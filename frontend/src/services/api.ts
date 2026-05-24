@@ -87,13 +87,29 @@ const ensureUserRecord = async (email: string, roleName: string) => {
     .from("roles")
     .select("id,nombre")
     .eq("nombre", roleName)
-    .single();
+    .maybeSingle();
 
   if (roleError) {
     createApiError(roleError.message || "Error al obtener rol");
   }
 
-  const roleId = roleData?.id || 3;
+  let roleId = roleData?.id;
+  if (!roleId) {
+    const { data: insertedRole, error: insertRoleError } = await supabase
+      .from("roles")
+      .insert({ nombre: roleName })
+      .select("id")
+      .maybeSingle();
+
+    if (insertRoleError) {
+      createApiError(insertRoleError.message || "Error al crear rol");
+    }
+    roleId = insertedRole?.id;
+  }
+
+  if (!roleId) {
+    createApiError("No se pudo determinar el rol del usuario");
+  }
 
   const { error: upsertError } = await supabase.from("usuarios").upsert(
     {
