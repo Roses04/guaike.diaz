@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
-import { LogIn, Mail, Lock, UserPlus, Info, WifiOff } from "lucide-react";
+import { LogIn, Mail, Lock, UserPlus, Info, WifiOff, Phone, FileText } from "lucide-react";
 
 const LoginView = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("turista");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,10 +42,21 @@ const LoginView = () => {
     }
 
     try {
+      if (!email || !password) {
+        setError("El correo y la contraseña son obligatorios.");
+        setLoading(false);
+        return;
+      }
+
+      if (!isLogin && !name) {
+        setError("Por favor ingresa tu nombre completo para registrarte.");
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
         // Log in
         const response = await api.post("/auth/login", { email, password });
-        // Guardar usuario en caché para uso offline futuro
         localStorage.setItem("auth_user", JSON.stringify(response.data.user));
         setAuth(response.data.user, response.data.token);
         if (response.data.user.role === "admin") {
@@ -53,9 +66,17 @@ const LoginView = () => {
         }
       } else {
         // Register
-        await api.post("/auth/register", { email, password, role });
+        await api.post("/auth/register", {
+          email,
+          password,
+          role,
+          name,
+          phone,
+        });
         setSuccess("Registro exitoso. ¡Ahora puedes iniciar sesión!");
         setIsLogin(true);
+        setName("");
+        setPhone("");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Ocurrió un error inesperado.");
@@ -141,17 +162,62 @@ const LoginView = () => {
           </div>
 
           {!isLogin && (
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Tipo de Usuario</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="block w-full px-3.5 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
-              >
-                <option value="turista">Turista (Visitar y calificar)</option>
-                <option value="operador">Operador (Artesano / Guía)</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Tipo de Usuario</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="block w-full px-3.5 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+                >
+                  <option value="turista">Turista (Visitar y calificar)</option>
+                  <option value="operador">Operador (Artesano / Guía)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Nombre Completo</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                      <UserPlus size={18} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                      placeholder="Ej. María Pérez"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Teléfono de contacto</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                      <Phone size={18} />
+                    </span>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                      placeholder="Ej. +584121234567"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl bg-brand-blue/5 dark:bg-brand-light/10 border border-brand-blue/20 dark:border-brand-light/20 p-4 text-sm text-slate-700 dark:text-slate-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText size={16} className="text-brand-blue dark:text-brand-light" />
+                  <span className="font-semibold">Datos requeridos según tu rol</span>
+                </div>
+                <p>{role === "operador" ? "Como operador podrás registrar tu taller y aparecer en el directorio municipal." : "Como turista podrás explorar los talleres y dejar reseñas."}</p>
+              </div>
+            </>
           )}
 
           <button

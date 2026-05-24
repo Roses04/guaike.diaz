@@ -88,6 +88,7 @@ const ProfileView = () => {
 
   const userRole = profile?.role || user?.role || "turista";
   const email = profile?.email || user?.email || "-";
+  const userName = profile?.full_name || profile?.name || email.split("@")[0] || "Usuario";
   const createdAt = profile?.fecha_creacion || profile?.created_at || "-";
 
   const getRoleDescription = () => {
@@ -107,7 +108,7 @@ const ProfileView = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-brand-gold font-bold mb-2">Perfil de Usuario</p>
-            <h1 className="text-4xl font-display font-extrabold text-slate-900 dark:text-white">Hola, {email}</h1>
+            <h1 className="text-4xl font-display font-extrabold text-slate-900 dark:text-white">Hola, {userName}</h1>
             <p className="mt-3 text-slate-600 dark:text-slate-400 max-w-2xl">{getRoleDescription()}</p>
           </div>
           <div className="rounded-3xl bg-brand-blue/10 dark:bg-brand-light/10 p-5 border border-brand-blue/20 dark:border-brand-light/20">
