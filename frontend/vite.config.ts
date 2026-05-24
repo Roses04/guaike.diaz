@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default ({ mode }) => {
+export default ({ mode }: { mode: string }) => {
   const root = path.resolve(__dirname, '..')
   const env = loadEnv(mode, root, '')
   const supabaseUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -119,6 +119,8 @@ export default ({ mode }) => {
           },
         ],
       },
-    })
+    }),
   ],
 })
+}
+
