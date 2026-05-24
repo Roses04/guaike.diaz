@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --color-brand-blue: #0F4C81;
+  --color-brand-light: #1A62A3;
+  --color-brand-gold: #C2701F; /* Rich high-contrast caramel gold for light mode text/icons */
+  --color-brand-dark: #0A0F14;
+  --color-brand-accent: #059669; /* Rich emerald-600 for light mode tags/success status */
+  
+  /* Aurora Glow colors */
+  --glow-1: rgba(15, 76, 129, 0.12);
+  --glow-2: rgba(230, 161, 92, 0.08);
+}
+
+.dark {
+  --color-brand-gold: #E6A15C; /* Elegant glowing gold for dark mode */
+  --color-brand-accent: #10b981; /* Bright emerald for dark mode */
+  --glow-1: rgba(26, 98, 163, 0.25);
+  --glow-2: rgba(230, 161, 92, 0.15);
+}
+
+@theme {
+  --font-display: 'Outfit', sans-serif;
+  --color-brand-blue: var(--color-brand-blue);
+  --color-brand-light: var(--color-brand-light);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand-accent: var(--color-brand-accent);
+}
+
+body {
+  @apply bg-[#F0EEE8] text-slate-800 transition-colors duration-300 antialiased;
+}
+
+.dark body {
+  @apply bg-brand-dark text-slate-100;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  @apply bg-white/60 backdrop-blur-xl border border-stone-200/60 shadow-xl shadow-brand-blue/5 transition-all duration-300;
+}
+
+.dark .glass-panel {
+  @apply bg-slate-900/60 backdrop-blur-md border border-white/5 shadow-2xl;
+}
+
+/* Floating Auroras */
+.aurora-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.aurora-glow-1 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-1) 0%, transparent 70%);
+  filter: blur(40px);
+  will-change: transform;
+}
+
+.aurora-glow-2 {
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-2) 0%, transparent 70%);
+  filter: blur(40px);
+  will-change: transform;
+}
+
+/* Leaflet Customizations */
+.leaflet-container {
+  font-family: inherit !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #1e293b !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.95) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.dark .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+
+/* Utilities for Native App UX */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
