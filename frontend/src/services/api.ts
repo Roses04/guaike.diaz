@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+declare const __VITE_API_URL__: string;
+
+const API_URL = typeof __VITE_API_URL__ !== "undefined" ? __VITE_API_URL__ : "http://localhost:4000/api";
 
 const api = axios.create({
   baseURL: API_URL,

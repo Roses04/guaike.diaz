@@ -1,14 +1,27 @@
-import { defineConfig } from 'vite'
+import path from 'path'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
-  server: {
-    host: true,
-  },
-  plugins: [
+export default ({ mode }) => {
+  const root = path.resolve(__dirname, '..')
+  const env = loadEnv(mode, root, '')
+  const supabaseUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
+  const apiUrl = env.VITE_API_URL || env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+
+  return defineConfig({
+    server: {
+      host: true,
+    },
+    define: {
+      __VITE_SUPABASE_URL__: JSON.stringify(supabaseUrl),
+      __VITE_SUPABASE_PUBLISHABLE_KEY__: JSON.stringify(supabaseKey),
+      __VITE_API_URL__: JSON.stringify(apiUrl),
+    },
+    plugins: [
     react(), 
     tailwindcss(),
     VitePWA({

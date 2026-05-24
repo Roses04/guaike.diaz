@@ -1,16 +1,14 @@
+import "./env.js";
 import express from "express";
 import type { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
-import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes.js";
 import operatorRoutes from "./routes/operatorRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;

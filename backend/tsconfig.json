@@ -41,6 +41,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "allowJs": true,
 
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
