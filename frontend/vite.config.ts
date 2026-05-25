@@ -9,7 +9,7 @@ export default ({ mode }: { mode: string }) => {
   const root = path.resolve(__dirname, '..')
   const env = loadEnv(mode, root, '')
   const supabaseUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const supabaseKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
+  const supabaseKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   const apiUrl = env.VITE_API_URL || env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
 
   return defineConfig({
