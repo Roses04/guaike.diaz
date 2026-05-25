@@ -552,8 +552,14 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     if (error) createApiError(error.message, 401);
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
-    await ensureUserRecord(email as string, "turista");
-    const profile = await getUserRecordByEmail(email as string);
+    
+    // Check if user record already exists to preserve their role (e.g. admin or operator)
+    let profile = await getUserRecordByEmail(email as string);
+    if (!profile) {
+      await ensureUserRecord(email as string, "turista");
+      profile = await getUserRecordByEmail(email as string);
+    }
+    
     if (!profile) createApiError("No se pudo obtener perfil de usuario");
     return buildResponse({ token: (session as any).access_token, user: profile });
   }

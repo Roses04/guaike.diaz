@@ -71,7 +71,7 @@ const ProfileView = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [token, user, navigate, setAuth]);
+  }, [token, navigate, setAuth]);
 
   if (!token) {
     return null;
