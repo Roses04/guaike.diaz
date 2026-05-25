@@ -31,3 +31,4 @@ Icon?
 
 # Vite/PWA caching
 public/sw.js
+.vercel
