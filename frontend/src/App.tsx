@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import BottomBar from "./components/BottomBar";
 import HomeView from "./views/HomeView";
 import MapView from "./views/MapView";
 import LoginView from "./views/LoginView";
@@ -89,6 +90,7 @@ function App() {
             </main>
             
             <Footer />
+            <BottomBar />
           </div>
         </div>
       </div>

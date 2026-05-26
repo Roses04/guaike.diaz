@@ -457,7 +457,7 @@ const OperatorDetailView = () => {
                   className={`p-5 rounded-3xl shadow-sm border relative overflow-hidden ${
                     rev.qr_verificado 
                       ? "bg-brand-gold/5 dark:bg-brand-gold/10 border-brand-gold/30" 
-                      : "bg-[#FAF9F5]/95 dark:bg-slate-900/95 border-gray-200/50 dark:border-white/5"
+                      : "bg-surface-95 dark:bg-slate-900/95 border-gray-200/50 dark:border-white/5"
                   }`}
                 >
                   {/* Glowing physical badge */}

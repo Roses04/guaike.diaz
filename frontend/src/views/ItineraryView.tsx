@@ -861,7 +861,7 @@ const ItineraryView = () => {
                   </MapContainer>
 
                   {/* Absolute active route overlay details banner */}
-                  <div className="absolute bottom-4 left-4 z-10 bg-[#FAF9F5]/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-stone-200/90 dark:border-white/5 flex items-center gap-3">
+                  <div className="absolute bottom-4 left-4 z-10 bg-surface-95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-stone-200/90 dark:border-white/5 flex items-center gap-3">
                     <span className={`p-2 rounded-xl flex items-center justify-center ${transportMode === 'driving' ? 'bg-blue-50 text-brand-blue' : 'bg-emerald-50 text-emerald-600'}`}>
                       {transportMode === 'driving' ? <Car size={16} /> : <Footprints size={16} />}
                     </span>
@@ -913,7 +913,7 @@ const ItineraryView = () => {
                               className={`w-10 h-10 rounded-full flex items-center justify-center font-display font-extrabold text-sm border-2 shadow-md transition z-10 cursor-pointer ${
                                 isVisited
                                   ? "bg-emerald-500 border-emerald-500 text-white"
-                                  : "bg-[#FAF9F5] dark:bg-slate-800 border-brand-blue/30 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-brand-blue"
+                                  : "bg-surface dark:bg-slate-800 border-brand-blue/30 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-brand-blue"
                               }`}
                               title={isVisited ? "Marcar como pendiente" : "Marcar como visitado"}
                             >
@@ -921,7 +921,7 @@ const ItineraryView = () => {
                             </button>
 
                             {/* Details card */}
-                            <div className="flex-grow space-y-2 bg-[#FAF9F5]/40 dark:bg-slate-900/20 border border-stone-200/60 dark:border-white/5 p-4 rounded-2xl">
+                            <div className="flex-grow space-y-2 bg-surface-40 dark:bg-slate-900/20 border border-stone-200/60 dark:border-white/5 p-4 rounded-2xl">
                               {idx > 0 && (
                                 <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mb-1">
                                   {transportMode === "driving" ? <Car size={10} /> : <Footprints size={10} />}

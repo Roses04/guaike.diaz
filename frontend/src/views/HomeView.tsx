@@ -112,8 +112,10 @@ const HomeView = () => {
               <Search size={18} />
             </span>
             <input 
+              id="global-search"
               type="text" 
               placeholder="Buscar taller, artesano o especialidad..."
+              aria-label="Buscar talleres o artesanos"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 focus:border-brand-blue/60 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"

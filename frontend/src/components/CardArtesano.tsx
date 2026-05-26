@@ -46,9 +46,11 @@ const CardArtesano = ({ operator }: { operator: Operator }) => {
           </div>
           <Link 
             to={`/operador/${operator.id}`}
-            className="text-brand-blue dark:text-brand-light font-bold hover:text-brand-gold dark:hover:text-brand-gold transition duration-200 text-sm"
+            className="municipal-cta"
+            aria-label={`Ver perfil de ${operator.nombre_taller}`}
           >
-            Ver Perfil &rarr;
+            Ver Perfil
+            <span aria-hidden>&rarr;</span>
           </Link>
         </div>
       </div>
