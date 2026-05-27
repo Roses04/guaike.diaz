@@ -10,6 +10,16 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 import { useThemeStore } from "../store/useThemeStore";
+import {
+  MunicipioBoundsController,
+  MunicipioMaskLayer,
+  MunicipioBorderLayer,
+  getMapTileConfig,
+  MUNICIPIO_DIAZ_CENTER,
+  MUNICIPIO_DEFAULT_ZOOM,
+} from "../components/map/MunicipioMapLayers";
+import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
+import { PageHeader, TabSwitcher } from "../components/ui/PageHeader";
 
 interface Operator {
   id: number;
@@ -125,10 +135,7 @@ const ItineraryView = () => {
     }
   ];
 
-  // Map settings
-  const voyagerLayer = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-  const darkMatterLayer = "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png";
-  const defaultCenter: [number, number] = [11.018, -63.95];
+  const defaultCenter: [number, number] = MUNICIPIO_DIAZ_CENTER;
 
   // 1. Fetch operators and static configuration data
   const loadData = async () => {
@@ -316,7 +323,7 @@ const ItineraryView = () => {
     e.preventDefault();
 
     // Determine starting coordinates
-    let startCoords: [number, number] = [11.018, -63.95]; // default center
+    let startCoords: [number, number] = MUNICIPIO_DIAZ_CENTER;
     if (startPointType === "gps" && gpsLocation) {
       startCoords = gpsLocation;
     } else if (startPointType === "parish" && selectedStartParish) {
@@ -455,76 +462,23 @@ const ItineraryView = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <header className="mb-8 text-center max-w-3xl mx-auto">
-        <span className="text-xs uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full mb-3 inline-block">
-          Planificación Geoespacial
-        </span>
-        <h1 className="text-4xl sm:text-5xl font-display font-extrabold tracking-tight mb-3 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-brand-gold">
-          Rutas e Itinerarios
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
-          Diseña tu propio tour cultural en el Municipio Díaz. Elige entre recorridos temáticos curados o calcula una ruta inteligente adaptada a tus tiempos e intereses.
-        </p>
-      </header>
-
-      {/* Tabs Switcher */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex flex-wrap gap-1 shadow-inner border border-slate-200/50 dark:border-white/5">
-          <button
-            onClick={() => setActiveTab("curated")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "curated" 
-                ? "bg-white dark:bg-slate-700 text-brand-blue dark:text-white shadow-md" 
-                : "text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-white"
-            }`}
-          >
-            <Award size={16} /> Rutas Sugeridas
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("planner")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "planner" 
-                ? "bg-white dark:bg-slate-700 text-brand-blue dark:text-white shadow-md" 
-                : "text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-white"
-            }`}
-          >
-            <Sliders size={16} /> Planificador
-          </button>
-
-          <button
-            onClick={() => setActiveTab("active")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 relative ${
-              activeTab === "active" 
-                ? "bg-white dark:bg-slate-700 text-brand-blue dark:text-white shadow-md" 
-                : "text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-white"
-            }`}
-          >
-            <Compass size={16} className={activeItinerary.length > 0 ? "animate-spin-slow" : ""} />
-            Ruta Activa
-            {activeItinerary.length > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "history" 
-                ? "bg-white dark:bg-slate-700 text-brand-blue dark:text-white shadow-md" 
-                : "text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-white"
-            }`}
-          >
-            <Calendar size={16} /> Historial
-            {itinerariesHistory.length > 0 && (
-              <span className="bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1 font-bold">
-                {itinerariesHistory.length}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        badge="Planificación Geoespacial"
+        title="Rutas e Itinerarios"
+        description="Diseña tu propio tour cultural en el Municipio Díaz. Elige entre recorridos temáticos curados o calcula una ruta inteligente adaptada a tus tiempos e intereses."
+        actions={
+          <TabSwitcher
+            active={activeTab}
+            onChange={setActiveTab}
+            tabs={[
+              { id: "curated", label: "Rutas Sugeridas", icon: Award },
+              { id: "planner", label: "Planificador", icon: Sliders },
+              { id: "active", label: "Ruta Activa", icon: Compass },
+              { id: "history", label: "Historial", icon: Calendar },
+            ]}
+          />
+        }
+      />
 
       {/* Offline Banner Indicator */}
       {isOffline && (
@@ -813,15 +767,18 @@ const ItineraryView = () => {
               <div className="flex flex-col lg:flex-row gap-8 items-stretch">
                 {/* Visual Map (Left / Top) */}
                 <div className="flex-grow min-h-[280px] max-h-[min(420px,calc(100dvh-var(--mobile-chrome-top)-var(--mobile-chrome-bottom)-8rem))] lg:max-h-none lg:h-[calc(100vh-220px)] rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-white/5 relative z-0">
-                  <MapContainer 
-                    center={defaultCenter} 
-                    zoom={13} 
+                  <MapContainer
+                    center={defaultCenter}
+                    zoom={MUNICIPIO_DEFAULT_ZOOM}
+                    maxBounds={MUNICIPIO_MAX_BOUNDS}
+                    maxBoundsViscosity={1}
+                    minZoom={11}
                     className="h-full w-full"
                   >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                      url={isDarkMode ? darkMatterLayer : voyagerLayer}
-                    />
+                    <TileLayer {...getMapTileConfig(isDarkMode)} />
+                    <MunicipioBoundsController fitOnMount={false} />
+                    <MunicipioMaskLayer isDarkMode={isDarkMode} />
+                    <MunicipioBorderLayer isDarkMode={isDarkMode} />
                     
                     {/* Render sequence polyline connecting stops */}
                     <Polyline 

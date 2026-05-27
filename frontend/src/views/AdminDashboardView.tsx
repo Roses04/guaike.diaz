@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../services/api";
-import L from "leaflet";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import { PageHeader, TabSwitcher } from "../components/ui/PageHeader";
+import {
+  MunicipioBoundsController,
+  MunicipioMaskLayer,
+  MunicipioBorderLayer,
+  MunicipioLocationPicker,
+  getMapTileConfig,
+  MUNICIPIO_DIAZ_CENTER,
+  MUNICIPIO_DEFAULT_ZOOM,
+} from "../components/map/MunicipioMapLayers";
+import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
 import {
   Users,
   Store,
@@ -23,47 +33,6 @@ import {
   BarChart3,
   ListTodo
 } from "lucide-react";
-
-// Custom Leaflet pin icon creator
-const createDivIcon = (colorClass: string, iconHtml: string) => {
-  return L.divIcon({
-    html: `<div class="w-9 h-9 rounded-full ${colorClass} text-white flex items-center justify-center border-2 border-white shadow-lg">${iconHtml}</div>`,
-    className: "custom-div-icon",
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -32],
-  });
-};
-
-// Location picker component for event map creation
-const EventLocationPicker = ({ 
-  position, 
-  setPosition 
-}: { 
-  position: [number, number]; 
-  setPosition: (coords: [number, number]) => void; 
-}) => {
-  useMapEvents({
-    click(e) {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-
-  return (
-    <Marker
-      position={position}
-      draggable={true}
-      eventHandlers={{
-        dragend(e) {
-          const marker = e.target;
-          const pos = marker.getLatLng();
-          setPosition([pos.lat, pos.lng]);
-        },
-      }}
-      icon={createDivIcon("bg-brand-gold", '<span class="w-3 h-3 rounded-full bg-white block"></span>')}
-    />
-  );
-};
 
 const AdminDashboardView = () => {
   const { user, token } = useAuthStore();
@@ -115,7 +84,7 @@ const AdminDashboardView = () => {
   const [eventStart, setEventStart] = useState("");
   const [eventEnd, setEventEnd] = useState("");
   const [eventImageUrl, setEventImageUrl] = useState("");
-  const [eventLocation, setEventLocation] = useState<[number, number]>([11.018, -63.95]); // Default Municipio Diaz
+  const [eventLocation, setEventLocation] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
   const [publishingEvent, setPublishingEvent] = useState(false);
   const [eventSuccess, setEventSuccess] = useState("");
   const [eventError, setEventError] = useState("");
@@ -221,7 +190,7 @@ const AdminDashboardView = () => {
       setEventStart("");
       setEventEnd("");
       setEventImageUrl("");
-      setEventLocation([11.018, -63.95]);
+      setEventLocation(MUNICIPIO_DIAZ_CENTER);
 
       loadEventsList();
     } catch (err: any) {
@@ -247,52 +216,24 @@ const AdminDashboardView = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl flex-grow">
-      {/* Header Cockpit */}
-      <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs uppercase tracking-widest font-extrabold text-red-500 bg-red-500/10 px-3.5 py-1.5 rounded-full mb-3 inline-block">
-            Módulo Gubernamental Alcaldía
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
-            <ShieldCheck size={38} className="text-red-500" />
-            Cockpit de Moderación
-          </h1>
-        </div>
-
-        {/* Dynamic Glass Tabs Controls */}
-        <div className="flex overflow-x-auto no-scrollbar bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-gray-200 dark:border-white/5 shadow-inner max-w-full">
-          <button
-            onClick={() => setActiveTab("requests")}
-            className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "requests"
-                ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-md"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
-            }`}
-          >
-            <ListTodo size={14} /> Solicitudes
-          </button>
-          <button
-            onClick={() => setActiveTab("events")}
-            className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "events"
-                ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-md"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
-            }`}
-          >
-            <Calendar size={14} /> Ferias
-          </button>
-          <button
-            onClick={() => setActiveTab("stats")}
-            className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "stats"
-                ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-md"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800"
-            }`}
-          >
-            <BarChart3 size={14} /> Estadísticas
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        align="left"
+        badge="Módulo Gubernamental · Alcaldía"
+        title="Cockpit de Moderación"
+        description="Gestión de solicitudes, ferias y estadísticas del Municipio Díaz."
+        icon={ShieldCheck}
+        actions={
+          <TabSwitcher
+            active={activeTab}
+            onChange={setActiveTab}
+            tabs={[
+              { id: "requests", label: "Solicitudes", icon: ListTodo },
+              { id: "events", label: "Ferias", icon: Calendar },
+              { id: "stats", label: "Estadísticas", icon: BarChart3 },
+            ]}
+          />
+        }
+      />
 
       {/* Global alert messages */}
       {alertMsg && (
@@ -307,20 +248,20 @@ const AdminDashboardView = () => {
       {/* Tab 1: SOLICITUDES PENDIENTES */}
       {activeTab === "requests" && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-          <h2 className="text-xl font-display font-bold border-b border-gray-100 dark:border-white/5 pb-4 text-slate-800 dark:text-white">
+          <h2 className="text-xl font-display font-bold border-b border-slate-200/80 dark:border-white/5 pb-4 text-slate-800 dark:text-white">
             Solicitudes de Registro Pendientes ({pendingOperators.length})
           </h2>
 
           {loadingRequests ? (
             <div className="text-center py-12 text-slate-400">
-              <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <div className="w-10 h-10 border-4 border-brand-blue dark:border-brand-light border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               <span>Cargando solicitudes de artesanos...</span>
             </div>
           ) : pendingOperators.length > 0 ? (
             <>
             <div className="md:hidden space-y-4">
               {pendingOperators.map((req: any) => (
-                <div key={req.id} className="rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-3 bg-white/50 dark:bg-slate-900/30">
+                <div key={req.id} className="rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 space-y-3 bg-white/50 dark:bg-slate-900/30">
                   <div>
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{req.nombre_taller}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">{req.usuario_correo}</p>
@@ -355,7 +296,7 @@ const AdminDashboardView = () => {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] uppercase tracking-wider text-slate-400">
+                  <tr className="border-b border-slate-200/80 dark:border-white/5 text-[10px] uppercase tracking-wider text-slate-400">
                     <th className="pb-3.5 pl-2">Taller/Operador</th>
                     <th className="pb-3.5">Categoría</th>
                     <th className="pb-3.5">Parroquia</th>
@@ -363,7 +304,7 @@ const AdminDashboardView = () => {
                     <th className="pb-3.5 text-right pr-2">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-xs text-slate-700 dark:text-slate-300">
+                <tbody className="divide-y divide-slate-200/80 dark:divide-white/5 text-xs text-slate-700 dark:text-slate-300">
                   {pendingOperators.map((req: any) => (
                     <tr key={req.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/10 transition">
                       <td className="py-4 pl-2 font-semibold">
@@ -422,7 +363,7 @@ const AdminDashboardView = () => {
           {/* Create Event Form */}
           <form onSubmit={handleCreateEvent} className="lg:col-span-5 glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-5 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-brand-gold"></div>
-            <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-gray-100 dark:border-white/5 pb-4">
+            <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-200/80 dark:border-white/5 pb-4">
               <Calendar size={20} className="text-brand-gold" />
               Publicar Feria o Evento
             </h2>
@@ -501,21 +442,20 @@ const AdminDashboardView = () => {
               <div className="space-y-1">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 pl-1">Ubicación Georreferenciada *</label>
                 <p className="text-[10px] text-slate-400 pl-1 pb-1">Selecciona en el mapa el punto exacto de la feria.</p>
-                <div className="h-44 w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 z-0">
-                  <MapContainer center={eventLocation} zoom={12} className="h-full w-full">
-                    <TileLayer
-                      attribution={
-                        isDarkMode
-                          ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                          : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                      }
-                      url={
-                        isDarkMode
-                          ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                          : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                      }
-                    />
-                    <EventLocationPicker position={eventLocation} setPosition={setEventLocation} />
+                <div className="h-52 w-full rounded-2xl overflow-hidden border border-slate-200/80 dark:border-white/10 z-0 relative">
+                  <MapContainer
+                    center={eventLocation}
+                    zoom={MUNICIPIO_DEFAULT_ZOOM}
+                    maxBounds={MUNICIPIO_MAX_BOUNDS}
+                    maxBoundsViscosity={1}
+                    minZoom={11}
+                    className="h-full w-full"
+                  >
+                    <TileLayer {...getMapTileConfig(isDarkMode)} />
+                    <MunicipioBoundsController fitOnMount={false} />
+                    <MunicipioMaskLayer isDarkMode={isDarkMode} />
+                    <MunicipioBorderLayer isDarkMode={isDarkMode} />
+                    <MunicipioLocationPicker position={eventLocation} setPosition={setEventLocation} />
                   </MapContainer>
                 </div>
               </div>
@@ -532,7 +472,7 @@ const AdminDashboardView = () => {
 
           {/* Active Events List */}
           <div className="lg:col-span-7 glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-            <h2 className="text-xl font-display font-bold border-b border-gray-100 dark:border-white/5 pb-4 text-slate-800 dark:text-white">
+            <h2 className="text-xl font-display font-bold border-b border-slate-200/80 dark:border-white/5 pb-4 text-slate-800 dark:text-white">
               Eventos y Ferias Culturales Activas ({events.length})
             </h2>
 
@@ -544,7 +484,7 @@ const AdminDashboardView = () => {
             ) : events.length > 0 ? (
               <div className="space-y-4">
                 {events.map((ev: any) => (
-                  <div key={ev.id} className="p-4 rounded-2xl bg-gray-50/50 dark:bg-slate-800/10 border border-gray-200/50 dark:border-white/5 flex items-center justify-between gap-4">
+                  <div key={ev.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/50 dark:border-white/5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-16 h-12 rounded-xl bg-gray-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
                         <img src={ev.url_imagen || "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=400"} alt={ev.titulo} className="w-full h-full object-cover" />
@@ -643,7 +583,7 @@ const AdminDashboardView = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Searches by Category */}
                 <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-                  <h3 className="text-lg font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-gray-100 dark:border-white/5 pb-4">
+                  <h3 className="text-lg font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-200/80 dark:border-white/5 pb-4">
                     <TrendingUp size={18} className="text-brand-blue" />
                     Interés por Categoría (Búsquedas)
                   </h3>
@@ -659,7 +599,7 @@ const AdminDashboardView = () => {
                               <span className="text-slate-700 dark:text-slate-300">{cat.categoria_nombre}</span>
                               <span className="text-slate-400">{cat.cantidad} búsquedas ({pct.toFixed(0)}%)</span>
                             </div>
-                            <div className="w-full bg-gray-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                               <div 
                                 className="bg-brand-blue dark:bg-brand-light h-full rounded-full transition-all duration-1000"
                                 style={{ width: `${pct}%` }}
@@ -676,7 +616,7 @@ const AdminDashboardView = () => {
 
                 {/* Searches by Parroquia */}
                 <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-                  <h3 className="text-lg font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-gray-100 dark:border-white/5 pb-4">
+                  <h3 className="text-lg font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-200/80 dark:border-white/5 pb-4">
                     <MapPin size={18} className="text-brand-gold" />
                     Demanda Territorial (Búsquedas por Parroquia)
                   </h3>
@@ -692,7 +632,7 @@ const AdminDashboardView = () => {
                               <span className="text-slate-700 dark:text-slate-300 capitalize">{parr.parroquia_nombre}</span>
                               <span className="text-slate-400">{parr.cantidad} ({pct.toFixed(0)}%)</span>
                             </div>
-                            <div className="w-full bg-gray-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                               <div 
                                 className="bg-brand-gold h-full rounded-full transition-all duration-1000"
                                 style={{ width: `${pct}%` }}
@@ -719,7 +659,7 @@ const AdminDashboardView = () => {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative">
             <h3 className="font-bold text-lg">Documento RIF/Cédula Cargado</h3>
-            <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-gray-200 dark:border-white/5 shadow-inner">
+            <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-white/5 shadow-inner">
               <img src={activeDocument} alt="Documento verificador" className="w-full h-full object-contain" />
             </div>
             <div className="flex justify-end pt-2">

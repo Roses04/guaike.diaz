@@ -6,6 +6,16 @@ import L from "leaflet";
 import { Link } from "react-router-dom";
 import { Navigation, Tag } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
+import {
+  MunicipioBoundsController,
+  MunicipioMaskLayer,
+  MunicipioBorderLayer,
+  MunicipioMapLegend,
+  getMapTileConfig,
+  MUNICIPIO_DIAZ_CENTER,
+  MUNICIPIO_DEFAULT_ZOOM,
+} from "../components/map/MunicipioMapLayers";
+import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 
 
 
@@ -33,7 +43,7 @@ const MapView = () => {
   const { isDarkMode } = useThemeStore();
   const [operators, setOperators] = useState([]);
   const [events, setEvents] = useState([]);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([11.018, -63.95]); // Centro Municipio Díaz
+  const [mapCenter, setMapCenter] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
 
@@ -72,9 +82,12 @@ const MapView = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const coords: [number, number] = [latitude, longitude];
+        const coords = clampToMunicipioBounds(latitude, longitude);
         setUserLocation(coords);
         setMapCenter(coords);
+        if (coords[0] !== latitude || coords[1] !== longitude) {
+          alert("Tu ubicación está fuera del Municipio Díaz. Se mostró el límite municipal más cercano.");
+        }
         setLoadingLoc(false);
       },
       (error) => {
@@ -129,25 +142,19 @@ const MapView = () => {
       </div>
 
       {/* Leaflet Map */}
-      <div className="flex-grow h-full w-full z-0">
-        <MapContainer 
-          center={mapCenter} 
-          zoom={13} 
+      <div className="flex-grow h-full w-full z-0 relative">
+        <MapContainer
+          center={MUNICIPIO_DIAZ_CENTER}
+          zoom={MUNICIPIO_DEFAULT_ZOOM}
+          maxBounds={MUNICIPIO_MAX_BOUNDS}
+          maxBoundsViscosity={1}
+          minZoom={11}
           className="h-full w-full"
         >
-          <TileLayer
-            attribution={
-              isDarkMode
-                ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            }
-            url={
-              isDarkMode
-                ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            }
-          />
-          
+          <TileLayer {...getMapTileConfig(isDarkMode)} />
+          <MunicipioBoundsController fitOnMount />
+          <MunicipioMaskLayer isDarkMode={isDarkMode} />
+          <MunicipioBorderLayer isDarkMode={isDarkMode} />
           <MapController center={mapCenter} />
 
           {/* User Location Marker */}
@@ -227,6 +234,7 @@ const MapView = () => {
             </Marker>
           ))}
         </MapContainer>
+        <MunicipioMapLegend />
       </div>
     </div>
   );

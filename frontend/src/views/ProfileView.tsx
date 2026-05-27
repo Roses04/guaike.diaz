@@ -11,6 +11,7 @@ import {
   ArrowRight,
   WifiOff,
 } from "lucide-react";
+import { PageHeader } from "../components/ui/PageHeader";
 
 const ProfileView = () => {
   const { user, token, setAuth } = useAuthStore();
@@ -104,23 +105,25 @@ const ProfileView = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <div className="glass-panel rounded-3xl p-4 sm:p-8 shadow-2xl border border-slate-200/70 dark:border-white/10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-brand-gold font-bold mb-2">Perfil de Usuario</p>
-            <h1 className="text-4xl font-display font-extrabold text-slate-900 dark:text-white">Hola, {userName}</h1>
-            <p className="mt-3 text-slate-600 dark:text-slate-400 max-w-2xl">{getRoleDescription()}</p>
-          </div>
+      <PageHeader
+        align="left"
+        badge="Perfil de Usuario"
+        title={`Hola, ${userName}`}
+        description={getRoleDescription()}
+        icon={User}
+        actions={
           <div className="rounded-3xl bg-brand-blue/10 dark:bg-brand-light/10 p-5 border border-brand-blue/20 dark:border-brand-light/20">
             <div className="flex items-center gap-3 text-brand-blue dark:text-brand-light">
-              <User size={28} />
+              <ShieldCheck size={24} />
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] font-semibold">Rol Actual</p>
                 <p className="text-xl font-bold capitalize">{userRole}</p>
               </div>
             </div>
           </div>
-        </div>
+        }
+      />
+      <div className="glass-panel rounded-3xl p-4 sm:p-8 shadow-2xl border border-slate-200/70 dark:border-white/10">
 
         {isOffline && (
           <div className="mb-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-200 p-4">
