@@ -12,7 +12,8 @@
 
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b; /* tipografía principal */
-  --bg-surface: #f8f8f8; /* fondo blanco suave */
+  --bg-image-darkened: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('C:\Users\dionk\OneDrive\Imágenes\SanJuan.jpg'); /* imagen de fondo */
+  --bg-color-fallback: #f3f3f3;/* fondo blanco suave */
   --color-brand-gold-text: #7a5c00; /* legible sobre fondos claros */
 
   /* Greens */
@@ -72,7 +73,12 @@ html {
 }
 
 body {
-  background: var(--bg-surface);
+  background: var(--bg-color-fallback) var(--bg-image-darkened);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
   color: var(--color-primary-text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
