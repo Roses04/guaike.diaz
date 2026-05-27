@@ -6,9 +6,14 @@
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 
+  /* Mobile chrome (header + bottom nav + safe area) */
+  --mobile-chrome-top: 3.5rem;
+  --mobile-chrome-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b; /* tipografía principal */
   --bg-surface: #f8f8f8; /* fondo blanco suave */
+  --color-brand-gold-text: #7a5c00; /* legible sobre fondos claros */
 
   /* Greens */
   --green-1: #12ab33;
@@ -38,7 +43,15 @@
   --glow-2: rgba(247, 187, 66, 0.06); /* yellow-2 */
 }
 
+html {
+  color-scheme: light dark;
+}
+
 .dark {
+  color-scheme: dark;
+  --color-primary-text: #f1f5f9;
+  --bg-surface: #0f1419;
+  --color-brand-gold-text: var(--yellow-1);
   --color-brand-gold: var(--yellow-1);
   --color-brand-accent: var(--green-2);
   --glow-1: rgba(91, 189, 227, 0.18); /* blue-1 */
@@ -67,8 +80,22 @@ body {
 }
 
 .dark body {
-  background: #0a0f14; /* keep dark background for dark mode */
-  color: #f8f8f8;
+  background: #0a0f14;
+  color: var(--color-primary-text);
+}
+
+/* Dark mode surface utility overrides */
+.dark .bg-surface { background: var(--bg-surface) !important; }
+.dark .bg-surface-95 { background: rgba(15, 20, 25, 0.95) !important; }
+.dark .bg-surface-90 { background: rgba(15, 20, 25, 0.90) !important; }
+.dark .bg-surface-85 { background: rgba(15, 20, 25, 0.85) !important; }
+.dark .bg-\[\#FAF9F5\],
+.dark .bg-\[\#FAF9F5\]\/95,
+.dark .bg-\[\#FAF9F5\]\/90,
+.dark .bg-\[\#FAF9F5\]\/85,
+.dark .bg-\[\#FAF9F5\]\/60,
+.dark .bg-\[\#FAF9F5\]\/40 {
+  background: rgba(15, 20, 25, 0.92) !important;
 }
 
 /* Glassmorphism Classes */
@@ -151,6 +178,26 @@ body {
   background: rgba(15, 23, 42, 0.95) !important;
 }
 
+/* Municipio Díaz — borde del mapa */
+.municipio-border-path {
+  filter: drop-shadow(0 0 6px rgba(0, 147, 217, 0.45));
+}
+
+.dark .municipio-border-path {
+  filter: drop-shadow(0 0 8px rgba(91, 189, 227, 0.5));
+}
+
+.leaflet-tooltip.municipio-map-tooltip {
+  background: rgba(0, 147, 217, 0.95) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700;
+  font-size: 11px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  box-shadow: 0 4px 14px rgba(0, 147, 217, 0.35);
+}
+
 /* Utilities for Native App UX */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -199,13 +246,79 @@ body {
 /* Small helper for verified badge using municipal yellow */
 .badge-verified {
   background: rgba(251,219,59,0.12);
-  color: var(--yellow-2);
+  color: var(--color-brand-gold-text);
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
   font-weight: 700;
   display: inline-flex;
   gap: 0.4rem;
   align-items: center;
+}
+
+.dark .badge-verified {
+  background: rgba(251, 219, 59, 0.15);
+  color: var(--yellow-1);
+}
+
+/* Gold chip / label — legible in light and dark */
+.chip-gold {
+  background: rgba(251, 219, 59, 0.12);
+  color: var(--color-brand-gold-text);
+  font-weight: 800;
+}
+
+.dark .chip-gold {
+  background: rgba(251, 219, 59, 0.15);
+  color: var(--yellow-1);
+}
+
+.text-accent-gold {
+  color: var(--color-brand-gold-text);
+}
+
+.dark .text-accent-gold {
+  color: var(--yellow-1);
+}
+
+/* Map full-height on mobile (minus fixed chrome) */
+.min-h-map-mobile {
+  height: calc(100dvh - var(--mobile-chrome-top) - var(--mobile-chrome-bottom));
+}
+
+@media (min-width: 768px) {
+  .min-h-map-mobile {
+    height: calc(100vh - 4rem);
+  }
+}
+
+.mobile-offset-top {
+  top: calc(var(--mobile-chrome-top) + 0.5rem);
+}
+
+@media (min-width: 768px) {
+  .mobile-offset-top {
+    top: 1rem;
+  }
+}
+
+.mobile-fab-bottom {
+  bottom: calc(var(--mobile-chrome-bottom) + 1rem);
+}
+
+@media (min-width: 768px) {
+  .mobile-fab-bottom {
+    bottom: 1.5rem;
+  }
+}
+
+.mobile-banner-top {
+  top: calc(var(--mobile-chrome-top) + 0.5rem);
+}
+
+@media (min-width: 768px) {
+  .mobile-banner-top {
+    top: 1rem;
+  }
 }
 
 /* End custom overrides */

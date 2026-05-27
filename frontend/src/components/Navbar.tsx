@@ -1,12 +1,13 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
-import { User, ShieldCheck, LogOut, Map as MapIcon, Home, Sun, Moon, Compass } from "lucide-react";
+import { User, ShieldCheck, LogOut, Map as MapIcon, Home, Sun, Moon, Compass, Search } from "lucide-react";
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const NavItem = ({ to, icon: Icon, label, isActive }: { to: string, icon: any, label: string, isActive: boolean }) => (
     <Link 
@@ -14,13 +15,13 @@ const Navbar = () => {
       className={`flex flex-col md:flex-row items-center md:justify-start gap-1.5 md:gap-4 md:px-6 md:py-3.5 md:rounded-2xl transition-all duration-150 relative group
         ${isActive 
           ? "text-brand-blue dark:text-brand-light md:bg-gradient-to-br md:from-brand-blue md:to-brand-light md:dark:from-brand-light md:dark:to-brand-blue md:text-white md:shadow-lg md:shadow-brand-blue/20" 
-          : "text-slate-500 dark:text-slate-400 hover:text-brand-blue dark:hover:text-brand-light md:hover:bg-brand-blue/10 md:dark:hover:bg-brand-light/10"
+          : "text-slate-500 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-light md:hover:bg-brand-blue/10 md:dark:hover:bg-brand-light/10"
         }`}
     >
       <div className={`relative transition-transform duration-150 ${isActive ? "md:scale-100 -translate-y-1 md:-translate-y-0" : "md:group-hover:translate-x-1"}`}>
         <Icon size={24} strokeWidth={isActive ? 2.5 : 2} className={isActive ? "md:text-white" : ""} />
       </div>
-      <span className={`text-[10px] md:text-sm font-semibold md:font-bold ${isActive ? "md:text-white" : ""}`}>{label}</span>
+      <span className={`text-[9px] md:text-sm font-semibold md:font-bold ${isActive ? "md:text-white" : ""}`}>{label}</span>
       
       {/* Mobile Active Indicator Dot */}
       <div className={`absolute -bottom-1.5 md:hidden w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light transition-all duration-150 ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"}`}></div>
@@ -29,6 +30,35 @@ const Navbar = () => {
 
   const profileRoute = user ? "/perfil" : "/login";
   const isProfileActive = location.pathname === profileRoute;
+
+  const handleSearch = () => {
+    if (location.pathname !== "/") {
+      navigate("/#global-search");
+      return;
+    }
+    const el = document.getElementById("global-search");
+    el?.focus();
+    window.scrollTo({
+      top: el ? el.getBoundingClientRect().top + window.scrollY - 100 : 0,
+      behavior: "smooth",
+    });
+  };
+
+  const SearchNavItem = ({ isActive }: { isActive: boolean }) => (
+    <button
+      type="button"
+      onClick={handleSearch}
+      className={`flex flex-col md:hidden items-center gap-1.5 transition-all duration-150 relative group
+        ${isActive
+          ? "text-brand-blue dark:text-brand-light"
+          : "text-slate-500 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-light"
+        }`}
+    >
+      <Search size={24} strokeWidth={isActive ? 2.5 : 2} />
+      <span className="text-[9px] font-semibold">Buscar</span>
+      <div className={`absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light transition-all duration-150 ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+    </button>
+  );
 
   return (
     <>
@@ -53,7 +83,7 @@ const Navbar = () => {
       </header>
 
       {/* DESKTOP SIDEBAR & MOBILE BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-0 right-0 md:sticky md:top-8 md:h-[calc(100vh-64px)] z-50 bg-surface-90 dark:bg-brand-dark/90 md:bg-surface-60 md:dark:bg-slate-900/40 backdrop-blur-2xl border-t md:border border-stone-200/90 dark:border-white/5 rounded-t-[32px] md:rounded-[40px] shadow-[0_-10px_40px_-10px_rgba(15,76,129,0.08)] md:shadow-2xl flex md:flex-col justify-around md:justify-start px-6 pt-4 pb-8 md:p-6 transition-all duration-150 md:gap-3 w-full md:w-[260px]">
+      <nav className="fixed bottom-0 left-0 right-0 md:sticky md:top-8 md:h-[calc(100vh-64px)] z-50 bg-surface-90 dark:bg-brand-dark/90 md:bg-surface-60 md:dark:bg-slate-900/40 backdrop-blur-2xl border-t md:border border-stone-200/90 dark:border-white/5 rounded-t-[32px] md:rounded-[40px] shadow-[0_-10px_40px_-10px_rgba(15,76,129,0.08)] md:shadow-2xl flex md:flex-col justify-around md:justify-start px-3 sm:px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:p-6 transition-all duration-150 md:gap-3 w-full md:w-[260px]">
         
         {/* Desktop Logo */}
         <div className="hidden md:block mb-10 text-center mt-2">
@@ -65,6 +95,7 @@ const Navbar = () => {
         </div>
 
         <NavItem to="/" icon={Home} label="Inicio" isActive={location.pathname === "/"} />
+        <SearchNavItem isActive={location.pathname === "/" && typeof window !== "undefined" && window.location.hash === "#global-search"} />
         <NavItem to="/mapa" icon={MapIcon} label="Mapa" isActive={location.pathname === "/mapa"} />
         <NavItem to="/itinerarios" icon={Compass} label="Rutas" isActive={location.pathname === "/itinerarios"} />
         {user?.role === "admin" && (

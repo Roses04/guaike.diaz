@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../services/api";
-import L from "leaflet";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import {
+  MunicipioBoundsController,
+  MunicipioMaskLayer,
+  MunicipioBorderLayer,
+  MunicipioLocationPicker,
+  getMapTileConfig,
+  MUNICIPIO_DIAZ_CENTER,
+  MUNICIPIO_DEFAULT_ZOOM,
+} from "../components/map/MunicipioMapLayers";
+import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 import { 
   Store, 
   MapPin, 
@@ -19,47 +28,6 @@ import {
   AlertTriangle,
   FileText
 } from "lucide-react";
-
-// Custom Leaflet Pin Icon Creator
-const createDivIcon = (colorClass: string, iconHtml: string) => {
-  return L.divIcon({
-    html: `<div class="w-9 h-9 rounded-full ${colorClass} text-white flex items-center justify-center border-2 border-white shadow-lg transform transition duration-200 hover:scale-110">${iconHtml}</div>`,
-    className: "custom-div-icon",
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -32],
-  });
-};
-
-// Map click event listener for picking location
-const LocationPicker = ({ 
-  position, 
-  setPosition 
-}: { 
-  position: [number, number]; 
-  setPosition: (coords: [number, number]) => void; 
-}) => {
-  useMapEvents({
-    click(e) {
-      setPosition([e.latlng.lat, e.latlng.lng]);
-    },
-  });
-
-  return (
-    <Marker
-      position={position}
-      draggable={true}
-      eventHandlers={{
-        dragend(e) {
-          const marker = e.target;
-          const pos = marker.getLatLng();
-          setPosition([pos.lat, pos.lng]);
-        },
-      }}
-      icon={createDivIcon("bg-brand-blue", '<span class="w-3 h-3 rounded-full bg-white block"></span>')}
-    />
-  );
-};
 
 const RegisterOperatorView = () => {
   const { user, token } = useAuthStore();
@@ -104,7 +72,7 @@ const RegisterOperatorView = () => {
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState("");
   
   // Geolocation
-  const [location, setLocation] = useState<[number, number]>([11.018, -63.95]); // Default Municipio Diaz
+  const [location, setLocation] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
   const [gpsLoading, setGpsLoading] = useState(false);
 
   // Accessibilities & Static Options
@@ -147,7 +115,7 @@ const RegisterOperatorView = () => {
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation([pos.coords.latitude, pos.coords.longitude]);
+        setLocation(clampToMunicipioBounds(pos.coords.latitude, pos.coords.longitude));
         setGpsLoading(false);
       },
       (err) => {
@@ -430,20 +398,23 @@ const RegisterOperatorView = () => {
           </p>
 
           <div className="h-80 w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 z-0">
-            <MapContainer center={location} zoom={13} className="h-full w-full">
-              <TileLayer
-                attribution={
-                  isDarkMode
-                    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                }
-                url={
-                  isDarkMode
-                    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                }
+            <MapContainer
+              center={location}
+              zoom={MUNICIPIO_DEFAULT_ZOOM}
+              maxBounds={MUNICIPIO_MAX_BOUNDS}
+              maxBoundsViscosity={1}
+              minZoom={11}
+              className="h-full w-full"
+            >
+              <TileLayer {...getMapTileConfig(isDarkMode)} />
+              <MunicipioBoundsController fitOnMount={false} />
+              <MunicipioMaskLayer isDarkMode={isDarkMode} />
+              <MunicipioBorderLayer isDarkMode={isDarkMode} />
+              <MunicipioLocationPicker
+                position={location}
+                setPosition={setLocation}
+                markerClass="bg-brand-blue"
               />
-              <LocationPicker position={location} setPosition={setLocation} />
             </MapContainer>
           </div>
 

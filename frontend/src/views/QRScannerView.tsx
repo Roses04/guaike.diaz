@@ -126,7 +126,7 @@ const QRScannerView = () => {
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 
         <header className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 rounded-2xl chip-gold flex items-center justify-center">
             <QrCode size={26} />
           </div>
           <h1 className="text-2xl font-display font-extrabold text-slate-800 dark:text-white">Escáner de Visita</h1>
@@ -166,7 +166,7 @@ const QRScannerView = () => {
         {/* Scanner Feed Window */}
         {!validating && !validationError && (
           <div className="space-y-4">
-            <div className="relative aspect-square w-full max-w-[280px] mx-auto rounded-3xl overflow-hidden bg-black border-2 border-brand-gold/50 shadow-inner flex items-center justify-center">
+            <div className="relative aspect-square w-full max-w-full sm:max-w-[280px] mx-auto px-0 rounded-3xl overflow-hidden bg-black border-2 border-brand-gold/50 shadow-inner flex items-center justify-center">
               {/* Scan box alignment overlays */}
               <div className="absolute inset-0 border-[24px] border-black/40 pointer-events-none z-10 flex items-center justify-center">
                 <div className="w-full h-full border-2 border-dashed border-brand-gold/80 rounded-2xl relative">

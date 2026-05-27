@@ -31,8 +31,8 @@ export default ({ mode }: { mode: string }) => {
         name: 'GUAIKE.DÍAZ',
         short_name: 'GUAIKE',
         description: 'Sistema de Información Geoespacial para la Gestión Turístico-Artesanal',
-        theme_color: '#1e3a8a',
-        background_color: '#0f172a',
+        theme_color: '#0093d9',
+        background_color: '#0a0f14',
         display: 'standalone',
         start_url: '/',
         icons: [

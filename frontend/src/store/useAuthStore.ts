@@ -1,10 +1,7 @@
 import { create } from "zustand";
+import { normalizeAuthUser, type AuthUser } from "../utils/authUser";
 
-interface User {
-  id: number;
-  email: string;
-  role: string;
-}
+type User = AuthUser;
 
 interface AuthState {
   user: User | null;
@@ -16,7 +13,7 @@ interface AuthState {
 let storedUser: User | null = null;
 try {
   const rawUser = localStorage.getItem("auth_user");
-  storedUser = rawUser ? JSON.parse(rawUser) : null;
+  storedUser = rawUser ? normalizeAuthUser(JSON.parse(rawUser)) : null;
 } catch {
   storedUser = null;
 }
@@ -25,9 +22,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: storedUser,
   token: localStorage.getItem("token"),
   setAuth: (user, token) => {
+    const normalized = normalizeAuthUser(user) ?? user;
     localStorage.setItem("token", token);
-    localStorage.setItem("auth_user", JSON.stringify(user));
-    set({ user, token });
+    localStorage.setItem("auth_user", JSON.stringify(normalized));
+    set({ user: normalized, token });
   },
   logout: () => {
     localStorage.removeItem("token");

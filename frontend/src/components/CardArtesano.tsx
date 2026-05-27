@@ -24,7 +24,7 @@ const CardArtesano = ({ operator }: { operator: Operator }) => {
         />
         <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
           <span className="bg-slate-900/70 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
-            <Tag size={10} className="text-brand-gold" /> {operator.categoria_nombre}
+            <Tag size={10} className="text-accent-gold" /> {operator.categoria_nombre}
           </span>
         </div>
         {operator.es_verificado && (
@@ -42,7 +42,7 @@ const CardArtesano = ({ operator }: { operator: Operator }) => {
         </p>
         <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-1 font-bold text-slate-600 dark:text-slate-300">
-            <MapPin size={14} className="text-brand-gold" /> {operator.parroquia_nombre}
+            <MapPin size={14} className="text-accent-gold" /> {operator.parroquia_nombre}
           </div>
           <Link 
             to={`/operador/${operator.id}`}

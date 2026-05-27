@@ -6,6 +6,16 @@ import L from "leaflet";
 import { Link } from "react-router-dom";
 import { Navigation, Tag } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
+import {
+  MunicipioBoundsController,
+  MunicipioMaskLayer,
+  MunicipioBorderLayer,
+  MunicipioMapLegend,
+  getMapTileConfig,
+  MUNICIPIO_DIAZ_CENTER,
+  MUNICIPIO_DEFAULT_ZOOM,
+} from "../components/map/MunicipioMapLayers";
+import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 
 
 
@@ -33,7 +43,7 @@ const MapView = () => {
   const { isDarkMode } = useThemeStore();
   const [operators, setOperators] = useState([]);
   const [events, setEvents] = useState([]);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([11.018, -63.95]); // Centro Municipio Díaz
+  const [mapCenter, setMapCenter] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
 
@@ -72,9 +82,12 @@ const MapView = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const coords: [number, number] = [latitude, longitude];
+        const coords = clampToMunicipioBounds(latitude, longitude);
         setUserLocation(coords);
         setMapCenter(coords);
+        if (coords[0] !== latitude || coords[1] !== longitude) {
+          alert("Tu ubicación está fuera del Municipio Díaz. Se mostró el límite municipal más cercano.");
+        }
         setLoadingLoc(false);
       },
       (error) => {
@@ -87,9 +100,9 @@ const MapView = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] w-full relative flex flex-col md:flex-row">
+    <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row -mx-0 md:mx-0">
       {/* Floating Top Elements (like Google Maps Chips) */}
-      <div className="absolute top-4 left-0 right-0 z-[1000] px-4 pointer-events-none">
+      <div className="absolute mobile-offset-top left-0 right-0 z-[1000] px-4 pointer-events-none md:top-4">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pointer-events-auto pb-2">
           {/* Title Chip */}
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center shrink-0">
@@ -117,7 +130,7 @@ const MapView = () => {
       </div>
 
       {/* Floating Action Button (Locate Me) - Google Maps Style */}
-      <div className="absolute bottom-6 right-4 z-[1000] pointer-events-auto">
+      <div className="absolute mobile-fab-bottom right-4 z-[1000] pointer-events-auto">
         <button 
           onClick={handleLocateMe}
           disabled={loadingLoc}
@@ -129,25 +142,19 @@ const MapView = () => {
       </div>
 
       {/* Leaflet Map */}
-      <div className="flex-grow h-full w-full z-0">
-        <MapContainer 
-          center={mapCenter} 
-          zoom={13} 
+      <div className="flex-grow h-full w-full z-0 relative">
+        <MapContainer
+          center={MUNICIPIO_DIAZ_CENTER}
+          zoom={MUNICIPIO_DEFAULT_ZOOM}
+          maxBounds={MUNICIPIO_MAX_BOUNDS}
+          maxBoundsViscosity={1}
+          minZoom={11}
           className="h-full w-full"
         >
-          <TileLayer
-            attribution={
-              isDarkMode
-                ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            }
-            url={
-              isDarkMode
-                ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            }
-          />
-          
+          <TileLayer {...getMapTileConfig(isDarkMode)} />
+          <MunicipioBoundsController fitOnMount />
+          <MunicipioMaskLayer isDarkMode={isDarkMode} />
+          <MunicipioBorderLayer isDarkMode={isDarkMode} />
           <MapController center={mapCenter} />
 
           {/* User Location Marker */}
@@ -227,6 +234,7 @@ const MapView = () => {
             </Marker>
           ))}
         </MapContainer>
+        <MunicipioMapLegend />
       </div>
     </div>
   );

@@ -95,7 +95,15 @@ export class AuthController {
         res.status(404).json({ message: "Usuario no encontrado" });
         return;
       }
-      res.json(user);
+      res.json({
+        id: user.id,
+        email: user.correo,
+        role: user.rol_nombre,
+        correo: user.correo,
+        rol_nombre: user.rol_nombre,
+        rol_id: user.rol_id,
+        fecha_creacion: user.fecha_creacion,
+      });
     } catch (error) {
       console.error("Error al obtener perfil:", error);
       res.status(500).json({ message: "Error interno del servidor" });

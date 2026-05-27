@@ -8,13 +8,13 @@ const Footer = () => {
             <span className="text-brand-gold font-black">.</span>
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400 font-sans tracking-normal">DÍAZ</span>
           </div>
-          <p className="text-[11px] max-w-md leading-relaxed text-slate-400 dark:text-slate-500">
+          <p className="text-[11px] max-w-md leading-relaxed text-slate-500 dark:text-slate-400">
             Sistema de Información Geoespacial para la Gestión Turístico-Artesanal del Municipio Díaz, Nueva Esparta.
           </p>
         </div>
         <div className="border-t border-gray-200/50 dark:border-white/5 pt-4 max-w-lg mx-auto">
-          <p className="text-[10px] tracking-wide text-slate-400 dark:text-slate-500">
-            © 2026 Dionkel Rosas. Todos los derechos reservados.
+          <p className="text-[10px] tracking-wide text-slate-500 dark:text-slate-400">
+            © 2026 Municipio Díaz, Nueva Esparta. Facultad de Ingeniería - Escuela de Sistemas.
           </p>
         </div>
       </div>
