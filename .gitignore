@@ -32,3 +32,6 @@ Icon?
 # Vite/PWA caching
 public/sw.js
 .vercel
+
+# Plan files
+registro_verificación_ui_974912e5.plan.md

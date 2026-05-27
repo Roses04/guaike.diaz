@@ -23,8 +23,8 @@ export const MUNICIPIO_MAX_BOUNDS: L.LatLngBoundsExpression = [
   [11.11, -63.84],
 ];
 
-export const MUNICIPIO_MIN_ZOOM = 11;
-export const MUNICIPIO_DEFAULT_ZOOM = 13;
+export const MUNICIPIO_MIN_ZOOM = 12;
+export const MUNICIPIO_DEFAULT_ZOOM = 15;
 
 /**
  * Contorno simplificado del Municipio Díaz (lat, lng).
@@ -62,8 +62,8 @@ const toLngLatRing = (ring: [number, number][]) =>
 
 const municipioLngLatRing = toLngLatRing(MUNICIPIO_DIAZ_RING);
 
-/** Anillo exterior para enmascarar el área fuera del municipio. 
-const MASK_EXTERIOR: [number, number][] = [
+/** Anillo exterior para enmascarar el área fuera del municipio. */
+const MUNICIPIO_DIAZ_MASK_EXTERIOR: [number, number][] = [
   [11.025287, -63.966953],
   [11.011382, -63.957597],
   [11.009778, -63.945838],
@@ -89,7 +89,6 @@ const MASK_EXTERIOR: [number, number][] = [
   [11.024528, -63.983957],
   [11.025287, -63.966953]
 ];
-*/
 
 export const municipioDiazBoundaryGeoJSON: GeoPolygonFeature = {
   type: "Feature",
@@ -105,7 +104,7 @@ export const municipioDiazMaskGeoJSON: GeoPolygonFeature = {
   properties: { name: "mask" },
   geometry: {
     type: "Polygon",
-    coordinates: [MASK_EXTERIOR, [...municipioLngLatRing].reverse()],
+    coordinates: [MUNICIPIO_DIAZ_MASK_EXTERIOR, [...municipioLngLatRing].reverse()],
   },
 };
 

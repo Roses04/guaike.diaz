@@ -65,7 +65,7 @@ export function MunicipioBorderLayer({ isDarkMode }: { isDarkMode: boolean }) {
       data={municipioDiazBoundaryGeoJSON}
       style={{
         color: borderColor,
-        weight: 4,
+        weight: 2.5,
         opacity: 1,
         fillColor,
         fillOpacity: isDarkMode ? 0.14 : 0.1,
