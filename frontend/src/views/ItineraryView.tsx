@@ -457,7 +457,7 @@ const ItineraryView = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
       <header className="mb-8 text-center max-w-3xl mx-auto">
-        <span className="text-xs uppercase tracking-widest font-extrabold text-brand-gold bg-brand-gold/10 px-3.5 py-1.5 rounded-full mb-3 inline-block">
+        <span className="text-xs uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full mb-3 inline-block">
           Planificación Geoespacial
         </span>
         <h1 className="text-4xl sm:text-5xl font-display font-extrabold tracking-tight mb-3 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-brand-gold">
@@ -604,7 +604,7 @@ const ItineraryView = () => {
               {/* Transport Mode Switcher */}
               <div className="space-y-2">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Modo de Transporte</label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     type="button"
                     onClick={() => setTransportMode("driving")}
@@ -747,7 +747,7 @@ const ItineraryView = () => {
               {/* Accessibility options */}
               <div className="space-y-2">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Requisitos de Accesibilidad (Opcional)</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {optionsAccs.map((acc) => {
                     const isChecked = selectedAccs.includes(acc.id);
                     return (
@@ -812,7 +812,7 @@ const ItineraryView = () => {
             ) : (
               <div className="flex flex-col lg:flex-row gap-8 items-stretch">
                 {/* Visual Map (Left / Top) */}
-                <div className="flex-grow min-h-[350px] lg:h-[calc(100vh-220px)] rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-white/5 relative z-0">
+                <div className="flex-grow min-h-[280px] max-h-[min(420px,calc(100dvh-var(--mobile-chrome-top)-var(--mobile-chrome-bottom)-8rem))] lg:max-h-none lg:h-[calc(100vh-220px)] rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-white/5 relative z-0">
                   <MapContainer 
                     center={defaultCenter} 
                     zoom={13} 
@@ -826,7 +826,7 @@ const ItineraryView = () => {
                     {/* Render sequence polyline connecting stops */}
                     <Polyline 
                       positions={getPolylineCoords()} 
-                      color={isDarkMode ? "#10b981" : "#0F4C81"} 
+                      color={isDarkMode ? "#10b981" : "#0093d9"} 
                       dashArray="8, 12"
                       weight={4}
                     />
@@ -840,7 +840,7 @@ const ItineraryView = () => {
                       >
                         <Popup>
                           <div className="p-1.5 max-w-[180px] space-y-1.5 font-sans">
-                            <span className="text-[10px] font-extrabold uppercase text-brand-gold bg-brand-gold/10 px-2 py-0.5 rounded-full inline-block">
+                            <span className="text-[10px] font-extrabold uppercase chip-gold px-2 py-0.5 rounded-full inline-block">
                               Parada {idx + 1}
                             </span>
                             <h4 className="font-bold text-sm text-slate-800 dark:text-white leading-tight">{op.nombre_taller}</h4>
@@ -941,7 +941,7 @@ const ItineraryView = () => {
                                 <span className="text-[9px] font-extrabold uppercase bg-slate-200/60 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md">
                                   {op.parroquia_nombre}
                                 </span>
-                                <span className="text-[9px] font-extrabold uppercase bg-brand-gold/10 text-brand-gold px-2 py-0.5 rounded-md">
+                                <span className="text-[9px] font-extrabold uppercase chip-gold px-2 py-0.5 rounded-md">
                                   {op.categoria_nombre}
                                 </span>
                               </div>
@@ -1039,7 +1039,7 @@ const ItineraryView = () => {
                   >
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-extrabold uppercase bg-brand-gold/10 text-brand-gold px-2.5 py-1 rounded-full">
+                        <span className="text-[10px] font-extrabold uppercase chip-gold px-2.5 py-1 rounded-full">
                           {route.createdAt}
                         </span>
                         <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
@@ -1070,7 +1070,7 @@ const ItineraryView = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-5 mt-4 border-t border-slate-100 dark:border-white/5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-5 mt-4 border-t border-slate-100 dark:border-white/5">
                       <button
                         onClick={() => handleLoadFromHistory(route)}
                         className="w-full bg-brand-blue dark:bg-brand-light hover:bg-brand-blue/90 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-1 shadow-sm"

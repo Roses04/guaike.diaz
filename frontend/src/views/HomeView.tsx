@@ -92,7 +92,7 @@ const HomeView = () => {
 
       {/* Hero Section */}
       <header className="mb-12 text-center max-w-3xl mx-auto py-6">
-        <span className="text-xs uppercase tracking-widest font-extrabold text-brand-gold dark:text-brand-gold bg-brand-gold/10 px-3.5 py-1.5 rounded-full mb-4 inline-block">
+        <span className="text-xs uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full mb-4 inline-block">
           Patrimonio Cultural Verificado
         </span>
         <h1 className="text-4xl sm:text-6xl font-display font-extrabold tracking-tight mb-4 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-brand-gold">

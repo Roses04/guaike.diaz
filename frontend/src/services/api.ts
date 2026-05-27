@@ -60,29 +60,55 @@ const buildResponse = (data: any, status = 200) => ({
   config: {},
 });
 
+const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<string> => {
+  if (Array.isArray(rolesJoin)) {
+    const name = (rolesJoin[0] as { nombre?: string } | undefined)?.nombre;
+    if (name) return name;
+  } else if (rolesJoin && typeof rolesJoin === "object") {
+    const name = (rolesJoin as { nombre?: string }).nombre;
+    if (name) return name;
+  }
+
+  const { data: roleRow, error: roleError } = await supabase
+    .from("roles")
+    .select("nombre")
+    .eq("id", rolId)
+    .maybeSingle();
+
+  if (roleError) {
+    createApiError(roleError.message || "Error al leer rol del usuario");
+  }
+
+  return roleRow?.nombre || "turista";
+};
+
 const getUserRecordByEmail = async (email: string) => {
   const { data, error } = await supabase
     .from("usuarios")
     .select("id, correo, rol_id, roles(nombre)")
     .eq("correo", email)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error) {
     createApiError(error.message || "Error al leer usuario");
   }
 
   if (!data) return null;
 
+  const role = await resolveRoleName(data.rol_id, data.roles);
+
   return {
     id: data.id,
     email: data.correo,
-    role: Array.isArray(data.roles)
-      ? ((data.roles[0] as any)?.nombre || "turista")
-      : ((data.roles as any)?.nombre || "turista"),
+    role,
   };
 };
 
+/** Crea el registro en `usuarios` solo si no existe; nunca sobrescribe el rol existente. */
 const ensureUserRecord = async (email: string, roleName: string) => {
+  const existing = await getUserRecordByEmail(email);
+  if (existing) return existing;
+
   const { data: roleData, error: roleError } = await supabase
     .from("roles")
     .select("id,nombre")
@@ -111,18 +137,22 @@ const ensureUserRecord = async (email: string, roleName: string) => {
     createApiError("No se pudo determinar el rol del usuario");
   }
 
-  const { error: upsertError } = await supabase.from("usuarios").upsert(
-    {
-      correo: email,
-      contrasena: "",
-      rol_id: roleId,
-    },
-    { onConflict: "correo" }
-  );
+  const { error: insertError } = await supabase.from("usuarios").insert({
+    correo: email,
+    contrasena: "",
+    rol_id: roleId,
+  });
 
-  if (upsertError) {
-    createApiError(upsertError.message || "Error al crear usuario");
+  if (insertError) {
+    // Carrera: otro proceso creó el usuario; devolver el registro existente
+    if (insertError.code === "23505") {
+      const retry = await getUserRecordByEmail(email);
+      if (retry) return retry;
+    }
+    createApiError(insertError.message || "Error al crear usuario");
   }
+
+  return await getUserRecordByEmail(email);
 };
 
 const getSessionUser = async () => {

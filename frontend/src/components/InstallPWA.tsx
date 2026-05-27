@@ -65,7 +65,7 @@ const InstallPWA = () => {
   if (isStandalone || !showInstallBanner) return null;
 
   return (
-    <div className="fixed top-20 md:top-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-[100] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-stone-200/80 dark:border-white/10 shadow-2xl rounded-3xl p-4 flex flex-col gap-3 transition-all duration-500">
+    <div className="fixed mobile-banner-top md:top-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-[100] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-stone-200/80 dark:border-white/10 shadow-2xl rounded-3xl p-4 flex flex-col gap-3 transition-all duration-500">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-light flex items-center justify-center text-white shadow-lg shrink-0">

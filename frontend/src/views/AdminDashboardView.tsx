@@ -260,7 +260,7 @@ const AdminDashboardView = () => {
         </div>
 
         {/* Dynamic Glass Tabs Controls */}
-        <div className="flex bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-gray-200 dark:border-white/5 shadow-inner">
+        <div className="flex overflow-x-auto no-scrollbar bg-gray-100 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-gray-200 dark:border-white/5 shadow-inner max-w-full">
           <button
             onClick={() => setActiveTab("requests")}
             className={`px-4.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
@@ -317,7 +317,42 @@ const AdminDashboardView = () => {
               <span>Cargando solicitudes de artesanos...</span>
             </div>
           ) : pendingOperators.length > 0 ? (
-            <div className="overflow-x-auto">
+            <>
+            <div className="md:hidden space-y-4">
+              {pendingOperators.map((req: any) => (
+                <div key={req.id} className="rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-3 bg-white/50 dark:bg-slate-900/30">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{req.nombre_taller}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{req.usuario_correo}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <span className="capitalize bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">{req.categoria_nombre}</span>
+                    <span className="capitalize bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">{req.parroquia_nombre}</span>
+                  </div>
+                  <button
+                    onClick={() => setActiveDocument(req.imagen_principal)}
+                    className="w-full bg-brand-blue/5 hover:bg-brand-blue/10 dark:bg-brand-light/10 text-brand-blue dark:text-brand-light font-bold px-3 py-2 rounded-lg flex items-center justify-center gap-1 cursor-pointer transition text-xs"
+                  >
+                    <FileText size={12} /> Ver Cédula/RIF
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleVerifyOperator(req.id, true)}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 text-sm"
+                    >
+                      <CheckCircle size={16} /> Aprobar
+                    </button>
+                    <button
+                      onClick={() => handleVerifyOperator(req.id, false)}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 text-sm"
+                    >
+                      <XCircle size={16} /> Rechazar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] uppercase tracking-wider text-slate-400">
@@ -370,6 +405,7 @@ const AdminDashboardView = () => {
                 </tbody>
               </table>
             </div>
+            </>
           ) : (
             <div className="text-center py-16 text-slate-400 dark:text-slate-500">
               <ShieldCheck size={48} className="mx-auto mb-2 opacity-50 text-slate-300" />
@@ -427,7 +463,7 @@ const AdminDashboardView = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 pl-1">Fecha Inicio *</label>
                   <input
@@ -551,7 +587,7 @@ const AdminDashboardView = () => {
           ) : stats ? (
             <>
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
                   <div className="p-3 rounded-2xl bg-brand-blue/10 text-brand-blue dark:bg-brand-light/10 dark:text-brand-light flex-shrink-0">
                     <Store size={22} />
@@ -573,7 +609,7 @@ const AdminDashboardView = () => {
                 </div>
 
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-brand-gold/10 text-brand-gold flex-shrink-0">
+                  <div className="p-3 rounded-2xl chip-gold flex-shrink-0">
                     <MessageSquare size={22} />
                   </div>
                   <div>

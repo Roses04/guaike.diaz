@@ -104,7 +104,7 @@ const ProfileView = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <div className="glass-panel rounded-3xl p-8 shadow-2xl border border-slate-200/70 dark:border-white/10">
+      <div className="glass-panel rounded-3xl p-4 sm:p-8 shadow-2xl border border-slate-200/70 dark:border-white/10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-brand-gold font-bold mb-2">Perfil de Usuario</p>

@@ -87,7 +87,7 @@ const LoginView = () => {
 
   return (
     <div className="container mx-auto px-4 py-16 flex-grow flex items-center justify-center">
-      <div className="max-w-md w-full glass-panel p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+      <div className="max-w-md w-full glass-panel p-4 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
         {/* Glow border line */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 

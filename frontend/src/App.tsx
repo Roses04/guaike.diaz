@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import BottomBar from "./components/BottomBar";
 import HomeView from "./views/HomeView";
 import MapView from "./views/MapView";
 import LoginView from "./views/LoginView";
@@ -17,6 +16,7 @@ import api, { syncOfflineQueue } from "./services/api";
 import InstallPWA from "./components/InstallPWA";
 import { NetworkBanner } from "./components/NetworkBanner";
 import { useAuthStore } from "./store/useAuthStore";
+import { normalizeAuthUser } from "./utils/authUser";
 
 function App() {
   const { initializeTheme } = useThemeStore();
@@ -28,13 +28,21 @@ function App() {
     // Restaurar sesión si hay token guardado pero no usuario en memoria
     if (token && !user) {
       api.get("/auth/profile")
-        .then((res) => setAuth(res.data, token))
+        .then((res) => {
+          const normalized = normalizeAuthUser(res.data);
+          if (normalized) {
+            setAuth(normalized, token);
+          }
+        })
         .catch(() => {
           const cachedUser = localStorage.getItem("auth_user");
           if (cachedUser) {
             try {
-              setAuth(JSON.parse(cachedUser), token);
-              return;
+              const normalized = normalizeAuthUser(JSON.parse(cachedUser));
+              if (normalized) {
+                setAuth(normalized, token);
+                return;
+              }
             } catch {
               // continue to logout if cache is invalid
             }
@@ -74,7 +82,7 @@ function App() {
         <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8 md:max-w-7xl md:mx-auto md:p-6 md:min-h-screen">
           <Navbar />
           
-          <div className="flex flex-col min-h-screen md:min-h-0 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-24 pt-16 md:pb-0 md:pt-0 transition-all duration-200 z-10">
+          <div className="flex flex-col min-h-screen md:min-h-0 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pb-0 md:pt-0 transition-all duration-200 z-10">
             <main className="flex-grow flex flex-col w-full h-full">
               <Routes>
                 <Route path="/" element={<HomeView />} />
@@ -90,7 +98,6 @@ function App() {
             </main>
             
             <Footer />
-            <BottomBar />
           </div>
         </div>
       </div>

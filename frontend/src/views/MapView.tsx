@@ -87,9 +87,9 @@ const MapView = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] w-full relative flex flex-col md:flex-row">
+    <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row -mx-0 md:mx-0">
       {/* Floating Top Elements (like Google Maps Chips) */}
-      <div className="absolute top-4 left-0 right-0 z-[1000] px-4 pointer-events-none">
+      <div className="absolute mobile-offset-top left-0 right-0 z-[1000] px-4 pointer-events-none md:top-4">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pointer-events-auto pb-2">
           {/* Title Chip */}
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center shrink-0">
@@ -117,7 +117,7 @@ const MapView = () => {
       </div>
 
       {/* Floating Action Button (Locate Me) - Google Maps Style */}
-      <div className="absolute bottom-6 right-4 z-[1000] pointer-events-auto">
+      <div className="absolute mobile-fab-bottom right-4 z-[1000] pointer-events-auto">
         <button 
           onClick={handleLocateMe}
           disabled={loadingLoc}

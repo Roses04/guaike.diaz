@@ -213,8 +213,8 @@ const OperatorDetailView = () => {
         </Link>
 
         {operator.es_verificado && (
-          <span className="text-xs font-extrabold uppercase tracking-widest text-brand-gold bg-brand-gold/15 px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
-            <CheckCircle size={14} className="text-brand-gold" /> Patrimonio Verificado
+          <span className="text-xs font-extrabold uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+            <CheckCircle size={14} className="text-accent-gold" /> Patrimonio Verificado
           </span>
         )}
       </div>
@@ -231,7 +231,7 @@ const OperatorDetailView = () => {
           </div>
 
           {gallery.length > 0 && (
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               {gallery.slice(0, 4).map((img, idx) => (
                 <div key={idx} className="rounded-2xl overflow-hidden aspect-square border border-gray-200 dark:border-white/10 shadow hover:opacity-90 transition cursor-pointer">
                   <img src={img.url_imagen} alt={`Taller ${idx}`} className="w-full h-full object-cover" />
@@ -391,7 +391,7 @@ const OperatorDetailView = () => {
           )}
 
           {isQrVerified && (
-            <div className="mb-6 bg-brand-gold/10 dark:bg-brand-gold/15 border border-brand-gold/40 p-4 rounded-2xl flex items-center gap-3">
+            <div className="mb-6 chip-gold border border-brand-gold/40 dark:border-brand-gold/30 p-4 rounded-2xl flex items-center gap-3">
               <Award className="text-brand-gold animate-bounce" size={24} />
               <div>
                 <p className="text-xs font-extrabold text-brand-gold uppercase tracking-wider">¡Felicidades!</p>
@@ -462,7 +462,7 @@ const OperatorDetailView = () => {
                 >
                   {/* Glowing physical badge */}
                   {rev.qr_verificado && (
-                    <span className="absolute top-3.5 right-4 text-[10px] uppercase tracking-widest font-extrabold text-brand-gold bg-brand-gold/15 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <span className="absolute top-3.5 right-4 text-[10px] uppercase tracking-widest chip-gold px-2.5 py-1 rounded-full flex items-center gap-1">
                       <Award size={10} /> QR Verificado
                     </span>
                   )}
