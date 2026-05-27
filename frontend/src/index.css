@@ -43,6 +43,10 @@
   --color-brand-accent: var(--green-2);
   --glow-1: rgba(91, 189, 227, 0.18); /* blue-1 */
   --glow-2: rgba(224, 33, 85, 0.10); /* red hint for contrast */
+  --footer-bg: rgba(15, 20, 25, 0.95);
+  --footer-border: rgba(255, 255, 255, 0.12);
+  --footer-text: #cbd5e1;
+  --footer-text-muted: #94a3b8;
 }
 
 @theme {

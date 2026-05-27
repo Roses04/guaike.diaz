@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="block md:block bg-white/60 dark:bg-brand-dark/60 backdrop-blur-md border-t border-gray-200/50 dark:border-white/5 py-6 mt-auto text-slate-500 dark:text-slate-400 transition-colors duration-300">
+    <footer className="mt-auto w-full px-4 py-3 bg-white text-slate-600 border-t border-slate-200 dark:bg-[var(--footer-bg)] dark:text-[var(--footer-text)] dark:border-t dark:border-[var(--footer-border)] backdrop-blur z-10">
       <div className="container mx-auto px-4 text-center space-y-4">
         <div className="flex flex-col items-center justify-center gap-1.5">
           <div className="text-lg font-display font-extrabold tracking-tight flex items-center gap-1">
@@ -14,7 +14,7 @@ const Footer = () => {
         </div>
         <div className="border-t border-gray-200/50 dark:border-white/5 pt-4 max-w-lg mx-auto">
           <p className="text-[10px] tracking-wide text-slate-400 dark:text-slate-500">
-            © 2026 Municipio Díaz, Nueva Esparta. Facultad de Ingeniería - Escuela de Sistemas.
+            © 2026 Dionkel Rosas. Todos los derechos reservados.
           </p>
         </div>
       </div>
