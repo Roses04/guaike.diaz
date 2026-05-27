@@ -62,7 +62,7 @@ const toLngLatRing = (ring: [number, number][]) =>
 
 const municipioLngLatRing = toLngLatRing(MUNICIPIO_DIAZ_RING);
 
-/** Anillo exterior para enmascarar el área fuera del municipio. */
+/** Anillo exterior para enmascarar el área fuera del municipio. 
 const MASK_EXTERIOR: [number, number][] = [
   [11.025287, -63.966953],
   [11.011382, -63.957597],
@@ -89,6 +89,7 @@ const MASK_EXTERIOR: [number, number][] = [
   [11.024528, -63.983957],
   [11.025287, -63.966953]
 ];
+*/
 
 export const municipioDiazBoundaryGeoJSON: GeoPolygonFeature = {
   type: "Feature",
