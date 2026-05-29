@@ -12,7 +12,7 @@
 
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b; /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('C:\Users\dionk\OneDrive\Imágenes\SanJuan.jpg'); /* imagen de fondo */
+  --bg-image-darkened: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.72)), url('/images/SanJuan.jpg'); /* imagen de fondo */
   --bg-color-fallback: #f3f3f3;/* fondo blanco suave */
   --color-brand-gold-text: #7a5c00; /* legible sobre fondos claros */
 

@@ -63,10 +63,13 @@ const Navbar = () => {
   return (
     <>
       {/* MOBILE TOP HEADER */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-surface-85 dark:bg-brand-dark/85 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-3.5 px-6 flex justify-between items-center transition-colors duration-150">
-        <Link to="/" className="text-xl font-display font-extrabold tracking-tight flex items-center gap-1">
-          <span className="text-primary dark:text-white">GUAIKE</span>
-          <span className="text-brand-gold font-black">.</span>
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-surface-85 dark:bg-brand-dark/85 backdrop-blur-xl border-b border-stone-200/50 dark:border-white/5 py-2 px-6 flex justify-between items-center transition-colors duration-150">
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/images/logo.png" alt="Guaike Logo" className="h-8 w-auto dark:brightness-110" />
+          <div className="text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5">
+            <span className="text-primary dark:text-white">GUAIKE</span>
+            <span className="text-brand-gold font-black">.</span>
+          </div>
         </Link>
         <div className="flex items-center gap-4">
           <button 
@@ -86,12 +89,15 @@ const Navbar = () => {
       <nav className="fixed bottom-0 left-0 right-0 md:sticky md:top-8 md:h-[calc(100vh-64px)] z-50 bg-surface-90 dark:bg-brand-dark/90 md:bg-surface-60 md:dark:bg-slate-900/40 backdrop-blur-2xl border-t md:border border-stone-200/90 dark:border-white/5 rounded-t-[32px] md:rounded-[40px] shadow-[0_-10px_40px_-10px_rgba(15,76,129,0.08)] md:shadow-2xl flex md:flex-col justify-around md:justify-start px-3 sm:px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:p-6 transition-all duration-150 md:gap-3 w-full md:w-[260px]">
         
         {/* Desktop Logo */}
-        <div className="hidden md:block mb-10 text-center mt-2">
-          <Link to="/" className="text-[2rem] font-display font-extrabold tracking-tight flex items-center justify-center gap-1">
-            <span className="text-primary dark:text-white">GUAIKE</span>
-            <span className="text-brand-gold font-black">.</span>
+        <div className="hidden md:flex flex-col items-center mb-10 text-center mt-2 w-full">
+          <Link to="/" className="flex flex-col items-center gap-2">
+            <img src="/images/logo.png" alt="Guaike Logo" className="h-16 w-auto drop-shadow-md dark:brightness-110" />
+            <div className="text-[1.8rem] font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none mt-1">
+              <span className="text-primary dark:text-white">GUAIKE</span>
+              <span className="text-brand-gold font-black">.</span>
+            </div>
           </Link>
-          <span className="text-[11px] font-semibold text-slate-400 mt-1 block tracking-wider">NUEVA ESPARTA</span>
+          <span className="text-[11px] font-bold text-brand-gold dark:text-brand-gold mt-1 block tracking-wider">MUNICIPIO DÍAZ</span>
         </div>
 
         <NavItem to="/" icon={Home} label="Inicio" isActive={location.pathname === "/"} />

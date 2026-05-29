@@ -46,8 +46,8 @@ export function MunicipioMaskLayer({ isDarkMode }: { isDarkMode: boolean }) {
       data={municipioDiazMaskGeoJSON}
       style={{
         stroke: false,
-        fillColor: isDarkMode ? "#020617" : "#1e293b",
-        fillOpacity: isDarkMode ? 0.55 : 0.4,
+        fillColor: isDarkMode ? "#020617" : "#090d16",
+        fillOpacity: isDarkMode ? 0.65 : 0.52,
       }}
       interactive={false}
     />
@@ -56,8 +56,8 @@ export function MunicipioMaskLayer({ isDarkMode }: { isDarkMode: boolean }) {
 
 /** Borde resaltado del municipio. */
 export function MunicipioBorderLayer({ isDarkMode }: { isDarkMode: boolean }) {
-  const borderColor = isDarkMode ? "#5fbde3" : "#0093d9";
-  const fillColor = isDarkMode ? "#5fbde3" : "#0093d9";
+  const borderColor = isDarkMode ? "#38bdf8" : "#0f4c81";
+  const fillColor = isDarkMode ? "#38bdf8" : "#0f4c81";
 
   return (
     <GeoJSON
@@ -65,11 +65,11 @@ export function MunicipioBorderLayer({ isDarkMode }: { isDarkMode: boolean }) {
       data={municipioDiazBoundaryGeoJSON}
       style={{
         color: borderColor,
-        weight: 2.5,
+        weight: 3,
         opacity: 1,
         fillColor,
-        fillOpacity: isDarkMode ? 0.14 : 0.1,
-        dashArray: "10 6",
+        fillOpacity: isDarkMode ? 0.08 : 0.05,
+        dashArray: isDarkMode ? "6 6" : "8 5",
       }}
       onEachFeature={(_feature, layer) => {
         if (layer instanceof L.Path) {
