@@ -65,9 +65,7 @@ function App() {
 
   return (
     <Router>
-      {/* CAMBIO 1: Se añade 'md:h-screen md:overflow-hidden' para fijar el viewport 
-        en resoluciones de escritorio y evitar que la barra de scroll general del navegador aparezca.
-      */}
+      {/* Contenedor principal rígido en escritorio */}
       <div className="min-h-screen md:min-h-0 md:h-screen md:overflow-hidden transition-colors duration-200 relative overflow-x-hidden">
         {/* Ambient Aurora Glow Background */}
         <div className="aurora-bg">
@@ -78,22 +76,18 @@ function App() {
         {/* Global PWA Install Banner */}
         <InstallPWA />
 
-        {/* Global Network Conectivity Banner */}
+        {/* Global Network Connectivity Banner */}
         <NetworkBanner />
 
         {/* Global Layout Container */}
-        {/* CAMBIO 2: Cambiamos 'md:min-h-screen' por 'md:h-full' para que el Grid 
-          se acople milimétricamente al contenedor padre de pantalla completa.
-        */}
         <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8 md:max-w-7xl md:mx-auto md:p-6 md:h-full w-full">
           <Navbar />
 
-          {/* CAMBIO 3: Añadimos 'md:h-full md:overflow-y-auto' a la caja translúcida.
-            Esto hace que la columna derecha actúe como un panel independiente, encapsulando el scroll 
-            de modo que las vistas (como el mapa) y el footer se deslicen de forma interna y fluida.
-          */}
+          {/* Panel derecho con scroll propio */}
           <div className="flex flex-col min-h-screen md:min-h-0 md:h-full md:overflow-y-auto md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pb-0 md:pt-0 transition-all duration-200 z-10">
-            <main className="flex-grow flex flex-col w-full h-full">
+
+            {/* CORRECCIÓN: Cambiamos 'flex-grow' y eliminamos 'h-full' para evitar el colapso del footer */}
+            <main className="flex-1 w-full flex flex-col">
               <Routes>
                 <Route path="/" element={<HomeView />} />
                 <Route path="/mapa" element={<MapView />} />
@@ -107,6 +101,7 @@ function App() {
               </Routes>
             </main>
 
+            {/* El footer ahora se mantendrá siempre al final de todo el contenido scrolleable */}
             <Footer />
           </div>
         </div>
