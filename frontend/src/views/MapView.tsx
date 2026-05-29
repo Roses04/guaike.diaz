@@ -162,7 +162,7 @@ const MapView = () => {
           minZoom={11}
           className="h-full w-full"
         >
-          <TileLayer {...getMapTileConfig(isDarkMode)} />
+          <TileLayer key={isDarkMode ? "dark" : "light"} {...getMapTileConfig(isDarkMode)} />
           <MunicipioBoundsController fitOnMount />
           <MunicipioMaskLayer isDarkMode={isDarkMode} />
           <MunicipioBorderLayer isDarkMode={isDarkMode} />
