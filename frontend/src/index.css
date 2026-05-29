@@ -12,8 +12,8 @@
 
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b; /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.72)), url('/images/SanJuan.jpg'); /* imagen de fondo */
-  --bg-color-fallback: #f3f3f3;/* fondo blanco suave */
+  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.88)), url('/images/SanJuan.jpg'); /* imagen de fondo */
+  --bg-color-fallback: #f8fafc;/* fondo blanco suave */
   --color-brand-gold-text: #7a5c00; /* legible sobre fondos claros */
 
   /* Greens */
@@ -61,6 +61,7 @@ html {
   --footer-border: rgba(255, 255, 255, 0.12);
   --footer-text: #cbd5e1;
   --footer-text-muted: #94a3b8;
+  --bg-image-darkened: linear-gradient(rgba(10, 15, 20, 0.93), rgba(10, 15, 20, 0.93)), url('/images/SanJuan.jpg');
 }
 
 @theme {
@@ -86,7 +87,7 @@ body {
 }
 
 .dark body {
-  background: #0a0f14;
+  background: #0a0f14 var(--bg-image-darkened);
   color: var(--color-primary-text);
 }
 
@@ -328,3 +329,16 @@ body {
 }
 
 /* End custom overrides */
+
+.login-mobile-bg {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/Pozas_de_San_Juan_Bautísta.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+@media (min-width: 768px) {
+  .login-mobile-bg {
+    background-image: none !important;
+    background: transparent !important;
+  }
+}

@@ -8,6 +8,7 @@ const HomeView = () => {
   const [operators, setOperators] = useState([]);
   const [categories, setCategories] = useState([]);
   const [parroquias, setParroquias] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
@@ -37,8 +38,13 @@ const HomeView = () => {
       const opsRes = await api.get("/operators", { params });
       setOperators(opsRes.data);
 
-      // Cache verified operators list
+      // 3. Fetch events/fairs
+      const eventsRes = await api.get("/events");
+      setEvents(eventsRes.data);
+
+      // Cache verified data list
       localStorage.setItem("cache_operadores", JSON.stringify(opsRes.data));
+      localStorage.setItem("cache_eventos", JSON.stringify(eventsRes.data));
       setIsOffline(false);
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -48,10 +54,12 @@ const HomeView = () => {
       const cachedOps = localStorage.getItem("cache_operadores");
       const cachedCats = localStorage.getItem("cache_categorias");
       const cachedParrs = localStorage.getItem("cache_parroquias");
+      const cachedEvents = localStorage.getItem("cache_eventos");
 
       if (cachedOps) setOperators(JSON.parse(cachedOps));
       if (cachedCats) setCategories(JSON.parse(cachedCats));
       if (cachedParrs) setParroquias(JSON.parse(cachedParrs));
+      if (cachedEvents) setEvents(JSON.parse(cachedEvents));
     } finally {
       setLoading(false);
     }
@@ -225,6 +233,74 @@ const HomeView = () => {
           </div>
         </div>
       </section>
+
+      {/* Sección Agenda Cultural: Ferias y Eventos */}
+      {events && events.length > 0 && (
+        <section className="mb-20">
+          <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-10">
+            <span className="text-[10px] uppercase tracking-widest text-brand-blue dark:text-brand-light font-bold px-3 py-1 bg-brand-blue/10 dark:bg-brand-light/10 rounded-full mb-3">
+              Agenda Municipal en Vivo
+            </span>
+            <h2 className="text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-3">
+              Próximas Ferias y Eventos Especiales
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              ¡No te pierdas de nada! Vive de cerca la cultura, exposiciones artísticas y ferias de emprendedores organizadas en nuestro municipio.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {events.map((ev: any) => {
+              const eventImage = ev.url_imagen || "/images/SanJuan.jpg";
+              const startDate = new Date(ev.fecha_inicio).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+              const endDate = new Date(ev.fecha_fin).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+              
+              return (
+                <div key={`ev-${ev.id}`} className="glass-panel rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 flex flex-col hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+                  <div className="relative h-48 w-full overflow-hidden">
+                    <img 
+                      src={eventImage} 
+                      alt={ev.titulo} 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className="bg-brand-gold text-slate-900 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                        Feria / Evento
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 flex-grow flex flex-col">
+                    <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
+                      📅 {startDate} - {endDate}
+                    </div>
+                    <h3 className="font-display font-bold text-xl text-slate-800 dark:text-white mb-2 leading-snug">
+                      {ev.titulo}
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-5 flex-grow">
+                      {ev.descripcion}
+                    </p>
+                    
+                    <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex justify-between items-center text-xs">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        📍 Municipio Díaz
+                      </span>
+                      <Link 
+                        to="/mapa" 
+                        state={{ center: [ev.latitud, ev.longitud] }}
+                        className="municipal-cta shrink-0"
+                      >
+                        Ver en el Mapa
+                        <span>&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Interactive Filters Panel */}
       <div id="director-artesanal" className="scroll-mt-24 mb-6 text-center max-w-xl mx-auto">

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import L from "leaflet";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Navigation, Tag } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
 import {
@@ -41,11 +41,22 @@ const MapController = ({ center }: { center: [number, number] }) => {
 
 const MapView = () => {
   const { isDarkMode } = useThemeStore();
+  const location = useLocation();
   const [operators, setOperators] = useState([]);
   const [events, setEvents] = useState([]);
-  const [mapCenter, setMapCenter] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(
+    location.state && (location.state as any).center
+      ? (location.state as any).center
+      : MUNICIPIO_DIAZ_CENTER
+  );
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
+
+  useEffect(() => {
+    if (location.state && (location.state as any).center) {
+      setMapCenter((location.state as any).center);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const fetchData = async () => {
