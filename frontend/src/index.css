@@ -11,10 +11,14 @@
   --mobile-chrome-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 
   /* Municipio Díaz - identidad visual */
-  --color-primary-text: #2a346b; /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.88)), url('/images/SanJuan.jpg'); /* imagen de fondo */
-  --bg-color-fallback: #f8fafc;/* fondo blanco suave */
-  --color-brand-gold-text: #7a5c00; /* legible sobre fondos claros */
+  --color-primary-text: #2a346b;
+  /* tipografía principal */
+  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.88)), url('/images/SanJuan.jpg');
+  /* imagen de fondo */
+  --bg-color-fallback: #f8fafc;
+  /* fondo blanco suave */
+  --color-brand-gold-text: #7a5c00;
+  /* legible sobre fondos claros */
 
   /* Greens */
   --green-1: #12ab33;
@@ -40,8 +44,10 @@
   --color-brand-accent: var(--green-1);
 
   /* Aurora Glow colors (subtle) */
-  --glow-1: rgba(0, 147, 217, 0.10); /* blue-2 */
-  --glow-2: rgba(247, 187, 66, 0.06); /* yellow-2 */
+  --glow-1: rgba(0, 147, 217, 0.10);
+  /* blue-2 */
+  --glow-2: rgba(247, 187, 66, 0.06);
+  /* yellow-2 */
 }
 
 html {
@@ -55,8 +61,10 @@ html {
   --color-brand-gold-text: var(--yellow-1);
   --color-brand-gold: var(--yellow-1);
   --color-brand-accent: var(--green-2);
-  --glow-1: rgba(91, 189, 227, 0.18); /* blue-1 */
-  --glow-2: rgba(224, 33, 85, 0.10); /* red hint for contrast */
+  --glow-1: rgba(91, 189, 227, 0.18);
+  /* blue-1 */
+  --glow-2: rgba(224, 33, 85, 0.10);
+  /* red hint for contrast */
   --footer-bg: rgba(15, 20, 25, 0.95);
   --footer-border: rgba(255, 255, 255, 0.12);
   --footer-text: #cbd5e1;
@@ -81,8 +89,8 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   color: var(--color-primary-text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: color .2s, background .2s;
 }
 
@@ -92,10 +100,22 @@ body {
 }
 
 /* Dark mode surface utility overrides */
-.dark .bg-surface { background: var(--bg-surface) !important; }
-.dark .bg-surface-95 { background: rgba(15, 20, 25, 0.95) !important; }
-.dark .bg-surface-90 { background: rgba(15, 20, 25, 0.90) !important; }
-.dark .bg-surface-85 { background: rgba(15, 20, 25, 0.85) !important; }
+.dark .bg-surface {
+  background: var(--bg-surface) !important;
+}
+
+.dark .bg-surface-95 {
+  background: rgba(15, 20, 25, 0.95) !important;
+}
+
+.dark .bg-surface-90 {
+  background: rgba(15, 20, 25, 0.90) !important;
+}
+
+.dark .bg-surface-85 {
+  background: rgba(15, 20, 25, 0.85) !important;
+}
+
 .dark .bg-\[\#FAF9F5\],
 .dark .bg-\[\#FAF9F5\]\/95,
 .dark .bg-\[\#FAF9F5\]\/90,
@@ -107,18 +127,19 @@ body {
 
 /* Glassmorphism Classes */
 .glass-panel {
-  background: rgba(248,248,248,0.92); /* soft card surface matching municipal white */
+  background: rgba(248, 248, 248, 0.92);
+  /* soft card surface matching municipal white */
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(42,52,107,0.06);
-  box-shadow: 0 10px 30px rgba(9,30,58,0.04);
+  border: 1px solid rgba(42, 52, 107, 0.06);
+  box-shadow: 0 10px 30px rgba(9, 30, 58, 0.04);
   transition: all 0.3s ease;
 }
 
 .dark .glass-panel {
-  background: rgba(10,15,20,0.6);
+  background: rgba(10, 15, 20, 0.6);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.04);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* Floating Auroras */
@@ -209,6 +230,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -216,25 +238,66 @@ body {
 
 /* Override Tailwind arbitrary hex classes that reference old soft-white */
 /* Map bg-[#FAF9F5] and variants to municipal surface variables */
-.bg-\[\#FAF9F5\] { background: var(--bg-surface) !important; }
-.bg-\[\#FAF9F5\]\/95 { background: rgba(248,248,248,0.95) !important; }
-.bg-\[\#FAF9F5\]\/90 { background: rgba(248,248,248,0.90) !important; }
-.bg-\[\#FAF9F5\]\/85 { background: rgba(248,248,248,0.85) !important; }
-.bg-\[\#FAF9F5\]\/60 { background: rgba(248,248,248,0.60) !important; }
-.bg-\[\#FAF9F5\]\/40 { background: rgba(248,248,248,0.40) !important; }
+.bg-\[\#FAF9F5\] {
+  background: var(--bg-surface) !important;
+}
 
-.border-\[\#FAF9F5\] { border-color: rgba(248,248,248,0.95) !important; }
+.bg-\[\#FAF9F5\]\/95 {
+  background: rgba(248, 248, 248, 0.95) !important;
+}
+
+.bg-\[\#FAF9F5\]\/90 {
+  background: rgba(248, 248, 248, 0.90) !important;
+}
+
+.bg-\[\#FAF9F5\]\/85 {
+  background: rgba(248, 248, 248, 0.85) !important;
+}
+
+.bg-\[\#FAF9F5\]\/60 {
+  background: rgba(248, 248, 248, 0.60) !important;
+}
+
+.bg-\[\#FAF9F5\]\/40 {
+  background: rgba(248, 248, 248, 0.40) !important;
+}
+
+.border-\[\#FAF9F5\] {
+  border-color: rgba(248, 248, 248, 0.95) !important;
+}
 
 /* Small helper utilities aligned with identidad municipal */
-.text-primary { color: var(--color-primary-text) !important; }
-.bg-surface { background: var(--bg-surface) !important; }
-.bg-surface-95 { background: rgba(248,248,248,0.95) !important; }
-.bg-surface-90 { background: rgba(248,248,248,0.90) !important; }
-.bg-surface-85 { background: rgba(248,248,248,0.85) !important; }
-.bg-surface-60 { background: rgba(248,248,248,0.60) !important; }
-.bg-surface-40 { background: rgba(248,248,248,0.40) !important; }
+.text-primary {
+  color: var(--color-primary-text) !important;
+}
 
-.border-surface { border-color: rgba(42,52,107,0.06) !important; }
+.bg-surface {
+  background: var(--bg-surface) !important;
+}
+
+.bg-surface-95 {
+  background: rgba(248, 248, 248, 0.95) !important;
+}
+
+.bg-surface-90 {
+  background: rgba(248, 248, 248, 0.90) !important;
+}
+
+.bg-surface-85 {
+  background: rgba(248, 248, 248, 0.85) !important;
+}
+
+.bg-surface-60 {
+  background: rgba(248, 248, 248, 0.60) !important;
+}
+
+.bg-surface-40 {
+  background: rgba(248, 248, 248, 0.40) !important;
+}
+
+.border-surface {
+  border-color: rgba(42, 52, 107, 0.06) !important;
+}
 
 /* Primary municipal CTA */
 .municipal-cta {
@@ -246,13 +309,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
-.municipal-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+
+.municipal-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
 
 /* Small helper for verified badge using municipal yellow */
 .badge-verified {
-  background: rgba(251,219,59,0.12);
+  background: rgba(251, 219, 59, 0.12);
   color: var(--color-brand-gold-text);
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
@@ -340,5 +407,21 @@ body {
   .login-mobile-bg {
     background-image: none !important;
     background: transparent !important;
+  }
+}
+
+@layer utilities {
+
+  /* Ocultar barra de scroll para navegadores basados en WebKit (Chrome, Safari, Brave) */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Ocultar barra de scroll para Firefox e Internet Explorer */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 }
