@@ -112,12 +112,15 @@ const Navbar = () => {
         <NavItem to={profileRoute} icon={User} label={user ? "Perfil" : "Ingresar"} isActive={isProfileActive} />
 
         {/* Desktop Footer Actions */}
-        {/* CAMBIO: Se añadió 'flex-shrink-0', 'w-full' y 'overflow-hidden' para que la info de sesión encaje perfectamente y respete el ancho */}
-        <div className="hidden md:flex flex-col mt-auto gap-3 pt-6 border-t border-stone-200 dark:border-white/10 w-full flex-shrink-0 overflow-hidden">
+        {/* Eliminamos overflow-hidden para evitar que corte elementos verticalmente y permitimos el flujo natural */}
+        <div className="hidden md:flex flex-col mt-auto gap-3 pt-6 border-t border-stone-200 dark:border-white/10 w-full flex-shrink-0">
           {user && (
-            <div className="mb-2 px-2 w-full overflow-hidden">
-              <span className="text-[11px] text-brand-gold font-bold uppercase tracking-wider block mb-1">{user.role}</span>
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate block w-full" title={user.email}>
+            <div className="mb-2 px-2 w-full">
+              <span className="text-[11px] text-brand-gold font-bold uppercase tracking-wider block mb-1">
+                {user.role}
+              </span>
+              {/* CAMBIO: Usamos break-words y whitespace-normal para mostrar el email completo saltando de línea si es necesario */}
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 break-words whitespace-normal block w-full">
                 {user.email}
               </span>
             </div>

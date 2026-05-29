@@ -65,7 +65,10 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen transition-colors duration-200 relative overflow-x-hidden">
+      {/* CAMBIO 1: Se añade 'md:h-screen md:overflow-hidden' para fijar el viewport 
+        en resoluciones de escritorio y evitar que la barra de scroll general del navegador aparezca.
+      */}
+      <div className="min-h-screen md:min-h-0 md:h-screen md:overflow-hidden transition-colors duration-200 relative overflow-x-hidden">
         {/* Ambient Aurora Glow Background */}
         <div className="aurora-bg">
           <div className="aurora-glow-1"></div>
@@ -79,10 +82,17 @@ function App() {
         <NetworkBanner />
 
         {/* Global Layout Container */}
-        <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8 md:max-w-7xl md:mx-auto md:p-6 md:min-h-screen">
+        {/* CAMBIO 2: Cambiamos 'md:min-h-screen' por 'md:h-full' para que el Grid 
+          se acople milimétricamente al contenedor padre de pantalla completa.
+        */}
+        <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8 md:max-w-7xl md:mx-auto md:p-6 md:h-full w-full">
           <Navbar />
-          
-          <div className="flex flex-col min-h-screen md:min-h-0 md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pb-0 md:pt-0 transition-all duration-200 z-10">
+
+          {/* CAMBIO 3: Añadimos 'md:h-full md:overflow-y-auto' a la caja translúcida.
+            Esto hace que la columna derecha actúe como un panel independiente, encapsulando el scroll 
+            de modo que las vistas (como el mapa) y el footer se deslicen de forma interna y fluida.
+          */}
+          <div className="flex flex-col min-h-screen md:min-h-0 md:h-full md:overflow-y-auto md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pb-0 md:pt-0 transition-all duration-200 z-10">
             <main className="flex-grow flex flex-col w-full h-full">
               <Routes>
                 <Route path="/" element={<HomeView />} />
@@ -96,7 +106,7 @@ function App() {
                 <Route path="/itinerarios" element={<ItineraryView />} />
               </Routes>
             </main>
-            
+
             <Footer />
           </div>
         </div>
