@@ -46,7 +46,7 @@ const highlightByImage = (image: string) =>
   CULTURAL_HIGHLIGHTS.find((h) => h.image === image);
 
 const imageButtonClass =
-  "group relative w-full h-full text-left rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-all duration-300 hover:rotate-0 hover:z-20 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900";
+  "group relative w-full h-full text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-lg transition-all duration-300 hover:rotate-0 hover:z-20 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
 
 const HomeView = () => {
   const [events, setEvents] = useState([]);
@@ -95,6 +95,30 @@ const HomeView = () => {
   const sanJuan = highlightByImage("/images/SanJuan.jpg")!;
   const sombrero = highlightByImage("/images/Sombrero_de_cogollo.JPG")!;
   const fuentidueno = highlightByImage("/images/Fuentidueño.jpg")!;
+  const heroCollage = [sanJuan, sombrero, fuentidueno];
+  const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];
+
+  const renderHeroCard = (item: ContentModalItem, label: string, className = "") => (
+    <button
+      type="button"
+      onClick={() => openModal(item)}
+      className={`${imageButtonClass} ${className}`}
+      aria-label={`Ver más sobre ${item.title}`}
+    >
+      <img
+        src={item.image}
+        alt={item.title}
+        className="w-full h-full object-cover group-hover:brightness-105 transition-all duration-300"
+      />
+      <div className="absolute inset-0 bg-slate-900/20 dark:bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
+      <div className="absolute bottom-2 left-2 text-[9px] font-bold text-white bg-slate-900/70 dark:bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-sm">
+        {label}
+      </div>
+      <span className="absolute top-2 right-2 opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded-full text-white">
+        <ZoomIn size={14} />
+      </span>
+    </button>
+  );
 
   return (
     <div className="w-full px-4 py-6 md:px-6">
@@ -107,21 +131,21 @@ const HomeView = () => {
         </div>
       )}
 
-      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-brand-dark/95 border border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-8">
-        <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/20 rounded-full blur-[100px] pointer-events-none" />
+      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-brand-blue/10 dark:from-slate-900/95 dark:via-slate-800/90 dark:to-brand-dark/95 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+        <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/15 dark:bg-brand-blue/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 flex-grow max-w-2xl">
+        <div className="relative z-10 flex-grow max-w-2xl w-full">
           <span className="text-[10px] uppercase tracking-widest text-brand-gold font-extrabold px-3 py-1.5 bg-brand-gold/15 border border-brand-gold/30 rounded-full mb-5 inline-block">
             Guía Cultural Oficial del Municipio Díaz
           </span>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight mb-5 leading-[1.1]">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1]">
             Guardianes de la{" "}
-            <span className="bg-gradient-to-r from-brand-light to-brand-gold bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand-blue to-brand-gold dark:from-brand-light dark:to-brand-gold bg-clip-text text-transparent">
               Tradición Viva
             </span>
           </h1>
-          <p className="text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6">
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6">
             Te damos la bienvenida al Municipio Díaz, el corazón artesanal de la Isla de Margarita. Un santuario de
             palmeras datileras, tejedores sabios y sabores criollos que trascienden generaciones.
           </p>
@@ -134,61 +158,32 @@ const HomeView = () => {
             </Link>
             <Link
               to="/mapa"
-              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98] transition"
+              className="px-5 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-800 dark:text-white border border-stone-200 dark:border-white/20 font-bold text-xs sm:text-sm hover:scale-[1.02] active:scale-[0.98] transition"
             >
               Ver Mapa Interactivo
             </Link>
           </div>
         </div>
 
-        <div className="relative z-10 shrink-0 w-full lg:w-[520px] h-[320px] sm:h-[360px] lg:h-[420px] flex items-center justify-center">
-          <button
-            type="button"
-            onClick={() => openModal(sanJuan)}
-            className={`absolute w-[180px] h-[140px] -rotate-12 -translate-x-16 -translate-y-8 ${imageButtonClass}`}
-            aria-label={`Ver más sobre ${sanJuan.title}`}
-          >
-            <img src={sanJuan.image} alt={sanJuan.title} className="w-full h-full object-cover group-hover:brightness-110 transition-all duration-300" />
-            <div className="absolute inset-0 bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
-            <div className="absolute bottom-2 left-2 text-[9px] font-bold text-white bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-sm">
-              San Juan
-            </div>
-            <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded-full text-white">
-              <ZoomIn size={14} />
-            </span>
-          </button>
+        {/* Móvil: carrusel horizontal */}
+        <div className="relative z-10 w-full md:hidden">
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 no-scrollbar">
+            {heroCollage.map((item, i) => (
+              <div
+                key={item.image}
+                className="snap-center shrink-0 w-[85%] max-w-[300px] aspect-[16/10] first:ml-0"
+              >
+                {renderHeroCard(item, heroLabels[i], "h-full w-full")}
+              </div>
+            ))}
+          </div>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => openModal(sombrero)}
-            className={`absolute w-[180px] h-[140px] rotate-6 translate-x-16 translate-y-12 ${imageButtonClass}`}
-            aria-label={`Ver más sobre ${sombrero.title}`}
-          >
-            <img src={sombrero.image} alt={sombrero.title} className="w-full h-full object-cover group-hover:brightness-110 transition-all duration-300" />
-            <div className="absolute inset-0 bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
-            <div className="absolute bottom-2 left-2 text-[9px] font-bold text-white bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-sm">
-              Sombreros
-            </div>
-            <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded-full text-white">
-              <ZoomIn size={14} />
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openModal(fuentidueno)}
-            className={`absolute w-[190px] h-[150px] -rotate-3 -translate-y-2 border-2 border-white ${imageButtonClass}`}
-            aria-label={`Ver más sobre ${fuentidueno.title}`}
-          >
-            <img src={fuentidueno.image} alt={fuentidueno.title} className="w-full h-full object-cover group-hover:brightness-110 transition-all duration-300" />
-            <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/5 transition-colors" />
-            <div className="absolute bottom-2.5 left-2.5 text-[9px] font-bold text-white bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-sm">
-              Fuentidueño
-            </div>
-            <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded-full text-white">
-              <ZoomIn size={14} />
-            </span>
-          </button>
+        {/* Escritorio: collage superpuesto */}
+        <div className="relative z-10 shrink-0 w-full lg:w-[520px] h-[320px] sm:h-[360px] lg:h-[420px] hidden md:flex items-center justify-center">
+          {renderHeroCard(sanJuan, "San Juan", "absolute w-[180px] h-[140px] -rotate-12 -translate-x-16 -translate-y-8")}
+          {renderHeroCard(sombrero, "Sombreros", "absolute w-[180px] h-[140px] rotate-6 translate-x-16 translate-y-12")}
+          {renderHeroCard(fuentidueno, "Fuentidueño", "absolute w-[190px] h-[150px] -rotate-3 -translate-y-2 border-2 border-white dark:border-white")}
         </div>
       </header>
 
@@ -253,7 +248,7 @@ const HomeView = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.map((ev: { id: number; titulo: string; descripcion: string; url_imagen?: string; fecha_inicio: string; fecha_fin: string; latitud: number; longitud: number }) => {
+            {events.map((ev: { id: number; titulo: string; descripcion: string; url_imagen?: string; fecha_inicio: string; fecha_fin: string; latitud: number; longitud: number; coordsValidas?: boolean }) => {
               const eventImage = ev.url_imagen || "/images/SanJuan.jpg";
               const startDate = new Date(ev.fecha_inicio).toLocaleDateString("es-ES", {
                 day: "numeric",
@@ -312,10 +307,16 @@ const HomeView = () => {
                     </p>
 
                     <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex justify-end items-center text-xs">
-                      <Link to="/mapa" state={{ center: [ev.latitud, ev.longitud] }} className="municipal-cta shrink-0">
-                        Ver en el Mapa
-                        <span>&rarr;</span>
-                      </Link>
+                      {ev.coordsValidas ? (
+                        <Link to="/mapa" state={{ center: [ev.latitud, ev.longitud] }} className="municipal-cta shrink-0">
+                          Ver en el Mapa
+                          <span>&rarr;</span>
+                        </Link>
+                      ) : (
+                        <span className="text-amber-600 dark:text-amber-400 text-[11px] font-semibold">
+                          Ubicación pendiente en mapa
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { normalizeLocation, parseUbicacionForMunicipio } from "../utils/geo";
 
 const QUEUE_KEY = "offline_queue";
 
@@ -31,25 +32,21 @@ const createApiError = (message: string, status = 400): never => {
   throw error;
 };
 
-const normalizeLocation = (ubicacion: any) => {
-  if (!ubicacion) return { longitud: 0, latitud: 0 };
-
-  if (typeof ubicacion === "string") {
-    const match = ubicacion.match(/POINT\s*\(([-0-9.]+)\s+([-0-9.]+)\)/i);
-    if (match) {
-      return { longitud: parseFloat(match[1]), latitud: parseFloat(match[2]) };
-    }
+const coordsFromUbicacion = (ubicacion: unknown, debugId?: string | number) => {
+  const resolved = parseUbicacionForMunicipio(ubicacion, debugId);
+  if (resolved) {
+    return {
+      longitud: resolved.longitud,
+      latitud: resolved.latitud,
+      coordsValidas: true as const,
+    };
   }
-
-  if (ubicacion?.type === "Point" && Array.isArray(ubicacion.coordinates)) {
-    return { longitud: ubicacion.coordinates[0], latitud: ubicacion.coordinates[1] };
-  }
-
-  if (ubicacion?.x !== undefined && ubicacion?.y !== undefined) {
-    return { longitud: ubicacion.x, latitud: ubicacion.y };
-  }
-
-  return { longitud: 0, latitud: 0 };
+  const raw = normalizeLocation(ubicacion);
+  return {
+    longitud: raw.longitud,
+    latitud: raw.latitud,
+    coordsValidas: false as const,
+  };
 };
 
 const buildResponse = (data: any, status = 200) => ({
@@ -234,7 +231,7 @@ const loadOperators = async (params: any = {}) => {
   const imageMap = new Map((imagesRes.data || []).map((item: any) => [item.operador_id, item.url_imagen]));
 
   const operators = (operatorsRes.data || []).map((op: any) => {
-    const location = normalizeLocation(op.ubicacion);
+    const location = coordsFromUbicacion(op.ubicacion, op.id);
     return {
       ...op,
       categoria_nombre: catMap.get(op.categoria_id) || "",
@@ -242,6 +239,7 @@ const loadOperators = async (params: any = {}) => {
       imagen_principal: imageMap.get(op.id) || "",
       longitud: location.longitud,
       latitud: location.latitud,
+      coordsValidas: location.coordsValidas,
     };
   });
 
@@ -273,7 +271,7 @@ const getOperatorDetail = async (id: string) => {
   if (!operator) createApiError("Operador no encontrado", 404);
   const operatorData = operator as any;
 
-  const location = normalizeLocation(operatorData.ubicacion);
+  const location = coordsFromUbicacion(operatorData.ubicacion, operatorData.id);
 
   const [catRes, parrRes, imagesRes, accessRes, productsRes, reviewsRes] = await Promise.all([
     supabase.from("categorias").select("nombre").eq("id", operatorData.categoria_id).single(),
@@ -382,11 +380,12 @@ const getEvents = async () => {
   if (error) createApiError(error.message);
 
   return (data || []).map((event: any) => {
-    const location = normalizeLocation(event.ubicacion);
+    const location = coordsFromUbicacion(event.ubicacion, event.id);
     return {
       ...event,
       longitud: location.longitud,
       latitud: location.latitud,
+      coordsValidas: location.coordsValidas,
     };
   });
 };
@@ -483,15 +482,19 @@ const getPendingOperators = async () => {
   const userMap = new Map((usersRes.data || []).map((item: any) => [item.id, item.correo]));
   const imageMap = new Map((imagesRes.data || []).map((item: any) => [item.operador_id, item.url_imagen]));
 
-  return (data || []).map((op: any) => ({
-    ...op,
-    categoria_nombre: catMap.get(op.categoria_id) || "",
-    parroquia_nombre: parrMap.get(op.parroquia_id) || "",
-    usuario_correo: userMap.get(op.usuario_id) || "",
-    imagen_principal: imageMap.get(op.id) || "",
-    longitud: normalizeLocation(op.ubicacion).longitud,
-    latitud: normalizeLocation(op.ubicacion).latitud,
-  }));
+  return (data || []).map((op: any) => {
+    const location = coordsFromUbicacion(op.ubicacion, op.id);
+    return {
+      ...op,
+      categoria_nombre: catMap.get(op.categoria_id) || "",
+      parroquia_nombre: parrMap.get(op.parroquia_id) || "",
+      usuario_correo: userMap.get(op.usuario_id) || "",
+      imagen_principal: imageMap.get(op.id) || "",
+      longitud: location.longitud,
+      latitud: location.latitud,
+      coordsValidas: location.coordsValidas,
+    };
+  });
 };
 
 const verifyOperator = async (id: string, body: any) => {

@@ -46,8 +46,8 @@ export function MunicipioMaskLayer({ isDarkMode }: { isDarkMode: boolean }) {
       data={municipioDiazMaskGeoJSON}
       style={{
         stroke: false,
-        fillColor: isDarkMode ? "#020617" : "#090d16",
-        fillOpacity: isDarkMode ? 0.65 : 0.52,
+        fillColor: isDarkMode ? "#020617" : "#e2e8f0",
+        fillOpacity: isDarkMode ? 0.65 : 0.35,
       }}
       interactive={false}
     />

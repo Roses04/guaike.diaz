@@ -6,16 +6,21 @@
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  /* Mobile chrome (top header + safe area; no bottom tab bar) */
+  /* Mobile chrome (header + bottom tab bar + safe area) */
   --mobile-chrome-top: 3.5rem;
-  --mobile-chrome-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-chrome-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+
+  --bg-surface: #f8fafc;
+  --footer-bg: rgba(255, 255, 255, 0.95);
+  --footer-border: rgba(42, 52, 107, 0.12);
+  --footer-text: #334155;
+  --footer-text-muted: #64748b;
 
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b;
   /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.88)), url('/images/SanJuan.jpg');
-  /* imagen de fondo */
-  --bg-color-fallback: #f8fafc;
+  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.96)), url('/images/SanJuan.jpg');
+  --bg-color-fallback: #f1f5f9;
   /* fondo blanco suave */
   --color-brand-gold-text: #7a5c00;
   /* legible sobre fondos claros */
@@ -398,9 +403,13 @@ body {
 /* End custom overrides */
 
 .login-mobile-bg {
-  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/Pozas_de_San_Juan_Bautísta.jpg');
+  background-image: linear-gradient(rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.9)), url('/images/Pozas_de_San_Juan_Bautísta.jpg');
   background-size: cover;
   background-position: center;
+}
+
+.dark .login-mobile-bg {
+  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/Pozas_de_San_Juan_Bautísta.jpg');
 }
 
 @media (min-width: 768px) {
