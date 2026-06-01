@@ -45,8 +45,8 @@ const CULTURAL_HIGHLIGHTS: ContentModalItem[] = [
 const highlightByImage = (image: string) =>
   CULTURAL_HIGHLIGHTS.find((h) => h.image === image);
 
-const imageButtonClass =
-  "group relative w-full h-full text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-lg transition-all duration-300 hover:rotate-0 hover:z-20 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
+const heroCardClass =
+  "group absolute inset-0 text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
 
 const HomeView = () => {
   const [events, setEvents] = useState([]);
@@ -98,25 +98,25 @@ const HomeView = () => {
   const heroCollage = [sanJuan, sombrero, fuentidueno];
   const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];
 
-  const renderHeroCard = (item: ContentModalItem, label: string, className = "") => (
+  const renderHeroCard = (item: ContentModalItem, label: string) => (
     <button
       type="button"
       onClick={() => openModal(item)}
-      className={`${imageButtonClass} ${className}`}
+      className={heroCardClass}
       aria-label={`Ver más sobre ${item.title}`}
     >
       <img
         src={item.image}
         alt={item.title}
-        className="w-full h-full object-cover group-hover:brightness-105 transition-all duration-300"
+        className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
       />
-      <div className="absolute inset-0 bg-slate-900/20 dark:bg-slate-900/30 group-hover:bg-slate-900/10 transition-colors" />
-      <div className="absolute bottom-2 left-2 text-[9px] font-bold text-white bg-slate-900/70 dark:bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-sm">
-        {label}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent group-hover:via-slate-900/10 transition-colors" />
+      <div className="absolute bottom-0 inset-x-0 p-3 flex items-end justify-between gap-2">
+        <span className="text-[11px] font-bold text-white drop-shadow-sm">{label}</span>
+        <span className="shrink-0 bg-white/20 backdrop-blur-md p-1.5 rounded-full text-white opacity-80 group-hover:opacity-100 transition-opacity">
+          <ZoomIn size={14} />
+        </span>
       </div>
-      <span className="absolute top-2 right-2 opacity-70 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-black/50 p-1 rounded-full text-white">
-        <ZoomIn size={14} />
-      </span>
     </button>
   );
 
@@ -131,7 +131,7 @@ const HomeView = () => {
         </div>
       )}
 
-      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-brand-blue/10 dark:from-slate-900/95 dark:via-slate-800/90 dark:to-brand-dark/95 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-50 via-white to-brand-blue/10 dark:from-slate-900/95 dark:via-slate-800/90 dark:to-brand-dark/95 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/15 dark:bg-brand-blue/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -171,19 +171,27 @@ const HomeView = () => {
             {heroCollage.map((item, i) => (
               <div
                 key={item.image}
-                className="snap-center shrink-0 w-[85%] max-w-[300px] aspect-[16/10] first:ml-0"
+                className="snap-center shrink-0 w-[78%] max-w-[280px] aspect-[4/3] relative"
               >
-                {renderHeroCard(item, heroLabels[i], "h-full w-full")}
+                {renderHeroCard(item, heroLabels[i])}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Escritorio: collage superpuesto */}
-        <div className="relative z-10 shrink-0 w-full lg:w-[520px] h-[320px] sm:h-[360px] lg:h-[420px] hidden md:flex items-center justify-center">
-          {renderHeroCard(sanJuan, "San Juan", "absolute w-[180px] h-[140px] -rotate-12 -translate-x-16 -translate-y-8")}
-          {renderHeroCard(sombrero, "Sombreros", "absolute w-[180px] h-[140px] rotate-6 translate-x-16 translate-y-12")}
-          {renderHeroCard(fuentidueno, "Fuentidueño", "absolute w-[190px] h-[150px] -rotate-3 -translate-y-2 border-2 border-white dark:border-white")}
+        {/* Tablet/escritorio: galería bento sin rotaciones */}
+        <div className="relative z-10 hidden md:block w-full lg:w-[min(100%,28rem)] shrink-0">
+          <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[280px] lg:h-[320px]">
+            <div className="row-span-2 min-h-0 relative">
+              {renderHeroCard(sanJuan, "San Juan")}
+            </div>
+            <div className="min-h-0 relative">
+              {renderHeroCard(sombrero, "Sombreros")}
+            </div>
+            <div className="min-h-0 relative">
+              {renderHeroCard(fuentidueno, "Fuentidueño")}
+            </div>
+          </div>
         </div>
       </header>
 
