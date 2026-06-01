@@ -208,7 +208,7 @@ const OperatorDetailView = () => {
 
       {/* Navigation Header */}
       <div className="mb-6 flex justify-between items-center">
-        <Link to="/" className="text-sm font-bold text-slate-500 hover:text-brand-blue dark:hover:text-brand-light flex items-center gap-1">
+        <Link to="/directorio" className="text-sm font-bold text-slate-500 hover:text-brand-blue dark:hover:text-brand-light flex items-center gap-1">
           <ArrowLeft size={16} /> Volver al Directorio
         </Link>
 

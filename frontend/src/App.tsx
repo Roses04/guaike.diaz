@@ -66,8 +66,7 @@ function App() {
 
   return (
     <Router>
-      {/* Contenedor principal rígido en escritorio */}
-      <div className="min-h-screen md:min-h-0 md:h-screen md:overflow-hidden transition-colors duration-200 relative overflow-x-hidden">
+      <div className="min-h-screen transition-colors duration-200 relative overflow-x-hidden flex flex-col">
         {/* Ambient Aurora Glow Background */}
         <div className="aurora-bg">
           <div className="aurora-glow-1"></div>
@@ -80,32 +79,24 @@ function App() {
         {/* Global Network Connectivity Banner */}
         <NetworkBanner />
 
-        {/* Global Layout Container */}
-        <div className="md:grid md:grid-cols-[260px_1fr] md:gap-8 md:max-w-7xl md:mx-auto md:p-6 md:h-full w-full">
-          <Navbar />
+        <Navbar />
 
-          {/* Panel derecho con scroll propio */}
-          <div className="flex flex-col min-h-screen md:min-h-0 md:h-full md:overflow-y-auto md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:relative pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pb-0 md:pt-0 transition-all duration-200 z-10">
-
-            {/* CORRECCIÓN: Cambiamos 'flex-grow' y eliminamos 'h-full' para evitar el colapso del footer */}
-            <main className="flex-1 w-full flex flex-col">
-              <Routes>
-                <Route path="/" element={<HomeView />} />
-                <Route path="/directorio" element={<DirectoryView />} />
-                <Route path="/mapa" element={<MapView />} />
-                <Route path="/login" element={<LoginView />} />
-                <Route path="/perfil" element={<ProfileView />} />
-                <Route path="/registro-operador" element={<RegisterOperatorView />} />
-                <Route path="/operador/:id" element={<OperatorDetailView />} />
-                <Route path="/operador/:id/escanear-qr" element={<QRScannerView />} />
-                <Route path="/admin" element={<AdminDashboardView />} />
-                <Route path="/itinerarios" element={<ItineraryView />} />
-              </Routes>
-            </main>
-
-            {/* El footer ahora se mantendrá siempre al final de todo el contenido scrolleable */}
-            <Footer />
-          </div>
+        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pt-4 transition-all duration-200 z-10">
+          <main className="w-full flex flex-col md:bg-white/40 md:dark:bg-slate-900/40 md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
+            <Routes>
+              <Route path="/" element={<HomeView />} />
+              <Route path="/directorio" element={<DirectoryView />} />
+              <Route path="/mapa" element={<MapView />} />
+              <Route path="/login" element={<LoginView />} />
+              <Route path="/perfil" element={<ProfileView />} />
+              <Route path="/registro-operador" element={<RegisterOperatorView />} />
+              <Route path="/operador/:id" element={<OperatorDetailView />} />
+              <Route path="/operador/:id/escanear-qr" element={<QRScannerView />} />
+              <Route path="/admin" element={<AdminDashboardView />} />
+              <Route path="/itinerarios" element={<ItineraryView />} />
+            </Routes>
+          </main>
+          <Footer />
         </div>
       </div>
     </Router>

@@ -6,9 +6,9 @@
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 
-  /* Mobile chrome (header + bottom nav + safe area) */
+  /* Mobile chrome (top header + safe area; no bottom tab bar) */
   --mobile-chrome-top: 3.5rem;
-  --mobile-chrome-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  --mobile-chrome-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Municipio Díaz - identidad visual */
   --color-primary-text: #2a346b;
