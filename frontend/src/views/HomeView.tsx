@@ -2,49 +2,31 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import CardArtesano from "../components/CardArtesano";
-import { Search, MapPin, Tag, RefreshCw, WifiOff } from "lucide-react";
+import { RefreshCw, WifiOff } from "lucide-react";
 
 const HomeView = () => {
   const [operators, setOperators] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [parroquias, setParroquias] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // Filters state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCat, setSelectedCat] = useState("");
-  const [selectedParr, setSelectedParr] = useState("");
+  // Modal for viewing images/descriptions
+  const [modalItem, setModalItem] = useState<any | null>(null);
+
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch static data (categories, parroquias)
-      const staticRes = await api.get("/operators/static-data");
-      setCategories(staticRes.data.categorias);
-      setParroquias(staticRes.data.parroquias);
+      // Fetch operators and events
+      const opsRes = await api.get("/operators");
+      setOperators(opsRes.data || []);
 
-      // Save static data to cache
-      localStorage.setItem("cache_categorias", JSON.stringify(staticRes.data.categorias));
-      localStorage.setItem("cache_parroquias", JSON.stringify(staticRes.data.parroquias));
-
-      // 2. Fetch operators with active filters
-      const params: any = {};
-      if (selectedCat) params.categoria_id = selectedCat;
-      if (selectedParr) params.parroquia_id = selectedParr;
-      if (searchQuery) params.q = searchQuery;
-
-      const opsRes = await api.get("/operators", { params });
-      setOperators(opsRes.data);
-
-      // 3. Fetch events/fairs
       const eventsRes = await api.get("/events");
-      setEvents(eventsRes.data);
+      setEvents(eventsRes.data || []);
 
       // Cache verified data list
-      localStorage.setItem("cache_operadores", JSON.stringify(opsRes.data));
-      localStorage.setItem("cache_eventos", JSON.stringify(eventsRes.data));
+      localStorage.setItem("cache_operadores", JSON.stringify(opsRes.data || []));
+      localStorage.setItem("cache_eventos", JSON.stringify(eventsRes.data || []));
       setIsOffline(false);
     } catch (error) {
       console.error("Error al cargar datos:", error);
@@ -52,13 +34,9 @@ const HomeView = () => {
       
       // Load from cache if offline
       const cachedOps = localStorage.getItem("cache_operadores");
-      const cachedCats = localStorage.getItem("cache_categorias");
-      const cachedParrs = localStorage.getItem("cache_parroquias");
       const cachedEvents = localStorage.getItem("cache_eventos");
 
       if (cachedOps) setOperators(JSON.parse(cachedOps));
-      if (cachedCats) setCategories(JSON.parse(cachedCats));
-      if (cachedParrs) setParroquias(JSON.parse(cachedParrs));
       if (cachedEvents) setEvents(JSON.parse(cachedEvents));
     } finally {
       setLoading(false);
@@ -80,11 +58,16 @@ const HomeView = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [selectedCat, selectedParr]); // Reload when filters change
+  }, []); // initial load
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadData();
+  const openModal = (item: any) => {
+    setModalItem(item);
+    try { document.body.style.overflow = 'hidden'; } catch {}
+  };
+
+  const closeModal = () => {
+    setModalItem(null);
+    try { document.body.style.overflow = ''; } catch {}
   };
 
   return (
@@ -100,7 +83,7 @@ const HomeView = () => {
       )}
 
       {/* Hero Section Redesigned */}
-      <header className="relative rounded-[32px] overflow-hidden mb-16 p-6 sm:p-10 lg:p-14 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-brand-dark/95 border border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-10">
+      <header className="relative rounded-[32px] overflow-hidden mb-8 p-6 sm:p-10 lg:p-14 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-brand-dark/95 border border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-8">
         {/* Glow ambient effects */}
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
@@ -116,7 +99,7 @@ const HomeView = () => {
           <p className="text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6">
             Te damos la bienvenida al Municipio Díaz, el corazón artesanal de la Isla de Margarita. Un santuario de palmeras datileras, tejedores sabios y sabores criollos que trascienden generaciones.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex gap-3 flex-wrap lg:flex-nowrap">
             <a 
               href="#director-artesanal"
               className="px-5 py-3 rounded-2xl bg-brand-blue hover:bg-brand-light text-white font-bold text-xs sm:text-sm shadow-lg shadow-brand-blue/30 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
@@ -133,7 +116,7 @@ const HomeView = () => {
         </div>
 
         {/* Floating Collage Column */}
-        <div className="relative z-10 shrink-0 w-full lg:w-[380px] h-[260px] sm:h-[300px] lg:h-[320px] flex items-center justify-center">
+        <div className="relative z-10 shrink-0 w-full lg:w-[520px] h-[320px] sm:h-[360px] lg:h-[420px] flex items-center justify-center">
           {/* Back Card: San Juan */}
           <div className="absolute w-[180px] h-[140px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl -rotate-12 -translate-x-16 -translate-y-8 hover:rotate-0 hover:z-20 hover:scale-105 transition-all duration-300 cursor-pointer">
             <img src="/images/SanJuan.jpg" alt="San Juan" className="w-full h-full object-cover" />
@@ -158,7 +141,7 @@ const HomeView = () => {
       </header>
 
       {/* Sección Especial: Tesoros de Díaz */}
-      <section className="mb-20">
+      <section className="mb-12">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-10">
           <span className="text-[10px] uppercase tracking-widest text-brand-gold font-bold px-3 py-1 bg-brand-gold/10 rounded-full mb-3">
             Riqueza Ecoturística y Artesanal
@@ -173,7 +156,7 @@ const HomeView = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Card 1: Sombrero */}
-          <div className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
+          <div onClick={() => openModal({title: 'Tejido de Cogollo', image: '/images/Sombrero_de_cogollo.JPG', description: 'El tejido de sombreros con cogollo de dátil es símbolo de la laboriosidad y de la identidad ancestral de San Juan.'})} role="button" tabIndex={0} className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
             <div className="absolute inset-0">
               <img src="/images/Sombrero_de_cogollo.JPG" alt="Sombrero de Cogollo" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
@@ -188,7 +171,7 @@ const HomeView = () => {
           </div>
 
           {/* Card 2: Piñonate */}
-          <div className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
+          <div onClick={() => openModal({title: 'Dulce de Piñonate', image: '/images/Piñonate.jpg', description: 'Manjar tradicional elaborado artesanalmente a base de papaya, naranja silvestre y amor, envuelto en hojas secas de plátano.'})} role="button" tabIndex={0} className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
             <div className="absolute inset-0">
               <img src="/images/Piñonate.jpg" alt="Dulce Piñonate" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
@@ -203,7 +186,7 @@ const HomeView = () => {
           </div>
 
           {/* Card 3: Pozas */}
-          <div className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
+          <div onClick={() => openModal({title: 'Pozas de San Juan', image: '/images/Pozas_de_San_Juan_Bautísta.jpg', description: 'Piscinas naturales talladas en piedra en las faldas de la montaña, un refrescante paraíso rodeado de vegetación tropical.'})} role="button" tabIndex={0} className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
             <div className="absolute inset-0">
               <img src="/images/Pozas_de_San_Juan_Bautísta.jpg" alt="Pozas de San Juan" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
@@ -218,7 +201,7 @@ const HomeView = () => {
           </div>
 
           {/* Card 4: Fuentidueño */}
-          <div className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
+          <div onClick={() => openModal({title: 'Valle de Fuentidueño', image: '/images/Fuentidueño.jpg', description: 'Edén de palmeras datileras, manantiales naturales y paz inigualable, cuna de tejedores y agricultores tradicionales.'})} role="button" tabIndex={0} className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 transition-all duration-300">
             <div className="absolute inset-0">
               <img src="/images/Fuentidueño.jpg" alt="Fuentidueño Valle" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
@@ -236,7 +219,7 @@ const HomeView = () => {
 
       {/* Sección Agenda Cultural: Ferias y Eventos */}
       {events && events.length > 0 && (
-        <section className="mb-20">
+        <section className="mb-12">
           <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-10">
             <span className="text-[10px] uppercase tracking-widest text-brand-blue dark:text-brand-light font-bold px-3 py-1 bg-brand-blue/10 dark:bg-brand-light/10 rounded-full mb-3">
               Agenda Municipal en Vivo
@@ -257,7 +240,7 @@ const HomeView = () => {
               
               return (
                 <div key={`ev-${ev.id}`} className="glass-panel rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 flex flex-col hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
-                  <div className="relative h-48 w-full overflow-hidden">
+                  <div onClick={() => openModal({title: ev.titulo, image: eventImage, description: ev.descripcion})} role="button" tabIndex={0} className="relative h-48 w-full overflow-hidden">
                     <img 
                       src={eventImage} 
                       alt={ev.titulo} 
@@ -308,62 +291,11 @@ const HomeView = () => {
           Directorio de Talleres y Creadores
         </h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Usa los filtros a continuación para buscar por especialidad artesanal, parroquia o nombre del artesano.
+          Accede al módulo independiente para buscar por especialidad, parroquia o nombre del artesano.
         </p>
-      </div>
-
-      <div className="glass-panel rounded-3xl p-6 mb-12 shadow-xl">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-          {/* Search bar */}
-          <div className="md:col-span-2 relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
-              <Search size={18} />
-            </span>
-            <input 
-              id="global-search"
-              type="text" 
-              placeholder="Buscar taller, artesano o especialidad..."
-              aria-label="Buscar talleres o artesanos"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 focus:border-brand-blue/60 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-            />
-          </div>
-
-          {/* Categoría Filter */}
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
-              <Tag size={16} />
-            </span>
-            <select
-              value={selectedCat}
-              onChange={(e) => setSelectedCat(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 focus:border-brand-blue/60 text-slate-800 dark:text-slate-100 cursor-pointer appearance-none"
-            >
-              <option value="">Todas las Categorías</option>
-              {categories.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Parroquia Filter */}
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
-              <MapPin size={16} />
-            </span>
-            <select
-              value={selectedParr}
-              onChange={(e) => setSelectedParr(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 focus:border-brand-blue/60 text-slate-800 dark:text-slate-100 cursor-pointer appearance-none"
-            >
-              <option value="">Todas las Parroquias</option>
-              {parroquias.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.nombre}</option>
-              ))}
-            </select>
-          </div>
-        </form>
+        <div className="mt-6">
+          <Link to="/directorio" className="municipal-cta px-6 py-3">Abrir Directorio</Link>
+        </div>
       </div>
 
       {/* Artisans Results Grid */}
@@ -401,6 +333,27 @@ const HomeView = () => {
           </button>
         </div>
       )}
+
+      {modalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
+          <div className="relative bg-white dark:bg-slate-900 rounded-2xl overflow-hidden max-w-4xl w-full shadow-2xl">
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-1/2 h-80 md:h-auto">
+                <img src={modalItem.image} alt={modalItem.title} className="w-full h-full object-cover" />
+              </div>
+              <div className="p-6 md:w-1/2">
+                <h3 className="text-2xl font-bold mb-2 text-slate-800 dark:text-white">{modalItem.title}</h3>
+                <p className="text-slate-600 dark:text-slate-300">{modalItem.description}</p>
+                <div className="mt-4">
+                  <button onClick={closeModal} className="municipal-cta">Cerrar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

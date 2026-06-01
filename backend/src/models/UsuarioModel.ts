@@ -56,4 +56,17 @@ export class UsuarioModel {
       [id]
     );
   }
+  public static async actualizarCodigoVerificacion(usuarioId: number, codigo: string): Promise<void> {
+    await pool.query(
+      `UPDATE usuarios SET codigo_verificacion = $1 WHERE id = $2`,
+      [codigo, usuarioId]
+    );
+  }
+
+  public static async confirmarVerificacion(usuarioId: number): Promise<void> {
+    await pool.query(
+      `UPDATE usuarios SET verificado = TRUE, codigo_verificacion = NULL WHERE id = $2`,
+      [usuarioId]
+    );
+  }
 }

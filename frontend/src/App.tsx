@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomeView from "./views/HomeView";
+import DirectoryView from "./views/DirectoryView";
 import MapView from "./views/MapView";
 import LoginView from "./views/LoginView";
 import RegisterOperatorView from "./views/RegisterOperatorView";
@@ -90,6 +91,7 @@ function App() {
             <main className="flex-1 w-full flex flex-col">
               <Routes>
                 <Route path="/" element={<HomeView />} />
+                <Route path="/directorio" element={<DirectoryView />} />
                 <Route path="/mapa" element={<MapView />} />
                 <Route path="/login" element={<LoginView />} />
                 <Route path="/perfil" element={<ProfileView />} />
