@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
 
   /* Mobile chrome (header + bottom tab bar + safe area) */
   --mobile-chrome-top: 3.5rem;
@@ -62,6 +62,8 @@ html {
 .dark {
   color-scheme: dark;
   --color-primary-text: #f1f5f9;
+  /* brand-dark = superficie oscura (no usar el color de texto) */
+  --color-brand-dark: #0f1419;
   --bg-surface: #0f1419;
   --color-brand-gold-text: var(--yellow-1);
   --color-brand-gold: var(--yellow-1);

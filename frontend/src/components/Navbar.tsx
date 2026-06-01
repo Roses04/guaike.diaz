@@ -96,7 +96,7 @@ const Navbar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-brand-dark/90 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/5 shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/10 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-14 md:h-16 gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 min-w-0">
@@ -107,14 +107,14 @@ const Navbar = () => {
             />
             <div className="hidden sm:block min-w-0">
               <div className="text-base md:text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none">
-                <span className="text-primary dark:text-white">GUAIKE</span>
+                <span className="text-slate-800 dark:text-slate-100">GUAIKE</span>
                 <span className="text-brand-gold font-black">.</span>
               </div>
               <span className="text-[9px] md:text-[10px] font-bold text-brand-gold tracking-wider block">
                 MUNICIPIO DÍAZ
               </span>
             </div>
-            <span className="sm:hidden font-display font-bold text-sm text-primary dark:text-white truncate">
+            <span className="sm:hidden font-display font-bold text-sm text-slate-800 dark:text-slate-100 truncate">
               {mobileTitle}
             </span>
           </Link>

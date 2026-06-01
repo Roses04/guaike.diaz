@@ -11,12 +11,51 @@ const toNum = (v: unknown): number => {
   return Number.isFinite(n) ? n : NaN;
 };
 
+const WKB_POINT = 1;
+const WKB_SRID_FLAG = 0x20000000;
+
+/** PostGIS EWKB hex (p. ej. 0101000020E6100000...) → lng/lat */
+const parseEwkbPointHex = (hex: string): ParsedCoords | null => {
+  const clean = hex.replace(/^\\x/i, "").replace(/^0x/i, "").trim();
+  if (!/^[0-9a-fA-F]+$/.test(clean) || clean.length < 42) return null;
+
+  try {
+    const bytes = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < clean.length; i += 2) {
+      bytes[i / 2] = parseInt(clean.slice(i, i + 2), 16);
+    }
+    if (bytes.length < 25) return null;
+
+    const le = bytes[0] === 1;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let offset = 1;
+    const wkbType = view.getUint32(offset, le);
+    offset += 4;
+
+    if ((wkbType & 0xff) !== WKB_POINT) return null;
+    if (wkbType & WKB_SRID_FLAG) offset += 4;
+
+    const longitud = view.getFloat64(offset, le);
+    offset += 8;
+    const latitud = view.getFloat64(offset, le);
+
+    if (!Number.isFinite(longitud) || !Number.isFinite(latitud)) return null;
+    return { longitud, latitud };
+  } catch {
+    return null;
+  }
+};
+
 /** Parsea columna PostGIS / GeoJSON / WKT a lng-lat crudos. */
 export const normalizeLocation = (ubicacion: unknown): ParsedCoords => {
   if (ubicacion == null) return { latitud: NaN, longitud: NaN };
 
   if (typeof ubicacion === "string") {
-    const sridMatch = ubicacion.match(
+    const trimmed = ubicacion.trim();
+    const ewkb = parseEwkbPointHex(trimmed);
+    if (ewkb) return ewkb;
+
+    const sridMatch = trimmed.match(
       /POINT\s*\(\s*([-0-9.]+)\s+([-0-9.]+)\s*\)/i
     );
     if (sridMatch) {
