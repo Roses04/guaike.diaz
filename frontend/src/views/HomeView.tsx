@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import CardArtesano from "../components/CardArtesano";
-import { RefreshCw, WifiOff } from "lucide-react";
+import { WifiOff } from "lucide-react";
 
 const HomeView = () => {
-  const [operators, setOperators] = useState([]);
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Modal for viewing images/descriptions
@@ -15,31 +12,21 @@ const HomeView = () => {
 
 
   const loadData = async () => {
-    setLoading(true);
     try {
-      // Fetch operators and events
-      const opsRes = await api.get("/operators");
-      setOperators(opsRes.data || []);
-
+      // Fetch events
       const eventsRes = await api.get("/events");
       setEvents(eventsRes.data || []);
 
-      // Cache verified data list
-      localStorage.setItem("cache_operadores", JSON.stringify(opsRes.data || []));
+      // Cache events
       localStorage.setItem("cache_eventos", JSON.stringify(eventsRes.data || []));
       setIsOffline(false);
     } catch (error) {
       console.error("Error al cargar datos:", error);
       setIsOffline(true);
-      
-      // Load from cache if offline
-      const cachedOps = localStorage.getItem("cache_operadores");
-      const cachedEvents = localStorage.getItem("cache_eventos");
 
-      if (cachedOps) setOperators(JSON.parse(cachedOps));
+      // Load from cache if offline
+      const cachedEvents = localStorage.getItem("cache_eventos");
       if (cachedEvents) setEvents(JSON.parse(cachedEvents));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -71,7 +58,7 @@ const HomeView = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="w-full px-4 py-6">
       {/* Offline Alert Indicator */}
       {isOffline && (
         <div className="mb-6 bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-amber-600 dark:text-amber-400 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
@@ -83,7 +70,7 @@ const HomeView = () => {
       )}
 
       {/* Hero Section Redesigned */}
-      <header className="relative rounded-[32px] overflow-hidden mb-8 p-6 sm:p-10 lg:p-14 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-brand-dark/95 border border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-8">
+      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-brand-dark/95 border border-white/10 shadow-2xl text-left flex flex-col lg:flex-row items-center gap-8">
         {/* Glow ambient effects */}
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/10 rounded-full blur-[100px] pointer-events-none" />
@@ -99,7 +86,7 @@ const HomeView = () => {
           <p className="text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6">
             Te damos la bienvenida al Municipio Díaz, el corazón artesanal de la Isla de Margarita. Un santuario de palmeras datileras, tejedores sabios y sabores criollos que trascienden generaciones.
           </p>
-          <div className="flex gap-3 flex-wrap lg:flex-nowrap">
+          <div className="flex gap-3 flex-row flex-wrap">
             <a 
               href="#director-artesanal"
               className="px-5 py-3 rounded-2xl bg-brand-blue hover:bg-brand-light text-white font-bold text-xs sm:text-sm shadow-lg shadow-brand-blue/30 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
@@ -298,41 +285,7 @@ const HomeView = () => {
         </div>
       </div>
 
-      {/* Artisans Results Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="glass-panel rounded-3xl h-96 animate-pulse flex flex-col">
-              <div className="bg-gray-200/50 dark:bg-slate-800/50 h-52 rounded-t-3xl"></div>
-              <div className="p-5 flex-grow space-y-3">
-                <div className="h-6 bg-gray-200/50 dark:bg-slate-800/50 rounded-lg w-3/4"></div>
-                <div className="h-4 bg-gray-200/50 dark:bg-slate-800/50 rounded-lg w-1/2"></div>
-                <div className="h-12 bg-gray-200/50 dark:bg-slate-800/50 rounded-lg"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : operators.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {operators.map((op: any) => (
-            <CardArtesano key={op.id} operator={op} />
-          ))}
-        </div>
-      ) : (
-        <div className="glass-panel rounded-3xl p-16 text-center shadow-lg border border-dashed border-gray-200 dark:border-white/5 max-w-md mx-auto">
-          <WifiOff size={48} className="mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-          <h3 className="font-display font-bold text-lg mb-1">No se encontraron talleres</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Prueba ajustando los criterios del filtro de búsqueda o recarga la página.
-          </p>
-          <button 
-            onClick={loadData}
-            className="mt-5 bg-brand-blue dark:bg-brand-light text-white px-4 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-1.5 hover:shadow-lg transition cursor-pointer"
-          >
-            <RefreshCw size={14} /> Recargar Directorio
-          </button>
-        </div>
-      )}
+
 
       {modalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
