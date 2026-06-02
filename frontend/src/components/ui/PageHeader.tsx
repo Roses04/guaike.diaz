@@ -22,7 +22,7 @@ export function PageHeader({
 
   return (
     <header
-      className={`mb-8 md:mb-10 flex flex-col gap-4 ${
+      className={`pageheader-anim mb-8 md:mb-10 flex flex-col gap-4 ${
         isCenter ? "text-center max-w-3xl mx-auto" : "md:flex-row md:items-start md:justify-between"
       }`}
     >

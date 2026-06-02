@@ -142,12 +142,12 @@ const HomeView = () => {
 
       <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
         <div
-          className="absolute inset-0 bg-cover bg-center animate-hero-bg pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center animate-hero-bg hero-bg-visible pointer-events-none"
           style={{ backgroundImage: `url('${HERO_BG_IMAGE}')` }}
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-gradient-to-br from-white/92 via-white/88 to-brand-blue/20 dark:from-slate-900/93 dark:via-slate-900/88 dark:to-slate-950/85 pointer-events-none"
+          className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/40 dark:to-transparent pointer-events-none"
           aria-hidden
         />
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/10 dark:bg-brand-blue/15 rounded-full blur-[100px] pointer-events-none" />

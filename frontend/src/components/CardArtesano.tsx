@@ -15,7 +15,7 @@ const CardArtesano = ({ operator }: { operator: Operator }) => {
   const mainImage = operator.imagen_principal || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=600&auto=format&fit=crop";
 
   return (
-    <div className="glass-panel rounded-3xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl hover:border-brand-blue/30 dark:hover:border-brand-light/30 transition-all duration-300 flex flex-col group h-full">
+    <div className="glass-panel card-anim rounded-3xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl hover:border-brand-blue/30 dark:hover:border-brand-light/30 transition-all duration-300 flex flex-col group h-full">
       <div className="relative overflow-hidden">
         <img 
           src={mainImage} 

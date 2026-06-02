@@ -307,6 +307,36 @@ body {
 }
 
 /* Primary municipal CTA */
+.nav-item-anim {
+  transition: transform 0.22s cubic-bezier(.2,1,.22,1), box-shadow 0.2s ease, color 0.2s ease;
+  will-change: transform;
+}
+.nav-item-anim:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,147,217,0.08);
+}
+
+/* Card hover accent */
+.card-anim {
+  transition: transform 0.25s cubic-bezier(.2,1,.22,1), box-shadow 0.25s ease, border-color 0.2s ease;
+}
+.card-anim:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 40px rgba(0,147,217,0.08);
+  border-color: rgba(0,147,217,0.15);
+}
+
+/* PageHeader entrance */
+.pageheader-anim {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.pageheader-anim.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .municipal-cta {
   background: var(--color-brand-blue);
   color: white;
@@ -391,6 +421,15 @@ body {
 .animate-hero-bg {
   animation: hero-bg-kenburns 25s ease-in-out infinite alternate;
   transform-origin: center center;
+  will-change: transform, filter;
+}
+
+/* Enhanced hero background optional class for higher visibility */
+.hero-bg-visible {
+  filter: contrast(1.06) saturate(1.08) brightness(1.03);
+  background-size: cover;
+  background-position: center;
+  transition: filter 0.6s ease;
 }
 
 .anim-delay-100 { animation-delay: 100ms; }

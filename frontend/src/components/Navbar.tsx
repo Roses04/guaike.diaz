@@ -51,7 +51,7 @@ const Navbar = () => {
   }) => (
     <Link
       to={to}
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-150
+      className={`nav-item-anim flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-150
         ${isActive
           ? "text-white bg-gradient-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20"
           : "text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/10 dark:hover:bg-brand-light/10"
