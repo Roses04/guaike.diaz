@@ -317,11 +317,156 @@ body {
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .municipal-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 12px 30px rgba(0, 147, 217, 0.25);
+}
+
+.municipal-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Botones interactivos del hero */
+.btn-interactive {
+  transition: transform 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-interactive:hover {
+  transform: scale(1.03);
+  box-shadow: 0 12px 28px rgba(0, 147, 217, 0.22);
+}
+
+.btn-interactive:active {
+  transform: scale(0.97);
+}
+
+/* --- Animaciones Home --- */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes hero-bg-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-hero-bg {
+  animation: hero-bg-kenburns 25s ease-in-out infinite alternate;
+  transform-origin: center center;
+}
+
+.anim-delay-100 { animation-delay: 100ms; }
+.anim-delay-150 { animation-delay: 150ms; }
+.anim-delay-200 { animation-delay: 200ms; }
+.anim-delay-300 { animation-delay: 300ms; }
+.anim-delay-450 { animation-delay: 450ms; }
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-stagger-1 { transition-delay: 80ms; }
+.reveal-stagger-2 { transition-delay: 160ms; }
+.reveal-stagger-3 { transition-delay: 240ms; }
+.reveal-stagger-4 { transition-delay: 320ms; }
+
+/* Carrusel móvil: fade en bordes */
+.carousel-scroll-fade {
+  position: relative;
+}
+
+.carousel-scroll-fade::before,
+.carousel-scroll-fade::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5rem;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.carousel-scroll-fade::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.85), transparent);
+}
+
+.carousel-scroll-fade::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.85), transparent);
+}
+
+.dark .carousel-scroll-fade::before {
+  background: linear-gradient(to right, rgba(15, 20, 25, 0.9), transparent);
+}
+
+.dark .carousel-scroll-fade::after {
+  background: linear-gradient(to left, rgba(15, 20, 25, 0.9), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-hero-bg {
+    animation: none !important;
+  }
+
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none !important;
+  }
+
+  .btn-interactive:hover,
+  .municipal-cta:hover {
+    transform: none;
+  }
 }
 
 /* Small helper for verified badge using municipal yellow */
