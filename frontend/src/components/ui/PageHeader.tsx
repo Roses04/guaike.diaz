@@ -33,7 +33,7 @@ export function PageHeader({
         <h1
           className={`text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight flex items-center gap-2 ${
             isCenter
-              ? "justify-center bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold bg-clip-text text-transparent dark:from-white dark:via-slate-200 dark:to-brand-gold"
+              ? "heading-gradient justify-center"
               : "text-slate-800 dark:text-white"
           }`}
         >

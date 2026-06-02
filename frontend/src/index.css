@@ -11,13 +11,24 @@
   --mobile-chrome-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
 
   --bg-surface: #f8fafc;
+  /* Use sky blue for primary backgrounds where appropriate */
+  --bg-primary: var(--color-sky-blue);
+  /* Navy background for secondary sections */
+  --bg-secondary: var(--color-navy);
+
   --footer-bg: rgba(255, 255, 255, 0.95);
   --footer-border: rgba(42, 52, 107, 0.12);
   --footer-text: #334155;
-  --footer-text-muted: #64748b;
+  --color-primary-text: #2a346b;
 
   /* Municipio Díaz - identidad visual */
-  --color-primary-text: #2a346b;
+  /* Logo colors */
+  --color-sky-blue: #87CEEB; /* azul cielo */
+  --color-navy: #003366;   /* azul marino */
+  --color-vegetation: #2E8B57; /* verde */
+  --color-sun: #FFD700;   /* amarillo */
+  --color-brown: #A0522D;  /* marrón claro */
+  /* Keep existing brand mappings */
   /* tipografía principal */
   --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.96)), url('/images/SanJuan.jpg');
   --bg-color-fallback: #f1f5f9;
@@ -45,6 +56,12 @@
   --color-brand-blue: var(--blue-2);
   --color-brand-light: var(--blue-1);
   --color-brand-gold: var(--yellow-2);
+  /* Map brand colors to logo palette where feasible */
+  --color-brand-blue: var(--color-sky-blue);
+  --color-brand-light: var(--color-navy);
+  --color-brand-accent: var(--color-vegetation);
+  --color-brand-gold: var(--color-sun);
+
   --color-brand-dark: var(--color-primary-text);
   --color-brand-accent: var(--green-1);
 
@@ -144,7 +161,7 @@ body {
 
 .dark .glass-panel {
   background: rgba(10, 15, 20, 0.6);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
@@ -246,6 +263,16 @@ body {
 /* Override Tailwind arbitrary hex classes that reference old soft-white */
 /* Map bg-[#FAF9F5] and variants to municipal surface variables */
 .bg-\[\#FAF9F5\] {
+  background: var(--bg-surface) !important;
+}
+
+/* New utilities based on Municipio Díaz logo palette */
+.bg-municipio-sky { background-color: var(--color-sky-blue) !important; }
+.bg-municipio-navy { background-color: var(--color-navy) !important; }
+.bg-municipio-green { background-color: var(--color-vegetation) !important; }
+.bg-municipio-yellow { background-color: var(--color-sun) !important; }
+.bg-municipio-brown { background-color: var(--color-brown) !important; }
+
   background: var(--bg-surface) !important;
 }
 
@@ -437,16 +464,48 @@ body {
   text-shadow: 0 8px 28px rgba(6, 10, 20, 0.45);
 }
 
-/* Small padded background behind highlighted words inside the hero title */
+/* Small padded background behind highlighted words inside the hero title.
+   IMPORTANT: Must NOT set background when used with bg-clip-text + text-transparent.
+   Instead we add a soft glow/underline effect via a pseudo-element wrapper. */
 .title-bg {
-  background: rgba(255, 255, 255, 0.65);
-  padding: 0 0.2rem;
+  padding: 0 0.15rem;
   border-radius: 8px;
   display: inline-block;
+  /* Do NOT set background here — it breaks bg-clip-text gradient text */
 }
 
-.dark .title-bg {
-  background: rgba(10, 15, 20, 0.45);
+/* Gradient text utility — ensures text gradient is always visible */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, var(--color-brand-light) 0%, var(--color-brand-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Page section heading gradient text */
+.heading-gradient {
+  background: linear-gradient(to right, var(--color-brand-blue), var(--color-brand-light), var(--color-brand-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .heading-gradient {
+  background: linear-gradient(to right, #ffffff, #e2e8f0, var(--yellow-1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
 /* Image hover animation for cards */

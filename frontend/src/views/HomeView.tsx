@@ -159,7 +159,7 @@ const HomeView = () => {
           </span>
           <h1 className="hero-title text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1] animate-fade-in-up anim-delay-100 drop-shadow-sm dark:drop-shadow-none">
             Guardianes de la{" "}
-            <span className="title-bg bg-gradient-to-r from-brand-blue to-brand-gold dark:from-brand-light dark:to-brand-gold bg-clip-text text-transparent px-1">
+            <span className="gradient-text title-bg">
               Tradición Viva
             </span>
           </h1>
