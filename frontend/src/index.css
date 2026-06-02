@@ -432,6 +432,49 @@ body {
   transition: filter 0.6s ease;
 }
 
+/* Hero title legibility */
+.hero-title {
+  text-shadow: 0 8px 28px rgba(6, 10, 20, 0.45);
+}
+
+/* Small padded background behind highlighted words inside the hero title */
+.title-bg {
+  background: rgba(255, 255, 255, 0.65);
+  padding: 0 0.2rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.dark .title-bg {
+  background: rgba(10, 15, 20, 0.45);
+}
+
+/* Image hover animation for cards */
+.img-anim {
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+.img-anim img {
+  transition: transform 0.55s cubic-bezier(0.2,1,0.22,1), filter 0.35s ease;
+  will-change: transform, filter;
+}
+.img-anim:hover img {
+  transform: scale(1.06) rotate(-0.6deg);
+  filter: brightness(0.98) saturate(1.05);
+}
+.img-anim:hover {
+  box-shadow: 0 22px 48px rgba(6, 12, 30, 0.22);
+}
+
+/* Ensure card-anim also animates inner img */
+.card-anim img {
+  transition: transform 0.45s cubic-bezier(0.2,1,0.22,1), filter 0.3s ease;
+}
+.card-anim:hover img {
+  transform: scale(1.04) translateY(-4px);
+}
+
+
+
 .anim-delay-100 { animation-delay: 100ms; }
 .anim-delay-150 { animation-delay: 150ms; }
 .anim-delay-200 { animation-delay: 200ms; }

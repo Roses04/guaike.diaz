@@ -51,7 +51,7 @@ const highlightByImage = (image: string) =>
 const STAGGER_CLASS = ["", "anim-delay-150", "anim-delay-300"] as const;
 
 const heroCardClass =
-  "group absolute inset-0 text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
+  "group img-anim card-anim absolute inset-0 text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
 
 const HomeView = () => {
   const [events, setEvents] = useState([]);
@@ -157,9 +157,9 @@ const HomeView = () => {
           <span className="text-[10px] uppercase tracking-widest text-brand-gold font-extrabold px-3 py-1.5 bg-brand-gold/15 border border-brand-gold/30 rounded-full mb-5 inline-block animate-fade-in-up">
             Guía Cultural Oficial del Municipio Díaz
           </span>
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1] animate-fade-in-up anim-delay-100 drop-shadow-sm dark:drop-shadow-none">
+          <h1 className="hero-title text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1] animate-fade-in-up anim-delay-100 drop-shadow-sm dark:drop-shadow-none">
             Guardianes de la{" "}
-            <span className="bg-gradient-to-r from-brand-blue to-brand-gold dark:from-brand-light dark:to-brand-gold bg-clip-text text-transparent">
+            <span className="title-bg bg-gradient-to-r from-brand-blue to-brand-gold dark:from-brand-light dark:to-brand-gold bg-clip-text text-transparent px-1">
               Tradición Viva
             </span>
           </h1>
@@ -231,7 +231,7 @@ const HomeView = () => {
               <button
                 type="button"
                 onClick={() => openModal(item)}
-                className="group relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 text-left w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
+                className="group img-anim card-anim relative rounded-3xl overflow-hidden glass-panel h-80 flex flex-col justify-end p-5 shadow-lg border border-slate-100 dark:border-white/5 hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 text-left w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                 aria-label={`Ver información de ${item.title}`}
               >
                 <div className="absolute inset-0 overflow-hidden">
