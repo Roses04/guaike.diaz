@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npm install",
+  "installCommand": "NPM_CONFIG_PRODUCTION=false npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
   "framework": null,
