@@ -196,7 +196,7 @@ const HomeView = () => {
           </div>*/}
         </div>
 
-        <div className="relative z-10 hidden md:block w-full lg:w-[min(100%,28rem)] shrink-0">
+        {/*<div className="relative z-10 hidden md:block w-full lg:w-[min(100%,28rem)] shrink-0">
           <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[280px] lg:h-[320px]">
             <div className={`row-span-2 min-h-0 relative animate-scale-in ${STAGGER_CLASS[0]}`}>
               {renderHeroCard(sanJuan, "San Juan")}
@@ -208,7 +208,7 @@ const HomeView = () => {
               {renderHeroCard(fuentidueno, "Fuentidueño")}
             </div>
           </div>
-        </div>
+        </div>*/}
       </header>
 
       <section className="mb-12">
