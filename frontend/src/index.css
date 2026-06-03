@@ -273,9 +273,6 @@ body {
 .bg-municipio-yellow { background-color: var(--color-sun) !important; }
 .bg-municipio-brown { background-color: var(--color-brown) !important; }
 
-  background: var(--bg-surface) !important;
-}
-
 .bg-\[\#FAF9F5\]\/95 {
   background: rgba(248, 248, 248, 0.95) !important;
 }
@@ -461,51 +458,62 @@ body {
 
 /* Hero title legibility */
 .hero-title {
+  position: relative;
+  z-index: 40;
+  color: var(--color-primary-text) !important;
   text-shadow: 0 8px 28px rgba(6, 10, 20, 0.45);
 }
 
-/* Small padded background behind highlighted words inside the hero title.
-   IMPORTANT: Must NOT set background when used with bg-clip-text + text-transparent.
-   Instead we add a soft glow/underline effect via a pseudo-element wrapper. */
+/* Small padded translucent background behind highlighted words inside the hero title */
 .title-bg {
-  padding: 0 0.15rem;
-  border-radius: 8px;
+  background: rgba(255,255,255,0.75);
+  padding: 0 0.35rem;
+  border-radius: 10px;
   display: inline-block;
-  /* Do NOT set background here — it breaks bg-clip-text gradient text */
+  color: inherit;
+  box-shadow: 0 6px 18px rgba(6,12,30,0.08);
 }
 
-/* Gradient text utility — ensures text gradient is always visible */
+/* Dark mode variant */
+.dark .title-bg {
+  background: rgba(6,10,20,0.45);
+  color: inherit;
+}
+
+/* Gradient text utility (decorative). We keep a readable fallback color for accessibility. */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-gold) 100%);
+  /* Use deep navy → rich gold so the gradient is visible on light hero backgrounds */
+  background: linear-gradient(135deg, #003b6e 0%, #b8860b 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
+  color: #003b6e; /* solid fallback */
 }
 
 .dark .gradient-text {
-  background: linear-gradient(135deg, var(--color-brand-light) 0%, var(--color-brand-gold) 100%);
+  background: linear-gradient(135deg, #7dd3fc 0%, #fbbf24 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
+  color: #f1f5f9; /* solid fallback */
 }
 
-/* Page section heading gradient text */
+/* Page section heading gradient text — keep visible fallback color to avoid disappearing text */
 .heading-gradient {
-  background: linear-gradient(to right, var(--color-brand-blue), var(--color-brand-light), var(--color-brand-gold));
+  color: #002244 !important;
+  /* Deep navy → ocean blue → dark gold — fully legible on white/light backgrounds */
+  background: linear-gradient(to right, #002244, #0056b3, #9a6e00);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .dark .heading-gradient {
-  background: linear-gradient(to right, #ffffff, #e2e8f0, var(--yellow-1));
+  color: #f1f5f9 !important;
+  background: linear-gradient(to right, #ffffff, #93c5fd, var(--yellow-1));
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Image hover animation for cards */

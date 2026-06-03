@@ -82,7 +82,7 @@ function App() {
 
         <Navbar />
 
-        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-[var(--mobile-chrome-bottom)] pt-[var(--mobile-chrome-top)] md:pt-4 transition-all duration-200 z-10">
+        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-[3.5rem] md:pb-6 md:pt-4 transition-all duration-200 z-10">
           <main className="w-full flex flex-col bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
             <Routes>
               <Route path="/" element={<HomeView />} />
