@@ -100,8 +100,8 @@ const HomeView = () => {
   const sanJuan = highlightByImage("/images/SanJuan.jpg")!;
   const sombrero = highlightByImage("/images/Sombrero_de_cogollo.JPG")!;
   const fuentidueno = highlightByImage("/images/Fuentidueño.jpg")!;
-  const heroCollage = [sanJuan, sombrero, fuentidueno];
-  const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];
+ /* const heroCollage = [sanJuan, sombrero, fuentidueno];*/
+  /*const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];*/
 
   const tesorosItems = CULTURAL_HIGHLIGHTS.filter((h) =>
     ["/images/Sombrero_de_cogollo.JPG", "/images/Piñonate.jpg", "/images/Pozas_de_San_Juan_Bautísta.jpg", "/images/Fuentidueño.jpg"].includes(h.image)
@@ -184,7 +184,7 @@ const HomeView = () => {
         </div>
 
         <div className="relative z-10 w-full md:hidden carousel-scroll-fade">
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 no-scrollbar">
+          {/*<div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 no-scrollbar">
             {heroCollage.map((item, i) => (
               <div
                 key={item.image}
@@ -193,7 +193,7 @@ const HomeView = () => {
                 {renderHeroCard(item, heroLabels[i])}
               </div>
             ))}
-          </div>
+          </div>*/}
         </div>
 
         <div className="relative z-10 hidden md:block w-full lg:w-[min(100%,28rem)] shrink-0">
