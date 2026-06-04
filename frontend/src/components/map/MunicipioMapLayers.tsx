@@ -90,7 +90,7 @@ export function MunicipioBorderLayer({ isDarkMode }: { isDarkMode: boolean }) {
 /** Etiqueta flotante en el mapa (leyenda municipal). */
 export function MunicipioMapLegend() {
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-brand-blue/30 bg-white/95 px-3 py-2 text-[10px] font-bold text-brand-blue shadow-lg backdrop-blur-md dark:border-brand-light/30 dark:bg-slate-900/95 dark:text-brand-light">
+    <div className="pointer-events-none absolute bottom-3 left-3 z-500 rounded-xl border border-brand-blue/30 bg-white/95 px-3 py-2 text-[10px] font-bold text-brand-blue shadow-lg backdrop-blur-md dark:border-brand-light/30 dark:bg-slate-900/95 dark:text-brand-light">
       Área del Municipio Díaz
     </div>
   );

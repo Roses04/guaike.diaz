@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import * as api from "../services/api";
 import { WifiOff, ZoomIn } from "lucide-react";
 import ContentModal, { type ContentModalItem } from "../components/ui/ContentModal";
 import RevealOnScroll from "../components/ui/RevealOnScroll";
@@ -226,7 +226,7 @@ const HomeView = () => {
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-900/40 to-transparent" />
                 </div>
                 <div className="relative z-10">
                   <span className="text-[9px] uppercase tracking-wider font-extrabold text-brand-gold bg-brand-gold/10 backdrop-blur-md px-2 py-0.5 rounded-md mb-2 inline-block">
@@ -302,14 +302,14 @@ const HomeView = () => {
                       </span>
                     </button>
 
-                    <div className="p-6 flex-grow flex flex-col">
+                    <div className="p-6 grow flex flex-col">
                       <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-wide">
                         {dateMeta}
                       </div>
                       <h3 className="font-display font-bold text-xl text-slate-800 dark:text-white mb-2 leading-snug">
                         {ev.titulo}
                       </h3>
-                      <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-5 flex-grow">
+                      <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-5 grow">
                         {ev.descripcion}
                       </p>
 

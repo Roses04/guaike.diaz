@@ -595,15 +595,6 @@ const getAdminStats = async () => {
   };
 };
 
-const callEndpoint = async (method: string, url: string, payload?: any): Promise<any> => {
-  const route = url.startsWith("/") ? url : `/${url}`;
-  const lowerMethod = method.toLowerCase();
-
-  if (lowerMethod === "get" && route === "/auth/profile") {
-    const profile = await fetchUsuarioProfile();
-    return buildResponse(profile);
-  }
-
 // ── Helpers para envío de correos y generación de códigos ────────────────
 const generateVerificationCode = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -745,7 +736,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       profile = await getUserRecordByEmail(email as string);
     }
     
-    if (!profile) createApiError("No se pudo obtener perfil de usuario");
+    if (!profile) return createApiError("No se pudo obtener perfil de usuario");
 
     // Si la cuenta no está verificada, enviamos o reenviamos automáticamente el código
     if (!profile.verificado) {
@@ -822,12 +813,12 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const user = await getUserRecordByEmail(email);
     if (!user) createApiError("Usuario no encontrado", 404);
 
-    if (user.codigo_verificacion !== code) {
+    if (!user || user.codigo_verificacion !== code) {
       createApiError("Código de verificación incorrecto", 400);
     }
 
     // Comprobar expiración del código (máximo 10 minutos)
-    if (user.codigo_enviado_en) {
+    if (user && user.codigo_enviado_en) {
       const sentTime = new Date(user.codigo_enviado_en).getTime();
       const now = Date.now();
       if (now - sentTime > 10 * 60 * 1000) {
@@ -838,7 +829,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const { error } = await supabase
       .from("usuarios")
       .update({ verificado: true, codigo_verificacion: null, codigo_enviado_en: null })
-      .eq("id", user.id);
+      .eq("id", user!.id);
 
     if (error) createApiError(error.message);
 
@@ -856,7 +847,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const { error } = await supabase
       .from("usuarios")
       .update({ codigo_verificacion: code, codigo_enviado_en: nowStr })
-      .eq("id", user.id);
+      .eq("id", user!.id);
 
     if (error) createApiError(error.message);
 
@@ -870,12 +861,12 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const user = await getUserRecordByEmail(email);
     if (!user) createApiError("Usuario no registrado en el sistema", 404);
 
-    if (!user.preguntas_seguridad || !Array.isArray(user.preguntas_seguridad) || user.preguntas_seguridad.length === 0) {
+    if (!user!.preguntas_seguridad || !Array.isArray(user!.preguntas_seguridad) || user!.preguntas_seguridad.length === 0) {
       createApiError("Este usuario no configuró preguntas de seguridad. Por favor recupere mediante código de correo.", 400);
     }
 
     // Devolver solo los enunciados de las preguntas
-    const questionsOnly = user.preguntas_seguridad.map((q: any) => ({ question: q.question }));
+    const questionsOnly = user!.preguntas_seguridad.map((q: any) => ({ question: q.question }));
     return buildResponse({ questions: questionsOnly });
   }
 
@@ -884,13 +875,13 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const user = await getUserRecordByEmail(email);
     if (!user) createApiError("Usuario no registrado", 404);
 
-    if (!user.preguntas_seguridad || !Array.isArray(user.preguntas_seguridad)) {
+    if (!user!.preguntas_seguridad || !Array.isArray(user!.preguntas_seguridad)) {
       createApiError("Este usuario no tiene preguntas de seguridad configuradas", 400);
     }
 
     // Verificar si está bloqueado por rate limiting
-    if (user.bloqueado_hasta) {
-      const blockUntil = new Date(user.bloqueado_hasta).getTime();
+    if (user!.bloqueado_hasta) {
+      const blockUntil = new Date(user!.bloqueado_hasta).getTime();
       const now = Date.now();
       if (now < blockUntil) {
         const remaining = Math.ceil((blockUntil - now) / 60000);
@@ -900,7 +891,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     // Validar respuestas normalizándolas y comparando con bcryptjs
     let allCorrect = true;
-    for (const userQ of user.preguntas_seguridad) {
+    for (const userQ of user!.preguntas_seguridad) {
       const matched = answers.find((ans: any) => ans.question === userQ.question);
       if (!matched) {
         allCorrect = false;
@@ -915,7 +906,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     }
 
     if (!allCorrect) {
-      const nextAttempts = (user.intentos_fallidos || 0) + 1;
+      const nextAttempts = (user!.intentos_fallidos || 0) + 1;
       let updateFields: any = { intentos_fallidos: nextAttempts };
 
       if (nextAttempts >= 5) {
@@ -923,16 +914,16 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
         const waitMinutes = 5 * factor;
         updateFields.bloqueado_hasta = new Date(Date.now() + waitMinutes * 60000).toISOString();
 
-        await supabase.from("usuarios").update(updateFields).eq("id", user.id);
+        await supabase.from("usuarios").update(updateFields).eq("id", user!.id);
         createApiError(`Respuestas de seguridad incorrectas. Demasiados fallos. Cuenta bloqueada por ${waitMinutes} minutos.`, 423);
       } else {
-        await supabase.from("usuarios").update(updateFields).eq("id", user.id);
+        await supabase.from("usuarios").update(updateFields).eq("id", user!.id);
         createApiError(`Respuestas incorrectas. Intentos restantes: ${5 - nextAttempts}`, 400);
       }
     }
 
     // Respuestas correctas: resetear intentos fallidos
-    await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", user.id);
+    await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", user!.id);
 
     return buildResponse({ success: true, message: "Respuestas verificadas correctamente." });
   }
@@ -948,7 +939,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const { error } = await supabase.from("usuarios").update({
       codigo_verificacion: code,
       codigo_enviado_en: nowStr
-    }).eq("id", user.id);
+    }).eq("id", user!.id);
 
     if (error) createApiError(error.message);
 
@@ -962,12 +953,12 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const user = await getUserRecordByEmail(email);
     if (!user) createApiError("Usuario no registrado", 404);
 
-    if (user.codigo_verificacion !== code) {
+    if (user!.codigo_verificacion !== code) {
       createApiError("Código de recuperación incorrecto", 400);
     }
 
-    if (user.codigo_enviado_en) {
-      const sentTime = new Date(user.codigo_enviado_en).getTime();
+    if (user!.codigo_enviado_en) {
+      const sentTime = new Date(user!.codigo_enviado_en).getTime();
       if (Date.now() - sentTime > 10 * 60 * 1000) {
         createApiError("El código de recuperación ha expirado (máximo 10 minutos). Solicita uno nuevo.", 400);
       }
@@ -977,7 +968,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   }
 
   if (lowerMethod === "post" && route === "/auth/reset-password") {
-    const { email, password } = payload || {};
+    const { email } = payload || {};
     const user = await getUserRecordByEmail(email);
     if (!user) createApiError("Usuario no registrado", 404);
 
@@ -988,7 +979,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       codigo_enviado_en: null,
       intentos_fallidos: 0,
       bloqueado_hasta: null
-    }).eq("id", user.id);
+    }).eq("id", user!.id);
 
     if (error) createApiError(error.message);
 
@@ -1070,4 +1061,9 @@ const api = {
 };
 
 export { getOfflineQueue, syncOfflineQueue };
+export const get = api.get;
+export const post = api.post;
+export const patch = api.patch;
+export const del = api.delete;
+export const request = api.request;
 export default api;

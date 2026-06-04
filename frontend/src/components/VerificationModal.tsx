@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Mail, ShieldAlert, CheckCircle, RefreshCw, X, Info } from "lucide-react";
+import { ShieldAlert, CheckCircle, RefreshCw, X, Info } from "lucide-react";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 

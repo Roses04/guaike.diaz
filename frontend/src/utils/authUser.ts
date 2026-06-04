@@ -2,6 +2,7 @@ export interface AuthUser {
   id: number;
   email: string;
   role: string;
+  verificado?: boolean;
 }
 
 /** Normaliza respuestas de login, profile o caché al formato del store. */
@@ -27,9 +28,12 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
       : (roles as Record<string, unknown>).nombre as string | undefined;
   }
 
+  const verificado = row.verificado === undefined ? undefined : Boolean(row.verificado);
+
   return {
     id: Number(id),
     email,
     role: (role || "turista").toLowerCase(),
+    verificado,
   };
 }
