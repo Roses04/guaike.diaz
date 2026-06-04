@@ -111,7 +111,9 @@ const ItineraryView = () => {
       category: "Tejido de Palma",
       iconClass: "bg-amber-100 dark:bg-amber-950/40 text-brand-gold",
       stopsCount: 3,
-      duration: "~2 horas"
+      duration: "~2 horas",
+      image: "/images/tejedora.jpg",
+      accentColor: "from-amber-600/70"
     },
     {
       id: "dulces_route",
@@ -121,7 +123,9 @@ const ItineraryView = () => {
       category: "Gastronomía Tradicional",
       iconClass: "bg-emerald-100 dark:bg-emerald-950/40 text-brand-accent",
       stopsCount: 2,
-      duration: "~1.5 horas"
+      duration: "~1.5 horas",
+      image: "/images/datiles.jpg",
+      accentColor: "from-emerald-700/70"
     },
     {
       id: "textil_route",
@@ -131,7 +135,9 @@ const ItineraryView = () => {
       category: "Textil (Hamacas)",
       iconClass: "bg-blue-100 dark:bg-blue-950/40 text-brand-light",
       stopsCount: 2,
-      duration: "~1.5 horas"
+      duration: "~1.5 horas",
+      image: "/images/hamaca.jpg",
+      accentColor: "from-blue-700/70"
     }
   ];
 
@@ -498,19 +504,29 @@ const ItineraryView = () => {
             {curatedRoutes.map((route) => (
               <div 
                 key={route.id}
-                className="glass-panel rounded-3xl overflow-hidden hover:-translate-y-1 hover:shadow-2xl transition duration-300 flex flex-col h-full border border-slate-200 dark:border-white/5"
+                className="glass-panel rounded-3xl overflow-hidden hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 flex flex-col h-full border border-slate-200 dark:border-white/5 group"
               >
-                <div className="p-6 flex-grow space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className={`p-3 rounded-2xl ${route.iconClass} flex items-center justify-center`}>
-                      <Compass size={24} />
-                    </span>
-                    <span className="text-[11px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3 py-1 rounded-full">
-                      {route.parish}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-display font-bold text-2xl text-slate-800 dark:text-white pt-2">
+                {/* Hero image banner */}
+                <div className="relative h-44 overflow-hidden">
+                  <img
+                    src={route.image}
+                    alt={route.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-t ${route.accentColor} to-transparent`} />
+                  {/* Parish badge pinned top-right */}
+                  <span className="absolute top-3 right-3 text-[10px] font-extrabold uppercase bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full border border-white/20">
+                    {route.parish}
+                  </span>
+                  {/* Icon pinned bottom-left */}
+                  <span className={`absolute bottom-3 left-3 p-2.5 rounded-xl ${route.iconClass} bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm flex items-center justify-center shadow-lg`}>
+                    <Compass size={18} />
+                  </span>
+                </div>
+
+                <div className="p-6 flex-grow space-y-3">
+                  <h3 className="font-display font-bold text-xl text-slate-800 dark:text-white leading-tight">
                     {route.title}
                   </h3>
                   
@@ -518,12 +534,12 @@ const ItineraryView = () => {
                     {route.description}
                   </p>
 
-                  <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-1">
-                      <MapPin size={14} className="text-brand-gold" /> {route.stopsCount} paradas
+                      <MapPin size={13} className="text-brand-gold" /> {route.stopsCount} paradas
                     </div>
                     <div className="flex items-center gap-1">
-                      <Navigation size={14} className="text-brand-accent" /> {route.duration}
+                      <Navigation size={13} className="text-brand-accent" /> {route.duration}
                     </div>
                   </div>
                 </div>

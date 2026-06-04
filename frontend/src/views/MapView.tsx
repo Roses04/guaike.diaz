@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import L from "leaflet";
 import { Link, useLocation } from "react-router-dom";
-import { Navigation, Tag } from "lucide-react";
+import { Navigation, Tag, Map } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
 import {
   MunicipioBoundsController,
@@ -124,9 +124,10 @@ const MapView = () => {
       {/* Floating Top Elements (like Google Maps Chips) */}
       <div className="absolute mobile-offset-top left-0 right-0 z-[1000] px-4 pointer-events-none md:top-4">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pointer-events-auto pb-2">
-          {/* Title Chip */}
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center shrink-0">
-            <span className="font-display font-bold text-sm text-brand-blue dark:text-white tracking-wide">Explorar Municipio</span>
+          {/* Module Title Chip */}
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center gap-2 shrink-0">
+            <Map size={14} className="text-brand-blue dark:text-brand-light" />
+            <span className="font-display font-bold text-sm text-brand-blue dark:text-white tracking-wide">Mapa</span>
           </div>
           
           {/* Legend Chips */}

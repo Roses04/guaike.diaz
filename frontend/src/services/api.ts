@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { normalizeLocation, parseUbicacionForMunicipio } from "../utils/geo";
+import bcrypt from "bcryptjs";
 
 const QUEUE_KEY = "offline_queue";
 
@@ -82,7 +83,7 @@ const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<strin
 const getUserRecordByEmail = async (email: string) => {
   const { data, error } = await supabase
     .from("usuarios")
-    .select("id, correo, rol_id, roles(nombre)")
+    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, roles(nombre)")
     .eq("correo", email)
     .maybeSingle();
 
@@ -98,11 +99,26 @@ const getUserRecordByEmail = async (email: string) => {
     id: data.id,
     email: data.correo,
     role,
+    verificado: data.verificado,
+    codigo_verificacion: data.codigo_verificacion,
+    codigo_enviado_en: data.codigo_enviado_en,
+    preguntas_seguridad: data.preguntas_seguridad,
+    intentos_fallidos: data.intentos_fallidos || 0,
+    bloqueado_hasta: data.bloqueado_hasta,
   };
 };
 
 /** Crea el registro en `usuarios` solo si no existe; nunca sobrescribe el rol existente. */
-const ensureUserRecord = async (email: string, roleName: string) => {
+const ensureUserRecord = async (
+  email: string,
+  roleName: string,
+  extra?: {
+    codigo_verificacion?: string | null;
+    codigo_enviado_en?: string | null;
+    preguntas_seguridad?: any;
+    verificado?: boolean;
+  }
+) => {
   const existing = await getUserRecordByEmail(email);
   if (existing) return existing;
 
@@ -134,11 +150,20 @@ const ensureUserRecord = async (email: string, roleName: string) => {
     createApiError("No se pudo determinar el rol del usuario");
   }
 
-  const { error: insertError } = await supabase.from("usuarios").insert({
+  const insertData: any = {
     correo: email,
     contrasena: "",
     rol_id: roleId,
-  });
+  };
+
+  if (extra) {
+    if (extra.codigo_verificacion !== undefined) insertData.codigo_verificacion = extra.codigo_verificacion;
+    if (extra.codigo_enviado_en !== undefined) insertData.codigo_enviado_en = extra.codigo_enviado_en;
+    if (extra.preguntas_seguridad !== undefined) insertData.preguntas_seguridad = extra.preguntas_seguridad;
+    if (extra.verificado !== undefined) insertData.verificado = extra.verificado;
+  }
+
+  const { error: insertError } = await supabase.from("usuarios").insert(insertData);
 
   if (insertError) {
     // Carrera: otro proceso creó el usuario; devolver el registro existente
@@ -579,14 +604,141 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse(profile);
   }
 
+// ── Helpers para envío de correos y generación de códigos ────────────────
+const generateVerificationCode = (): string => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let part1 = "";
+  let part2 = "";
+  for (let i = 0; i < 4; i++) {
+    part1 += chars.charAt(Math.floor(Math.random() * chars.length));
+    part2 += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${part1}-${part2}`;
+};
+
+const sendEmailViaVercel = async (to: string, subject: string, text: string, html: string) => {
+  const secretKey = "guaike-system-default-secret-key-2026";
+  try {
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to,
+        subject,
+        text,
+        html,
+        secretKey,
+      }),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      console.error("Error al enviar correo por Vercel:", errData);
+    }
+  } catch (error) {
+    console.error("Error llamando a la función de correo:", error);
+  }
+};
+
+const sendVerificationCodeEmail = async (email: string, code: string) => {
+  const subject = "Verifica tu cuenta en GUAIKE.DÍAZ";
+  const text = `Tu código de verificación de 8 dígitos es: ${code}. Este código expira en 10 minutos.`;
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <h2 style="color: #0093d9; text-align: center;">Bienvenido a GUAIKE.DÍAZ</h2>
+      <p style="font-size: 16px; color: #334155; line-height: 1.6;">
+        Gracias por registrarte en el Sistema de Información Geoespacial del Municipio Díaz. Para completar tu registro y verificar tu cuenta, ingresa el siguiente código de 8 dígitos:
+      </p>
+      <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #003366;">
+        ${code}
+      </div>
+      <p style="font-size: 13px; color: #64748b; text-align: center; margin-top: 20px;">
+        Este código expira en 10 minutos (máximo). Si no solicitaste este correo, puedes ignorarlo.
+      </p>
+    </div>
+  `;
+  await sendEmailViaVercel(email, subject, text, html);
+};
+
+const sendRecoveryCodeEmail = async (email: string, code: string) => {
+  const subject = "Recuperación de contraseña en GUAIKE.DÍAZ";
+  const text = `Tu código de recuperación de contraseña es: ${code}. Este código expira en 10 minutos.`;
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <h2 style="color: #fbbf24; text-align: center;">Recuperación de Cuenta - GUAIKE.DÍAZ</h2>
+      <p style="font-size: 16px; color: #334155; line-height: 1.6;">
+        Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Usa el siguiente código para continuar con el restablecimiento:
+      </p>
+      <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #003366;">
+        ${code}
+      </div>
+      <p style="font-size: 13px; color: #64748b; text-align: center; margin-top: 20px;">
+        Este código expira en 10 minutos. Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura.
+      </p>
+    </div>
+  `;
+  await sendEmailViaVercel(email, subject, text, html);
+};
+
+const callEndpoint = async (method: string, url: string, payload?: any): Promise<any> => {
+  const route = url.startsWith("/") ? url : `/${url}`;
+  const lowerMethod = method.toLowerCase();
+
+  if (lowerMethod === "get" && route === "/auth/profile") {
+    const profile = await fetchUsuarioProfile();
+    return buildResponse(profile);
+  }
+
   if (lowerMethod === "post" && route === "/auth/login") {
     const { email, password } = payload || {};
+
+    // Verificar si el usuario está bloqueado por rate limiting
+    const existingUser = await getUserRecordByEmail(email);
+    if (existingUser && existingUser.bloqueado_hasta) {
+      const blockUntil = new Date(existingUser.bloqueado_hasta).getTime();
+      const now = Date.now();
+      if (now < blockUntil) {
+        const remainingMinutes = Math.ceil((blockUntil - now) / 60000);
+        createApiError(`Cuenta bloqueada temporalmente por exceso de intentos fallidos. Intente de nuevo en ${remainingMinutes} minutos.`, 423);
+      } else {
+        // Bloqueo expiró, resetear contadores en DB
+        await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", existingUser.id);
+        existingUser.intentos_fallidos = 0;
+        existingUser.bloqueado_hasta = null;
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) createApiError(error.message, 401);
+    if (error) {
+      if (existingUser) {
+        const nextAttempts = (existingUser.intentos_fallidos || 0) + 1;
+        let updateFields: any = { intentos_fallidos: nextAttempts };
+
+        if (nextAttempts >= 5) {
+          // Bloqueo: 5 fallos -> 5 minutos la primera vez, y aumenta 5 minutos adicionales por cada fallo posterior
+          const factor = (nextAttempts - 5) + 1;
+          const waitMinutes = 5 * factor;
+          const blockUntil = new Date(Date.now() + waitMinutes * 60000).toISOString();
+          updateFields.bloqueado_hasta = blockUntil;
+
+          await supabase.from("usuarios").update(updateFields).eq("id", existingUser.id);
+          createApiError(`Credenciales incorrectas. Demasiados intentos fallidos. Cuenta bloqueada por ${waitMinutes} minutos.`, 423);
+        } else {
+          await supabase.from("usuarios").update(updateFields).eq("id", existingUser.id);
+        }
+      }
+      createApiError(error.message || "Credenciales incorrectas", 401);
+    }
+    
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
-    
-    // Check if user record already exists to preserve their role (e.g. admin or operator)
+
+    // Reiniciar intentos fallidos en login correcto
+    if (existingUser) {
+      await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", existingUser.id);
+    }
+
     let profile = await getUserRecordByEmail(email as string);
     if (!profile) {
       await ensureUserRecord(email as string, "turista");
@@ -594,11 +746,45 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     }
     
     if (!profile) createApiError("No se pudo obtener perfil de usuario");
+
+    // Si la cuenta no está verificada, enviamos o reenviamos automáticamente el código
+    if (!profile.verificado) {
+      const code = generateVerificationCode();
+      const nowStr = new Date().toISOString();
+      await supabase.from("usuarios").update({
+        codigo_verificacion: code,
+        codigo_enviado_en: nowStr
+      }).eq("id", profile.id);
+
+      await sendVerificationCodeEmail(profile.email, code);
+
+      // Sincronizar estado en la respuesta de perfil
+      profile.verificado = false;
+      profile.codigo_verificacion = code;
+      profile.codigo_enviado_en = nowStr;
+    }
+
     return buildResponse({ token: (session as any).access_token, user: profile });
   }
 
   if (lowerMethod === "post" && route === "/auth/register") {
-    const { email, password, role, name, phone } = payload || {};
+    const { email, password, role, name, phone, securityQuestions } = payload || {};
+    
+    // Validar y normalizar preguntas de seguridad antes de hashear
+    let hashedQuestions = null;
+    if (Array.isArray(securityQuestions) && securityQuestions.length > 0) {
+      hashedQuestions = await Promise.all(
+        securityQuestions.map(async (q: any) => {
+          const normalizedAnswer = q.answer.trim().toLowerCase();
+          const answer_hash = await bcrypt.hash(normalizedAnswer, 10);
+          return {
+            question: q.question,
+            answer_hash,
+          };
+        })
+      );
+    }
+
     const profileData = {
       role,
       full_name: name,
@@ -614,8 +800,199 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     });
 
     if (error) createApiError(error.message);
-    await ensureUserRecord(email, role || "turista");
-    return buildResponse({ message: "Usuario registrado exitosamente" }, 201);
+
+    const code = generateVerificationCode();
+    const nowStr = new Date().toISOString();
+
+    await ensureUserRecord(email, role || "turista", {
+      codigo_verificacion: code,
+      codigo_enviado_en: nowStr,
+      preguntas_seguridad: hashedQuestions,
+      verificado: false,
+    });
+
+    // Enviar código de verificación por correo
+    await sendVerificationCodeEmail(email, code);
+
+    return buildResponse({ message: "Usuario registrado exitosamente. Se ha enviado un código de verificación." }, 201);
+  }
+
+  if (lowerMethod === "post" && route === "/auth/verify-code") {
+    const { email, code } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no encontrado", 404);
+
+    if (user.codigo_verificacion !== code) {
+      createApiError("Código de verificación incorrecto", 400);
+    }
+
+    // Comprobar expiración del código (máximo 10 minutos)
+    if (user.codigo_enviado_en) {
+      const sentTime = new Date(user.codigo_enviado_en).getTime();
+      const now = Date.now();
+      if (now - sentTime > 10 * 60 * 1000) {
+        createApiError("El código ha expirado (máximo 10 minutos). Solicita un nuevo código.", 400);
+      }
+    }
+
+    const { error } = await supabase
+      .from("usuarios")
+      .update({ verificado: true, codigo_verificacion: null, codigo_enviado_en: null })
+      .eq("id", user.id);
+
+    if (error) createApiError(error.message);
+
+    return buildResponse({ success: true, message: "Cuenta verificada con éxito" });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/resend-code") {
+    const { email } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no encontrado", 404);
+
+    const code = generateVerificationCode();
+    const nowStr = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("usuarios")
+      .update({ codigo_verificacion: code, codigo_enviado_en: nowStr })
+      .eq("id", user.id);
+
+    if (error) createApiError(error.message);
+
+    await sendVerificationCodeEmail(email, code);
+
+    return buildResponse({ success: true, message: "Se ha reenviado un nuevo código a tu correo." });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/recover-questions") {
+    const { email } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no registrado en el sistema", 404);
+
+    if (!user.preguntas_seguridad || !Array.isArray(user.preguntas_seguridad) || user.preguntas_seguridad.length === 0) {
+      createApiError("Este usuario no configuró preguntas de seguridad. Por favor recupere mediante código de correo.", 400);
+    }
+
+    // Devolver solo los enunciados de las preguntas
+    const questionsOnly = user.preguntas_seguridad.map((q: any) => ({ question: q.question }));
+    return buildResponse({ questions: questionsOnly });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/verify-questions") {
+    const { email, answers } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no registrado", 404);
+
+    if (!user.preguntas_seguridad || !Array.isArray(user.preguntas_seguridad)) {
+      createApiError("Este usuario no tiene preguntas de seguridad configuradas", 400);
+    }
+
+    // Verificar si está bloqueado por rate limiting
+    if (user.bloqueado_hasta) {
+      const blockUntil = new Date(user.bloqueado_hasta).getTime();
+      const now = Date.now();
+      if (now < blockUntil) {
+        const remaining = Math.ceil((blockUntil - now) / 60000);
+        createApiError(`Intentos bloqueados. Por favor espera ${remaining} minutos.`, 423);
+      }
+    }
+
+    // Validar respuestas normalizándolas y comparando con bcryptjs
+    let allCorrect = true;
+    for (const userQ of user.preguntas_seguridad) {
+      const matched = answers.find((ans: any) => ans.question === userQ.question);
+      if (!matched) {
+        allCorrect = false;
+        break;
+      }
+      const normalizedInput = matched.answer.trim().toLowerCase();
+      const isMatch = await bcrypt.compare(normalizedInput, userQ.answer_hash);
+      if (!isMatch) {
+        allCorrect = false;
+        break;
+      }
+    }
+
+    if (!allCorrect) {
+      const nextAttempts = (user.intentos_fallidos || 0) + 1;
+      let updateFields: any = { intentos_fallidos: nextAttempts };
+
+      if (nextAttempts >= 5) {
+        const factor = (nextAttempts - 5) + 1;
+        const waitMinutes = 5 * factor;
+        updateFields.bloqueado_hasta = new Date(Date.now() + waitMinutes * 60000).toISOString();
+
+        await supabase.from("usuarios").update(updateFields).eq("id", user.id);
+        createApiError(`Respuestas de seguridad incorrectas. Demasiados fallos. Cuenta bloqueada por ${waitMinutes} minutos.`, 423);
+      } else {
+        await supabase.from("usuarios").update(updateFields).eq("id", user.id);
+        createApiError(`Respuestas incorrectas. Intentos restantes: ${5 - nextAttempts}`, 400);
+      }
+    }
+
+    // Respuestas correctas: resetear intentos fallidos
+    await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", user.id);
+
+    return buildResponse({ success: true, message: "Respuestas verificadas correctamente." });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/send-recovery-email") {
+    const { email } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no registrado", 404);
+
+    const code = generateVerificationCode();
+    const nowStr = new Date().toISOString();
+
+    const { error } = await supabase.from("usuarios").update({
+      codigo_verificacion: code,
+      codigo_enviado_en: nowStr
+    }).eq("id", user.id);
+
+    if (error) createApiError(error.message);
+
+    await sendRecoveryCodeEmail(email, code);
+
+    return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/verify-recovery-code") {
+    const { email, code } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no registrado", 404);
+
+    if (user.codigo_verificacion !== code) {
+      createApiError("Código de recuperación incorrecto", 400);
+    }
+
+    if (user.codigo_enviado_en) {
+      const sentTime = new Date(user.codigo_enviado_en).getTime();
+      if (Date.now() - sentTime > 10 * 60 * 1000) {
+        createApiError("El código de recuperación ha expirado (máximo 10 minutos). Solicita uno nuevo.", 400);
+      }
+    }
+
+    return buildResponse({ success: true, message: "Código verificado correctamente." });
+  }
+
+  if (lowerMethod === "post" && route === "/auth/reset-password") {
+    const { email, password } = payload || {};
+    const user = await getUserRecordByEmail(email);
+    if (!user) createApiError("Usuario no registrado", 404);
+
+    // En producción se usaría supabase.auth.admin.updateUserById para cambiar contraseñas,
+    // en esta simulación cliente-servidor limpiamos códigos e intentos e informamos éxito
+    const { error } = await supabase.from("usuarios").update({
+      codigo_verificacion: null,
+      codigo_enviado_en: null,
+      intentos_fallidos: 0,
+      bloqueado_hasta: null
+    }).eq("id", user.id);
+
+    if (error) createApiError(error.message);
+
+    return buildResponse({ success: true, message: "Contraseña restablecida correctamente." });
   }
 
   if (lowerMethod === "get" && route === "/operators/static-data") {

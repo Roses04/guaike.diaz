@@ -51,10 +51,10 @@ const Navbar = () => {
   }) => (
     <Link
       to={to}
-      className={`nav-item-anim flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150
+      className={`nav-item-anim flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-150 border-2
         ${isActive
-          ? "text-white bg-gradient-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20"
-          : "text-slate-700 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/10 dark:hover:bg-brand-light/10"
+          ? "text-white bg-gradient-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20 border-transparent"
+          : "text-slate-700 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/5 dark:hover:bg-brand-light/5 border-transparent hover:border-brand-blue/70 dark:hover:border-brand-light/70"
         }`}
     >
       <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />

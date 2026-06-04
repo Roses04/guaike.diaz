@@ -45,13 +45,13 @@ const CULTURAL_HIGHLIGHTS: ContentModalItem[] = [
   },
 ];
 
-const highlightByImage = (image: string) =>
-  CULTURAL_HIGHLIGHTS.find((h) => h.image === image);
+//const highlightByImage = (image: string) =>
+  //CULTURAL_HIGHLIGHTS.find((h) => h.image === image);
 
-const STAGGER_CLASS = ["", "anim-delay-150", "anim-delay-300"] as const;
+//const STAGGER_CLASS = ["", "anim-delay-150", "anim-delay-300"] as const;
 
-const heroCardClass =
-  "group img-anim card-anim absolute inset-0 text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
+//const heroCardClass =
+  //"group img-anim card-anim absolute inset-0 text-left rounded-2xl overflow-hidden border border-stone-200/80 dark:border-white/10 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900";
 
 const HomeView = () => {
   const [events, setEvents] = useState([]);
@@ -97,17 +97,17 @@ const HomeView = () => {
     };
   }, []);
 
-  const sanJuan = highlightByImage("/images/SanJuan.jpg")!;
+  /*const sanJuan = highlightByImage("/images/SanJuan.jpg")!;
   const sombrero = highlightByImage("/images/Sombrero_de_cogollo.JPG")!;
   const fuentidueno = highlightByImage("/images/Fuentidueño.jpg")!;
- /* const heroCollage = [sanJuan, sombrero, fuentidueno];*/
-  /*const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];*/
+  const heroCollage = [sanJuan, sombrero, fuentidueno];
+  const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];*/
 
   const tesorosItems = CULTURAL_HIGHLIGHTS.filter((h) =>
     ["/images/Sombrero_de_cogollo.JPG", "/images/Piñonate.jpg", "/images/Pozas_de_San_Juan_Bautísta.jpg", "/images/Fuentidueño.jpg"].includes(h.image)
   );
 
-  const renderHeroCard = (item: ContentModalItem, label: string) => (
+  /*const renderHeroCard = (item: ContentModalItem, label: string) => (
     <button
       type="button"
       onClick={() => openModal(item)}
@@ -127,7 +127,7 @@ const HomeView = () => {
         </span>
       </div>
     </button>
-  );
+  );*/
 
   return (
     <div className="w-full px-4 py-6 md:px-6">
@@ -140,31 +140,31 @@ const HomeView = () => {
         </div>
       )}
 
-      <header className="relative rounded-[32px] overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+      <header className="relative rounded-4x1 overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
         <div
           className="absolute inset-0 bg-cover bg-center animate-hero-bg hero-bg-visible pointer-events-none"
           style={{ backgroundImage: `url('${HERO_BG_IMAGE}')` }}
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-gradient-to-br from-white/70 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/40 dark:to-transparent pointer-events-none"
+          className="absolute inset-0 bg-linear-to-br from-white/70 via-white/40 to-transparent dark:from-slate-900/60 dark:via-slate-900/40 dark:to-transparent pointer-events-none"
           aria-hidden
         />
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/10 dark:bg-brand-blue/15 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/8 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 flex-grow max-w-2xl w-full">
-          <span className="text-[10px] uppercase tracking-widest text-brand-gold font-extrabold px-3 py-1.5 bg-brand-gold/15 border border-brand-gold/30 rounded-full mb-5 inline-block animate-fade-in-up">
-            Guía Cultural Oficial del Municipio Díaz
-          </span>
+        <div className="relative z-10 grow max-w-2xl w-full">
           <h1 className="hero-title text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1] animate-fade-in-up anim-delay-100 drop-shadow-sm dark:drop-shadow-none">
             Guardianes de la{" "}
             <span className="gradient-text title-bg">
               Tradición Viva
             </span>
           </h1>
+          <h1 className="hero-subtitle text-xl sm:text-2xl lg:text-3xl font-display font-bold text-slate-600 dark:text-slate-400 tracking-tight mb-5 leading-[1.2] animate-fade-in-up anim-delay-100">
+            Municipio Díaz
+          </h1>
           <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6 animate-fade-in-up anim-delay-200">
-            Te damos la bienvenida al Municipio Díaz, el corazón artesanal de la Isla de Margarita. Un santuario de
+            El corazón artesanal de la Isla de Margarita. Un santuario de
             palmeras datileras, tejedores sabios y sabores criollos que trascienden generaciones.
           </p>
           <div className="flex gap-3 flex-row flex-wrap animate-fade-in-up anim-delay-300">
@@ -195,20 +195,6 @@ const HomeView = () => {
             ))}
           </div>*/}
         </div>
-
-        {/*<div className="relative z-10 hidden md:block w-full lg:w-[min(100%,28rem)] shrink-0">
-          <div className="grid grid-cols-2 grid-rows-2 gap-3 h-[280px] lg:h-[320px]">
-            <div className={`row-span-2 min-h-0 relative animate-scale-in ${STAGGER_CLASS[0]}`}>
-              {renderHeroCard(sanJuan, "San Juan")}
-            </div>
-            <div className={`min-h-0 relative animate-scale-in ${STAGGER_CLASS[1]}`}>
-              {renderHeroCard(sombrero, "Sombreros")}
-            </div>
-            <div className={`min-h-0 relative animate-scale-in ${STAGGER_CLASS[2]}`}>
-              {renderHeroCard(fuentidueno, "Fuentidueño")}
-            </div>
-          </div>
-        </div>*/}
       </header>
 
       <section className="mb-12">

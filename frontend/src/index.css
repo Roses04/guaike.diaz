@@ -708,12 +708,7 @@ body {
   background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/Pozas_de_San_Juan_Bautísta.jpg');
 }
 
-@media (min-width: 768px) {
-  .login-mobile-bg {
-    background-image: none !important;
-    background: transparent !important;
-  }
-}
+/* login-mobile-bg applies at all screen sizes */
 
 @layer utilities {
 

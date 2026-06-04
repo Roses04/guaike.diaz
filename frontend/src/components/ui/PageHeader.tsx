@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -19,10 +20,15 @@ export function PageHeader({
   actions,
 }: PageHeaderProps) {
   const isCenter = align === "center";
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <header
-      className={`pageheader-anim mb-8 md:mb-10 flex flex-col gap-4 ${
+      className={`pageheader-anim ${isMounted ? "is-visible" : ""} mb-8 md:mb-10 flex flex-col gap-4 ${
         isCenter ? "text-center max-w-3xl mx-auto" : "md:flex-row md:items-start md:justify-between"
       }`}
     >

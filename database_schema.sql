@@ -34,6 +34,12 @@ CREATE TABLE usuarios (
     correo VARCHAR(255) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     rol_id INTEGER NOT NULL REFERENCES roles(id),
+    verificado BOOLEAN DEFAULT FALSE,
+    codigo_verificacion VARCHAR(20) DEFAULT NULL,
+    codigo_enviado_en TIMESTAMP DEFAULT NULL,
+    preguntas_seguridad JSONB DEFAULT NULL,
+    intentos_fallidos INTEGER DEFAULT 0,
+    bloqueado_hasta TIMESTAMP DEFAULT NULL,
     ultimo_acceso TIMESTAMP,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP

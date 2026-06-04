@@ -19,6 +19,7 @@ import InstallPWA from "./components/InstallPWA";
 import { NetworkBanner } from "./components/NetworkBanner";
 import { useAuthStore } from "./store/useAuthStore";
 import { normalizeAuthUser } from "./utils/authUser";
+import VerificationModal from "./components/VerificationModal";
 
 function App() {
   const { initializeTheme } = useThemeStore();
@@ -79,6 +80,9 @@ function App() {
 
         {/* Global Network Connectivity Banner */}
         <NetworkBanner />
+
+        {/* Global Account Verification Modal */}
+        <VerificationModal />
 
         <Navbar />
 
