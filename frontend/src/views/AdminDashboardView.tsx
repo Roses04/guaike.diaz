@@ -258,7 +258,7 @@ const AdminDashboardView = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl flex-grow">
+    <div className="container mx-auto px-4 py-8 max-w-7xl grow">
       <PageHeader
         align="left"
         badge="Módulo Gubernamental · Alcaldía"
@@ -469,7 +469,7 @@ const AdminDashboardView = () => {
             </div>
 
             <div className="space-y-3 md:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Teléfono (opcional, SMS de verificación)</label>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Teléfono de contacto (opcional)</label>
               <input
                 type="tel"
                 value={adminPhone}
@@ -477,7 +477,7 @@ const AdminDashboardView = () => {
                 className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
                 placeholder="Ej. +584121234567"
               />
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Si provees teléfono, el usuario recibirá el código por SMS para confirmar su acceso.</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">El teléfono es opcional y se guarda como dato de contacto. La verificación se envía por email OTP.</p>
             </div>
 
             <div className="md:col-span-2 pt-2">
@@ -622,7 +622,7 @@ const AdminDashboardView = () => {
                 {events.map((ev: any) => (
                   <div key={ev.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/10 border border-slate-200/50 dark:border-white/5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-16 h-12 rounded-xl bg-gray-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                      <div className="w-16 h-12 rounded-xl bg-gray-200 dark:bg-slate-800 overflow-hidden shrink-0">
                         <img src={ev.url_imagen || "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=400"} alt={ev.titulo} className="w-full h-full object-cover" />
                       </div>
                       <div>
@@ -665,7 +665,7 @@ const AdminDashboardView = () => {
               {/* Metrics Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-brand-blue/10 text-brand-blue dark:bg-brand-light/10 dark:text-brand-light flex-shrink-0">
+                  <div className="p-3 rounded-2xl bg-brand-blue/10 text-brand-blue dark:bg-brand-light/10 dark:text-brand-light shrink-0">
                     <Store size={22} />
                   </div>
                   <div>
@@ -675,7 +675,7 @@ const AdminDashboardView = () => {
                 </div>
 
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 flex-shrink-0">
+                  <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shrink-0">
                     <Store size={22} />
                   </div>
                   <div>
@@ -685,7 +685,7 @@ const AdminDashboardView = () => {
                 </div>
 
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
-                  <div className="p-3 rounded-2xl chip-gold flex-shrink-0">
+                  <div className="p-3 rounded-2xl chip-gold shrink-0">
                     <MessageSquare size={22} />
                   </div>
                   <div>
@@ -695,7 +695,7 @@ const AdminDashboardView = () => {
                 </div>
 
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 flex-shrink-0">
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shrink-0">
                     <Award size={22} />
                   </div>
                   <div>
@@ -705,7 +705,7 @@ const AdminDashboardView = () => {
                 </div>
 
                 <div className="glass-panel p-5 rounded-3xl border border-white/20 dark:border-white/5 shadow-md flex items-center gap-3 col-span-2 md:col-span-1">
-                  <div className="p-3 rounded-2xl bg-slate-500/10 text-slate-500 flex-shrink-0">
+                  <div className="p-3 rounded-2xl bg-slate-500/10 text-slate-500 shrink-0">
                     <Users size={22} />
                   </div>
                   <div>
@@ -792,7 +792,7 @@ const AdminDashboardView = () => {
 
       {/* Document verification Modal */}
       {activeDocument && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-100 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl relative">
             <h3 className="font-bold text-lg">Documento RIF/Cédula Cargado</h3>
             <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-white/5 shadow-inner">

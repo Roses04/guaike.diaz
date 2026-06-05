@@ -650,34 +650,6 @@ const sendEmailViaVercel = async (to: string, subject: string, text: string, htm
   }
 };
 
-const sendSmsViaVercel = async (to: string, body: string) => {
-  const secretKey = "guaike-system-default-secret-key-2026";
-  try {
-    const response = await fetch("/api/send-sms", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        to,
-        body,
-        secretKey,
-      }),
-    });
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      console.error("Error al enviar SMS por Vercel:", errData);
-    }
-  } catch (error) {
-    console.error("Error llamando a la función de SMS:", error);
-  }
-};
-
-const sendPhoneVerificationSms = async (phone: string, code: string) => {
-  const body = `Tu código de verificación de GUAIKE.DÍAZ es: ${code}. No compartas este código con nadie.`;
-  await sendSmsViaVercel(phone, body);
-};
-
 const sendVerificationCodeEmail = async (email: string, code: string) => {
   const subject = "Verifica tu cuenta en GUAIKE.DÍAZ";
   const text = `Tu código de verificación de 8 dígitos es: ${code}. Este código expira en 10 minutos.`;
@@ -835,13 +807,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       verificado: false,
     });
 
-    if (phone) {
-      await sendPhoneVerificationSms(phone, code);
-    } else {
-      await sendVerificationCodeEmail(email, code);
-    }
+    await sendVerificationCodeEmail(email, code);
 
-    return buildResponse({ message: "Usuario registrado por el administrador. El código de verificación ha sido enviado." }, 201);
+    return buildResponse({ message: "Usuario registrado por el administrador. El código de verificación ha sido enviado por correo." }, 201);
   }
 
   if (lowerMethod === "post" && route === "/auth/register") {
