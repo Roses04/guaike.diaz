@@ -122,6 +122,15 @@ const ensureUserRecord = async (
   const existing = await getUserRecordByEmail(email);
   if (existing) return existing;
 
+  // Try to get current authenticated supabase user to store auth_id
+  let sessionUserId: string | null = null;
+  try {
+    const session = await supabase.auth.getUser();
+    sessionUserId = session?.data?.user?.id || null;
+  } catch (e) {
+    sessionUserId = null;
+  }
+
   const { data: roleData, error: roleError } = await supabase
     .from("roles")
     .select("id,nombre")
@@ -155,6 +164,8 @@ const ensureUserRecord = async (
     contrasena: "",
     rol_id: roleId,
   };
+
+  if (sessionUserId) insertData.auth_id = sessionUserId;
 
   if (extra) {
     if (extra.codigo_verificacion !== undefined) insertData.codigo_verificacion = extra.codigo_verificacion;

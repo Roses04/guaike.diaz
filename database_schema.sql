@@ -40,6 +40,7 @@ CREATE TABLE usuarios (
     preguntas_seguridad JSONB DEFAULT NULL,
     intentos_fallidos INTEGER DEFAULT 0,
     bloqueado_hasta TIMESTAMP DEFAULT NULL,
+    auth_id UUID,
     ultimo_acceso TIMESTAMP,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP

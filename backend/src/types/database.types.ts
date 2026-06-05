@@ -28,6 +28,22 @@ export interface Usuario {
   ultimo_acceso?: Date;
   fecha_creacion: Date;
   fecha_actualizacion: Date;
+  nombre_completo?: string | null;
+  telefono?: string | null;
+  cedula_tipo?: string | null;
+  cedula_numero?: string | null;
+  fecha_nacimiento?: Date | null;
+  municipio_residencia?: string | null;
+  email_verificado?: boolean;
+  codigo_verificacion_hash?: string | null;
+  codigo_expira?: Date | null;
+  verificado?: boolean;
+  codigo_verificacion?: string | null;
+  codigo_enviado_en?: Date | null;
+  preguntas_seguridad?: any;
+  intentos_fallidos?: number;
+  bloqueado_hasta?: Date | null;
+  auth_id?: string | null;
 }
 
 export interface Operador {

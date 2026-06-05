@@ -34,15 +34,25 @@ En **Supabase → Authentication → Policies**, habilita RLS para **todas** las
 -- Habilitar RLS en tabla usuarios
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 
+-- Agregar auth_id para enlazar el registro con auth.uid()
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS auth_id UUID;
+CREATE INDEX IF NOT EXISTS idx_usuarios_auth_id ON usuarios (auth_id);
+
 -- Política: solo puede leer su propio registro
 CREATE POLICY "Usuarios solo ven su propia fila"
   ON usuarios FOR SELECT
-  USING (correo_electronico = current_user);
+  USING (auth.uid() = auth_id);
+
+-- Política de inserción: la fila insertada debe pertenecer al usuario autenticado
+CREATE POLICY "Usuarios solo crean su propia fila"
+  ON usuarios FOR INSERT
+  WITH CHECK (auth.uid() = auth_id);
 
 -- Política de actualización
 CREATE POLICY "Usuarios solo editan su propia fila"
   ON usuarios FOR UPDATE
-  USING (correo_electronico = current_user);
+  USING (auth.uid() = auth_id)
+  WITH CHECK (auth.uid() = auth_id);
 
 -- Deshabilitar SELECT total (sin auth) en todas las tablas sensibles
 -- Repite para cada tabla que contenga datos de usuarios

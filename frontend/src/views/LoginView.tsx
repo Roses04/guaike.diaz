@@ -30,6 +30,43 @@ const LoginView = () => {
   const [ans1, setAns1] = useState("");
   const [q2, setQ2] = useState("");
   const [ans2, setAns2] = useState("");
+  const [phoneCode, setPhoneCode] = useState("+58");
+
+  const PHONE_CODES = [
+    { label: "Venezuela +58", value: "+58" },
+    { label: "Colombia +57", value: "+57" },
+    { label: "México +52", value: "+52" },
+    { label: "Estados Unidos +1", value: "+1" },
+    { label: "España +34", value: "+34" },
+  ];
+
+  const normalizePhoneNumber = (value: string, countryCode: string) => {
+    let digits = value.replace(/\D/g, "");
+    const normalizedCode = countryCode.replace("+", "");
+
+    if (digits.startsWith("00")) {
+      digits = digits.slice(2);
+    }
+
+    if (digits.startsWith(normalizedCode)) {
+      digits = digits.slice(normalizedCode.length);
+    }
+
+    if (digits.startsWith("0")) {
+      digits = digits.slice(1);
+    }
+
+    if (!digits) {
+      return "";
+    }
+
+    return `+${normalizedCode}${digits}`;
+  };
+
+  const formatPhoneInput = (value: string, countryCode: string) => {
+    const normalizedValue = normalizePhoneNumber(value, countryCode);
+    return normalizedValue;
+  };
 
   // Forgot Password Recovery State
   const [recoveryStep, setRecoveryStep] = useState(1); // 1: Email & Method, 2: Questions/Code input, 3: New Password
@@ -117,8 +154,8 @@ const LoginView = () => {
 
     try {
       // 1. Validaciones de Datos Obligatorios
-      if (!email || !password || !name) {
-        setError("Todos los campos marcados son obligatorios.");
+      if (!email || !password || !confirmPassword || !name || !q1 || !ans1 || !q2 || !ans2) {
+        setError("Por favor completa todos los campos obligatorios del registro.");
         setLoading(false);
         return;
       }
@@ -129,17 +166,15 @@ const LoginView = () => {
         return;
       }
 
-      // 2. Validación de Seguridad de Contraseña (Top tier ciberseguridad)
-      const pwError = validatePasswordStrength(password);
-      if (pwError) {
-        setError(pwError);
+      if (password !== confirmPassword) {
+        setError("Las contraseñas no coinciden.");
         setLoading(false);
         return;
       }
 
-      // 3. Validación de Preguntas de Seguridad
-      if (!q1 || !ans1 || !q2 || !ans2) {
-        setError("Debes seleccionar y responder ambas preguntas de seguridad.");
+      const pwError = validatePasswordStrength(password);
+      if (pwError) {
+        setError(pwError);
         setLoading(false);
         return;
       }
@@ -148,6 +183,16 @@ const LoginView = () => {
         setError("Por favor selecciona dos preguntas de seguridad diferentes.");
         setLoading(false);
         return;
+      }
+
+      let normalizedPhone = "";
+      if (phone.trim()) {
+        normalizedPhone = formatPhoneInput(phone, phoneCode);
+        if (!/^[+][0-9]{6,15}$/.test(normalizedPhone)) {
+          setError("Por favor ingresa un número de teléfono válido con el código de país correcto.");
+          setLoading(false);
+          return;
+        }
       }
 
       const securityQuestions = [
@@ -160,21 +205,22 @@ const LoginView = () => {
         password,
         role,
         name,
-        phone,
+        phone: normalizedPhone,
         securityQuestions
       });
 
       setSuccess("Registro exitoso. Se ha enviado un código de verificación a tu correo. ¡Inicia sesión para validarlo!");
       
-      // Cambiar a vista de login cargando el correo registrado
       setIsLogin(true);
       setPassword("");
+      setConfirmPassword("");
       setName("");
       setPhone("");
       setQ1("");
       setAns1("");
       setQ2("");
       setAns2("");
+      setPhoneCode("+58");
     } catch (err: any) {
       setError(err.response?.data?.message || "Error al registrar la cuenta.");
     } finally {
@@ -285,6 +331,12 @@ const LoginView = () => {
     } else {
       setRecoveryCode(val);
     }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const formatted = rawValue.replace(/[^0-9+]/g, "");
+    setPhone(formatted);
   };
 
   const resetRecoveryFlow = () => {
@@ -558,6 +610,25 @@ const LoginView = () => {
                 </div>
               </div>
 
+              {!isLogin && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Confirmar Contraseña</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                      <Lock size={18} />
+                    </span>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                      placeholder="Repite tu contraseña"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Campos extra de registro */}
               {!isLogin && (
                 <>
@@ -573,7 +644,7 @@ const LoginView = () => {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Nombre Completo</label>
                       <div className="relative">
@@ -593,18 +664,32 @@ const LoginView = () => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Teléfono de contacto (Opcional)</label>
-                      <div className="relative">
-                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                          <Phone size={18} />
-                        </span>
-                        <input
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
-                          placeholder="Ej. +584121234567"
-                        />
+                      <div className="grid grid-cols-3 gap-3">
+                        <select
+                          value={phoneCode}
+                          onChange={(e) => setPhoneCode(e.target.value)}
+                          className="col-span-1 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm px-3 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+                        >
+                          {PHONE_CODES.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="relative col-span-2">
+                          <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                            <Phone size={18} />
+                          </span>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={handlePhoneChange}
+                            placeholder="Ej. 4121234567"
+                            className="block w-full pl-11 pr-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                          />
+                        </div>
                       </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">El número se guardará con el formato internacional seleccionado.</p>
                     </div>
                   </div>
 

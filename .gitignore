@@ -14,8 +14,11 @@ backend/.env
 frontend/.env
 
 # Local / editor files
+.cursor/
 .vscode/
 .idea/
+supabase/
+postman/
 .DS_Store
 *.log
 npm-debug.log*
@@ -31,7 +34,8 @@ Icon?
 
 # Vite/PWA caching
 public/sw.js
-.vercel
+.vercel/
 
 # Plan files
+GUIA_SEGURIDAD.md
 registro_verificación_ui_974912e5.plan.md

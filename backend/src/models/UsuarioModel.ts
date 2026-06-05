@@ -65,7 +65,7 @@ export class UsuarioModel {
 
   public static async confirmarVerificacion(usuarioId: number): Promise<void> {
     await pool.query(
-      `UPDATE usuarios SET verificado = TRUE, codigo_verificacion = NULL WHERE id = $2`,
+      `UPDATE usuarios SET verificado = TRUE, codigo_verificacion = NULL WHERE id = $1`,
       [usuarioId]
     );
   }
