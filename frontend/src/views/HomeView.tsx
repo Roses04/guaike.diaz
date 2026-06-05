@@ -140,7 +140,7 @@ const HomeView = () => {
         </div>
       )}
 
-      <header className="relative rounded-4x1 overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+      <header className="relative rounded-3xl overflow-hidden mb-6 p-4 sm:p-8 lg:p-12 border border-stone-200/80 dark:border-white/10 shadow-2xl text-left flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
         <div
           className="absolute inset-0 bg-cover bg-center animate-hero-bg hero-bg-visible pointer-events-none"
           style={{ backgroundImage: `url('${HERO_BG_IMAGE}')` }}
@@ -153,14 +153,14 @@ const HomeView = () => {
         <div className="absolute -top-24 -left-24 w-72 h-72 bg-brand-blue/10 dark:bg-brand-blue/15 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-brand-gold/8 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 grow max-w-2xl w-full">
+        <div className="relative z-10 grow max-w-2xl rounded-2xl w-full">
           <h1 className="hero-title text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-5 leading-[1.1] animate-fade-in-up anim-delay-100 drop-shadow-sm dark:drop-shadow-none">
             Guardianes de la{" "}
             <span className="gradient-text title-bg">
               Tradición Viva
             </span>
           </h1>
-          <h1 className="hero-subtitle text-xl sm:text-2xl lg:text-3xl font-display font-bold text-slate-600 dark:text-slate-400 tracking-tight mb-5 leading-[1.2] animate-fade-in-up anim-delay-100">
+          <h1 className="hero-subtitle gradient-text text-xl sm:text-2xl lg:text-3xl font-display font-bold text-slate-600 dark:text-slate-400 tracking-tight mb-5 leading-[1.2] animate-fade-in-up anim-delay-100">
             Municipio Díaz
           </h1>
           <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6 animate-fade-in-up anim-delay-200">
