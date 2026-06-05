@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Navbar from "./components/Navbar";
 import MobileTabBar from "./components/MobileTabBar";
 import Footer from "./components/Footer";
@@ -106,6 +107,7 @@ function App() {
 
         <MobileTabBar />
       </div>
+      <SpeedInsights />
     </Router>
   );
 }
