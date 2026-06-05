@@ -182,19 +182,6 @@ const HomeView = () => {
             </Link>
           </div>
         </div>
-
-        <div className="relative z-10 w-full md:hidden carousel-scroll-fade">
-          {/*<div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 no-scrollbar">
-            {heroCollage.map((item, i) => (
-              <div
-                key={item.image}
-                className={`snap-center shrink-0 w-[78%] max-w-[280px] aspect-[4/3] relative animate-scale-in ${STAGGER_CLASS[i] ?? "anim-delay-450"}`}
-              >
-                {renderHeroCard(item, heroLabels[i])}
-              </div>
-            ))}
-          </div>*/}
-        </div>
       </header>
 
       <section className="mb-12">
