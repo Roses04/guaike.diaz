@@ -80,11 +80,16 @@ const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<strin
   return roleRow?.nombre || "turista";
 };
 
+const normalizeEmail = (email: string) => email?.trim().toLowerCase() || "";
+
 const getUserRecordByEmail = async (email: string) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) return null;
+
   const { data, error } = await supabase
     .from("usuarios")
     .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, roles(nombre)")
-    .eq("correo", email)
+    .eq("correo", normalizedEmail)
     .maybeSingle();
 
   if (error) {
@@ -159,8 +164,10 @@ const ensureUserRecord = async (
     createApiError("No se pudo determinar el rol del usuario");
   }
 
+  const normalizedEmail = normalizeEmail(email);
+
   const insertData: any = {
-    correo: email,
+    correo: normalizedEmail,
     contrasena: "",
     rol_id: roleId,
   };
@@ -643,6 +650,34 @@ const sendEmailViaVercel = async (to: string, subject: string, text: string, htm
   }
 };
 
+const sendSmsViaVercel = async (to: string, body: string) => {
+  const secretKey = "guaike-system-default-secret-key-2026";
+  try {
+    const response = await fetch("/api/send-sms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to,
+        body,
+        secretKey,
+      }),
+    });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      console.error("Error al enviar SMS por Vercel:", errData);
+    }
+  } catch (error) {
+    console.error("Error llamando a la función de SMS:", error);
+  }
+};
+
+const sendPhoneVerificationSms = async (phone: string, code: string) => {
+  const body = `Tu código de verificación de GUAIKE.DÍAZ es: ${code}. No compartas este código con nadie.`;
+  await sendSmsViaVercel(phone, body);
+};
+
 const sendVerificationCodeEmail = async (email: string, code: string) => {
   const subject = "Verifica tu cuenta en GUAIKE.DÍAZ";
   const text = `Tu código de verificación de 8 dígitos es: ${code}. Este código expira en 10 minutos.`;
@@ -769,8 +804,49 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ token: (session as any).access_token, user: profile });
   }
 
+  if (lowerMethod === "post" && route === "/auth/admin-register-user") {
+    let { email, password, role, name, phone } = payload || {};
+    email = normalizeEmail(email);
+
+    if (!email || !password || !role || !name) {
+      createApiError("Todos los campos obligatorios para el registro administrativo deben estar completos.");
+    }
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role,
+          full_name: name,
+          phone,
+        },
+      },
+    });
+
+    if (signUpError) createApiError(signUpError.message);
+
+    const code = generateVerificationCode();
+    const nowStr = new Date().toISOString();
+
+    await ensureUserRecord(email, role, {
+      codigo_verificacion: code,
+      codigo_enviado_en: nowStr,
+      verificado: false,
+    });
+
+    if (phone) {
+      await sendPhoneVerificationSms(phone, code);
+    } else {
+      await sendVerificationCodeEmail(email, code);
+    }
+
+    return buildResponse({ message: "Usuario registrado por el administrador. El código de verificación ha sido enviado." }, 201);
+  }
+
   if (lowerMethod === "post" && route === "/auth/register") {
-    const { email, password, role, name, phone, securityQuestions } = payload || {};
+    let { email, password, role, name, phone, securityQuestions } = payload || {};
+    email = normalizeEmail(email);
     
     // Validar y normalizar preguntas de seguridad antes de hashear
     let hashedQuestions = null;
@@ -821,7 +897,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/verify-code") {
     const { email, code } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no encontrado", 404);
 
     if (!user || user.codigo_verificacion !== code) {
@@ -849,7 +926,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/resend-code") {
     const { email } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no encontrado", 404);
 
     const code = generateVerificationCode();
@@ -869,7 +947,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/recover-questions") {
     const { email } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const user = await getUserRecordByEmail(normalizeEmail(email));
     if (!user) createApiError("Usuario no registrado en el sistema", 404);
 
     if (!user!.preguntas_seguridad || !Array.isArray(user!.preguntas_seguridad) || user!.preguntas_seguridad.length === 0) {
@@ -883,7 +961,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/verify-questions") {
     const { email, answers } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no registrado", 404);
 
     if (!user!.preguntas_seguridad || !Array.isArray(user!.preguntas_seguridad)) {
@@ -941,7 +1020,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/send-recovery-email") {
     const { email } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no registrado", 404);
 
     const code = generateVerificationCode();
@@ -961,7 +1041,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/verify-recovery-code") {
     const { email, code } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no registrado", 404);
 
     if (user!.codigo_verificacion !== code) {
@@ -980,7 +1061,8 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/reset-password") {
     const { email } = payload || {};
-    const user = await getUserRecordByEmail(email);
+    const normalizedEmail = normalizeEmail(email);
+    const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no registrado", 404);
 
     // En producción se usaría supabase.auth.admin.updateUserById para cambiar contraseñas,

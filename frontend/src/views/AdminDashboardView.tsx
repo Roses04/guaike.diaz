@@ -69,7 +69,7 @@ const AdminDashboardView = () => {
     );
   }
 
-  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats" | "users">("requests");
   
   // Tab 1: Operator Requests States
   const [pendingOperators, setPendingOperators] = useState([]);
@@ -92,6 +92,16 @@ const AdminDashboardView = () => {
   // Tab 3: Stats States
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // Tab 4: Admin User Registration States
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminName, setAdminName] = useState("");
+  const [adminRole, setAdminRole] = useState("turista");
+  const [adminPhone, setAdminPhone] = useState("");
+  const [adminError, setAdminError] = useState("");
+  const [adminSuccess, setAdminSuccess] = useState("");
+  const [adminLoading, setAdminLoading] = useState(false);
 
   // Global Action Notification State
   const [alertMsg, setAlertMsg] = useState("");
@@ -211,6 +221,39 @@ const AdminDashboardView = () => {
     } catch (err) {
       console.error("Error deleting event:", err);
       alert("No se pudo eliminar el evento.");
+    }
+  };
+
+  const handleAdminCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminError("");
+    setAdminSuccess("");
+    setAdminLoading(true);
+
+    try {
+      if (!adminEmail || !adminPassword || !adminName || !adminRole) {
+        setAdminError("Completa todos los campos obligatorios para registrar un usuario.");
+        return;
+      }
+
+      await api.post("/auth/admin-register-user", {
+        email: adminEmail,
+        password: adminPassword,
+        role: adminRole,
+        name: adminName,
+        phone: adminPhone,
+      });
+
+      setAdminSuccess("Usuario creado correctamente. Se ha enviado el código de verificación.");
+      setAdminEmail("");
+      setAdminPassword("");
+      setAdminName("");
+      setAdminPhone("");
+      setAdminRole("turista");
+    } catch (err: any) {
+      setAdminError(err.response?.data?.message || "No se pudo crear el usuario.");
+    } finally {
+      setAdminLoading(false);
     }
   };
 
@@ -354,6 +397,99 @@ const AdminDashboardView = () => {
               <p className="text-xs text-slate-400">Todos los perfiles de artesanos del Municipio Díaz han sido verificados.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab 2: GESTION DE USUARIOS */}
+      {activeTab === "users" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <h2 className="text-xl font-display font-bold border-b border-slate-200/80 dark:border-white/5 pb-4 text-slate-800 dark:text-white">
+            Registrar Usuario desde Administración
+          </h2>
+
+          {adminSuccess && (
+            <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-4.5 rounded-2xl text-xs">
+              {adminSuccess}
+            </div>
+          )}
+
+          {adminError && (
+            <div className="bg-red-500/10 dark:bg-red-950/20 border border-red-500/30 text-red-600 dark:text-red-400 p-4.5 rounded-2xl text-xs">
+              {adminError}
+            </div>
+          )}
+
+          <form onSubmit={handleAdminCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Correo electrónico *</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                placeholder="nombre@correo.com"
+                required
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contraseña inicial *</label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                placeholder="Contraseña segura"
+                required
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre completo *</label>
+              <input
+                type="text"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                placeholder="Ej. Joaquín Martínez"
+                required
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Rol *</label>
+              <select
+                value={adminRole}
+                onChange={(e) => setAdminRole(e.target.value)}
+                className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                required
+              >
+                <option value="turista">Turista</option>
+                <option value="operador">Operador</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Teléfono (opcional, SMS de verificación)</label>
+              <input
+                type="tel"
+                value={adminPhone}
+                onChange={(e) => setAdminPhone(e.target.value)}
+                className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                placeholder="Ej. +584121234567"
+              />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Si provees teléfono, el usuario recibirá el código por SMS para confirmar su acceso.</p>
+            </div>
+
+            <div className="md:col-span-2 pt-2">
+              <button
+                type="submit"
+                disabled={adminLoading}
+                className="w-full bg-brand-blue text-white rounded-2xl py-3 font-bold hover:bg-brand-blue/90 transition disabled:opacity-50"
+              >
+                {adminLoading ? "Registrando usuario..." : "Registrar usuario"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
