@@ -97,37 +97,9 @@ const HomeView = () => {
     };
   }, []);
 
-  /*const sanJuan = highlightByImage("/images/SanJuan.jpg")!;
-  const sombrero = highlightByImage("/images/Sombrero_de_cogollo.JPG")!;
-  const fuentidueno = highlightByImage("/images/Fuentidueño.jpg")!;
-  const heroCollage = [sanJuan, sombrero, fuentidueno];
-  const heroLabels = ["San Juan", "Sombreros", "Fuentidueño"];*/
-
   const tesorosItems = CULTURAL_HIGHLIGHTS.filter((h) =>
     ["/images/Sombrero_de_cogollo.JPG", "/images/Piñonate.jpg", "/images/Pozas_de_San_Juan_Bautísta.jpg", "/images/Fuentidueño.jpg"].includes(h.image)
   );
-
-  /*const renderHeroCard = (item: ContentModalItem, label: string) => (
-    <button
-      type="button"
-      onClick={() => openModal(item)}
-      className={heroCardClass}
-      aria-label={`Ver más sobre ${item.title}`}
-    >
-      <img
-        src={item.image}
-        alt={item.title}
-        className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent group-hover:via-slate-900/10 transition-colors duration-300" />
-      <div className="absolute bottom-0 inset-x-0 p-3 flex items-end justify-between gap-2">
-        <span className="text-[11px] font-bold text-white drop-shadow-sm">{label}</span>
-        <span className="shrink-0 bg-white/20 backdrop-blur-md p-1.5 rounded-full text-white opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">
-          <ZoomIn size={14} />
-        </span>
-      </div>
-    </button>
-  );*/
 
   return (
     <div className="w-full px-4 py-6 md:px-6">

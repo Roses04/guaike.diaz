@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
 import {
@@ -11,6 +12,8 @@ import {
   Moon,
   Compass,
   Users,
+  MoreVertical,
+  Search,
 } from "lucide-react";
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -37,6 +40,25 @@ const Navbar = () => {
   const mobileTitle =
     ROUTE_TITLES[location.pathname] ||
     (location.pathname.startsWith("/operador/") ? "Artesano" : "GUAIKE");
+  const isHomePage = location.pathname === "/";
+
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState("");
+
+  useEffect(() => {
+    if (location.pathname === "/directorio") {
+      setMobileSearch(searchParams.get("q") || "");
+    }
+  }, [location.pathname, searchParams]);
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = mobileSearch.trim();
+    const destination = trimmed ? `/directorio?q=${encodeURIComponent(trimmed)}` : "/directorio";
+    navigate(destination);
+  };
 
   const NavLink = ({
     to,
@@ -99,32 +121,59 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/10 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-14 md:h-16 gap-2">
-          <Link to="/" className="flex items-center gap-2 shrink-0 min-w-0">
-            <img
-              src="/images/logo.png"
-              alt="Guaike Logo"
-              className="h-8 md:h-9 w-auto dark:brightness-110 shrink-0"
-            />
-            <div className="hidden sm:block min-w-0">
-              <div className="text-base md:text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none">
-                <span className="text-slate-800 dark:text-slate-100">GUAIKE</span>
-                <span className="text-brand-gold font-black">.</span>
+
+          {/* Left: profile (mobile) and logo (desktop) */}
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
+            <Link to={profileRoute} className="md:hidden p-2 rounded-full bg-stone-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-stone-200 dark:border-white/5">
+              <User size={20} />
+            </Link>
+
+            <Link to="/" className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
+              <img
+                src="/images/logo.png"
+                alt="Guaike Logo"
+                className="h-8 md:h-9 w-auto dark:brightness-110 shrink-0"
+              />
+              <div className="hidden md:block min-w-0">
+                <div className="text-base md:text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none">
+                  <span className="text-slate-800 dark:text-slate-100">GUAIKE</span>
+                  <span className="text-brand-gold font-black">.</span>
+                </div>
+                <span className="text-[9px] md:text-[10px] font-bold text-brand-gold tracking-wider block">
+                  MUNICIPIO DÍAZ
+                </span>
               </div>
-              <span className="text-[9px] md:text-[10px] font-bold text-brand-gold tracking-wider block">
-                MUNICIPIO DÍAZ
-              </span>
-            </div>
-            <span className="sm:hidden font-display font-bold text-sm text-slate-800 dark:text-slate-100 truncate">
-              {mobileTitle}
+            </Link>
+
+            {/* Mobile title (small screens) */}
+            <span className="md:hidden font-display font-extrabold text-sm tracking-tight truncate flex items-center gap-0.5">
+              <span className="text-brand-blue">{isHomePage ? "GUAIKE" : mobileTitle}</span>
+              {isHomePage && <span className="text-brand-gold">.</span>}
             </span>
-          </Link>
+          </div>
+
+          {/* Mobile search (center) */}
+          <form onSubmit={handleSearchSubmit} className="md:hidden flex-1 mx-3">
+            <label htmlFor="mobile-directory-search" className="sr-only">Buscar en directorio</label>
+            <div className="flex items-center gap-2 bg-stone-100 dark:bg-slate-800/70 rounded-full px-4 py-2 text-slate-500 dark:text-slate-300 text-sm">
+              <Search size={16} className="text-slate-500 dark:text-slate-300" />
+              <input
+                id="mobile-directory-search"
+                type="search"
+                value={mobileSearch}
+                onChange={(e) => setMobileSearch(e.target.value)}
+                placeholder="Buscar..."
+                className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+              />
+            </div>
+          </form>
 
           {/* Desktop nav: shown only at lg+ to prevent wrapping at medium widths */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-nowrap overflow-hidden">
+          <nav className="hidden md:flex items-center gap-0.5 flex-nowrap overflow-hidden">
             {desktopNavLinks}
           </nav>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 relative">
             <button
               type="button"
               onClick={toggleTheme}
@@ -133,6 +182,18 @@ const Navbar = () => {
             >
               {isDarkMode ? <Sun size={18} className="text-brand-gold" /> : <Moon size={18} />}
             </button>
+
+            {/* Mobile menu button */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => setMenuOpen((s) => !s)}
+                className="md:hidden p-2 rounded-xl bg-stone-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-stone-200 dark:border-white/5"
+                aria-label="Opciones"
+              >
+                <MoreVertical size={18} />
+              </button>
+            )}
 
             {user && (
               <button
@@ -154,6 +215,38 @@ const Navbar = () => {
                 <ShieldCheck size={18} />
               </Link>
             )}
+
+            {/* Mobile dropdown menu */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-stone-200 dark:border-white/10 overflow-hidden z-50">
+                <ul className="py-1">
+                  <li>
+                    <Link to="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Inicio</Link>
+                  </li>
+                  <li>
+                    <Link to="/directorio" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Directorio</Link>
+                  </li>
+                  <li>
+                    <Link to="/mapa" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Mapa</Link>
+                  </li>
+                  {user ? (
+                    <>
+                      <li>
+                        <Link to={profileRoute} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Perfil</Link>
+                      </li>
+                      <li>
+                        <button onClick={() => { setMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700">Cerrar sesión</button>
+                      </li>
+                    </>
+                  ) : (
+                    <li>
+                      <Link to="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Ingresar</Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

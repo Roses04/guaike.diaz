@@ -514,7 +514,7 @@ const ItineraryView = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {/* Gradient overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-t ${route.accentColor} to-transparent`} />
+                  <div className={`absolute inset-0 bg-linear-to-t ${route.accentColor} to-transparent`} />
                   {/* Parish badge pinned top-right */}
                   <span className="absolute top-3 right-3 text-[10px] font-extrabold uppercase bg-black/40 backdrop-blur-sm text-white px-3 py-1 rounded-full border border-white/20">
                     {route.parish}
@@ -525,7 +525,7 @@ const ItineraryView = () => {
                   </span>
                 </div>
 
-                <div className="p-6 flex-grow space-y-3">
+                <div className="p-6 grow space-y-3">
                   <h3 className="font-display font-bold text-xl text-slate-800 dark:text-white leading-tight">
                     {route.title}
                   </h3>
@@ -782,7 +782,7 @@ const ItineraryView = () => {
             ) : (
               <div className="flex flex-col lg:flex-row gap-8 items-stretch">
                 {/* Visual Map (Left / Top) */}
-                <div className="flex-grow min-h-[280px] max-h-[min(420px,calc(100dvh-var(--mobile-chrome-top)-var(--mobile-chrome-bottom)-8rem))] lg:max-h-none lg:h-[calc(100vh-220px)] rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-white/5 relative z-0">
+                <div className="grow min-h-70 max-h-[min(420px,calc(100dvh-var(--mobile-chrome-top)-var(--mobile-chrome-bottom)-8rem))] lg:max-h-none lg:h-[calc(100vh-220px)] rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-white/5 relative z-0">
                   <MapContainer
                     center={defaultCenter}
                     zoom={MUNICIPIO_DEFAULT_ZOOM}
@@ -812,7 +812,7 @@ const ItineraryView = () => {
                         icon={createNumberedIcon(idx + 1)}
                       >
                         <Popup>
-                          <div className="p-1.5 max-w-[180px] space-y-1.5 font-sans">
+                          <div className="p-1.5 max-w-45 space-y-1.5 font-sans">
                             <span className="text-[10px] font-extrabold uppercase chip-gold px-2 py-0.5 rounded-full inline-block">
                               Parada {idx + 1}
                             </span>
@@ -848,7 +848,7 @@ const ItineraryView = () => {
                 {/* Timeline & Checklist (Right / Bottom) */}
                 <div className="w-full lg:w-96 flex flex-col space-y-6">
                   {/* Stepper Timeline Panel */}
-                  <div className="glass-panel rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-white/5 flex-grow">
+                  <div className="glass-panel rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-white/5 grow">
                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-white/5">
                       <h3 className="font-display font-extrabold text-lg text-slate-800 dark:text-white">Hoja de Ruta</h3>
                       <button
@@ -890,11 +890,11 @@ const ItineraryView = () => {
                               }`}
                               title={isVisited ? "Marcar como pendiente" : "Marcar como visitado"}
                             >
-                              {isVisited ? <Check size={16} className="stroke-[3]" /> : idx + 1}
+                              {isVisited ? <Check size={16} className="stroke-3" /> : idx + 1}
                             </button>
 
                             {/* Details card */}
-                            <div className="flex-grow space-y-2 bg-surface-40 dark:bg-slate-900/20 border border-stone-200/60 dark:border-white/5 p-4 rounded-2xl">
+                            <div className="grow space-y-2 bg-surface-40 dark:bg-slate-900/20 border border-stone-200/60 dark:border-white/5 p-4 rounded-2xl">
                               {idx > 0 && (
                                 <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1 mb-1">
                                   {transportMode === "driving" ? <Car size={10} /> : <Footprints size={10} />}
@@ -925,7 +925,7 @@ const ItineraryView = () => {
                                   href={mapsUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex-grow text-center bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
+                                  className="grow text-center bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1"
                                 >
                                   <Navigation size={10} /> GPS Mapa
                                 </a>
@@ -970,7 +970,7 @@ const ItineraryView = () => {
                         value={saveRouteName}
                         onChange={(e) => setSaveRouteName(e.target.value)}
                         required
-                        className="flex-grow px-3 py-2 text-xs rounded-xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 focus:outline-none text-slate-800 dark:text-slate-100"
+                        className="grow px-3 py-2 text-xs rounded-xl bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 focus:outline-none text-slate-800 dark:text-slate-100"
                       />
                       <button 
                         type="submit"

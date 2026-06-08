@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import CardArtesano from "../components/CardArtesano";
 import api from "../services/api";
 import { Search, Tag, MapPin, RefreshCw, WifiOff } from "lucide-react";
@@ -9,9 +10,10 @@ const DirectoryView = () => {
   const [parroquias, setParroquias] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCat, setSelectedCat] = useState("");
-  const [selectedParr, setSelectedParr] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
+  const [selectedCat, setSelectedCat] = useState(() => searchParams.get("categoria_id") || "");
+  const [selectedParr, setSelectedParr] = useState(() => searchParams.get("parroquia_id") || "");
 
   const loadData = async () => {
     setLoading(true);
@@ -45,16 +47,26 @@ const DirectoryView = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, [selectedCat, selectedParr]);
+    setSearchQuery(searchParams.get("q") || "");
+    setSelectedCat(searchParams.get("categoria_id") || "");
+    setSelectedParr(searchParams.get("parroquia_id") || "");
+  }, [searchParams]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
     loadData();
+  }, [selectedCat, selectedParr, searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const filters = new URLSearchParams();
+    if (searchQuery.trim()) filters.set("q", searchQuery.trim());
+    if (selectedCat) filters.set("categoria_id", selectedCat);
+    if (selectedParr) filters.set("parroquia_id", selectedParr);
+    setSearchParams(filters);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="w-full px-4 py-8">
       <div className="text-center max-w-xl mx-auto mb-6">
         <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-2">
           Directorio de Talleres y Creadores
