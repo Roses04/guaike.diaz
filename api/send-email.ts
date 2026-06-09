@@ -36,29 +36,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_PASS; // Contraseña de aplicación de Google
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined;
+  const smtpSecure = process.env.SMTP_SECURE === "true";
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_PASS;
+  const fromName = process.env.SMTP_FROM_NAME || "GUAIKE.DÍAZ";
+  const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
 
-  if (!gmailUser || !gmailPass) {
+  if (!smtpUser || !smtpPass) {
     res.status(500).json({
-      error: "Error de configuración de correo en el servidor. Variables GMAIL_USER y GMAIL_PASS no definidas.",
+      error: "Error de configuración de correo en el servidor. Variables SMTP_USER y SMTP_PASS (o GMAIL_USER y GMAIL_PASS) no definidas.",
     });
     return;
   }
 
+  const transporterConfig: any = {
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  };
+
+  if (smtpHost) {
+    transporterConfig.host = smtpHost;
+    transporterConfig.port = smtpPort || 587;
+    transporterConfig.secure = smtpSecure;
+  } else {
+    transporterConfig.service = "gmail";
+  }
+
   try {
-    // 3. Configurar transporte SMTP para Gmail
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: gmailUser,
-        pass: gmailPass,
-      },
-    });
+    const transporter = nodemailer.createTransport(transporterConfig);
 
     // 4. Configurar datos del correo
     const mailOptions = {
-      from: `"GUAIKE.DÍAZ" <${gmailUser}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
       text,

@@ -103,14 +103,14 @@ const VerificationModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
       {/* Dark Overlay backdrop */}
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={handleClose}></div>
       
       {/* Modal Box */}
       <div className="relative max-w-md w-full glass-panel p-6 sm:p-8 rounded-3xl shadow-2xl border border-stone-200/80 dark:border-white/10 overflow-hidden bg-white/95 dark:bg-slate-900/95">
         {/* Glow accent top bar */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 
         {/* Close Button */}
         <button 
@@ -135,14 +135,14 @@ const VerificationModal = () => {
 
           {error && (
             <div className="w-full bg-red-500/10 dark:bg-red-950/20 border border-red-500/20 text-red-600 dark:text-red-400 p-3.5 rounded-2xl text-xs text-left flex items-start gap-2">
-              <Info size={14} className="mt-0.5 flex-shrink-0" />
+              <Info size={14} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
             <div className="w-full bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-3.5 rounded-2xl text-xs text-left flex items-start gap-2">
-              <CheckCircle size={14} className="mt-0.5 flex-shrink-0" />
+              <CheckCircle size={14} className="mt-0.5 shrink-0" />
               <span>{success}</span>
             </div>
           )}

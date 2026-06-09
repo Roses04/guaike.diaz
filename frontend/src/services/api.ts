@@ -58,6 +58,15 @@ const buildResponse = (data: any, status = 200) => ({
   config: {},
 });
 
+const getEmailRedirectUrl = () => {
+  const envBaseUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || import.meta.env.VITE_APP_URL;
+  const baseUrl = typeof envBaseUrl === "string" && envBaseUrl.trim()
+    ? envBaseUrl.trim().replace(/\/+$/, "")
+    : window.location.origin;
+
+  return `${baseUrl}/auth/confirm`;
+};
+
 const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<string> => {
   if (Array.isArray(rolesJoin)) {
     const name = (rolesJoin[0] as { nombre?: string } | undefined)?.nombre;
@@ -127,13 +136,19 @@ const ensureUserRecord = async (
   const existing = await getUserRecordByEmail(email);
   if (existing) return existing;
 
-  // Try to get current authenticated supabase user to store auth_id
+  // Try to get current authenticated supabase user to store auth_id and metadata
   let sessionUserId: string | null = null;
+  let sessionUserMetadata: any = null;
+  let sessionUserEmailConfirmed = false;
   try {
     const session = await supabase.auth.getUser();
     sessionUserId = session?.data?.user?.id || null;
+    sessionUserMetadata = session?.data?.user?.user_metadata || null;
+    sessionUserEmailConfirmed = Boolean(session?.data?.user?.email_confirmed_at);
   } catch (e) {
     sessionUserId = null;
+    sessionUserMetadata = null;
+    sessionUserEmailConfirmed = false;
   }
 
   const { data: roleData, error: roleError } = await supabase
@@ -179,6 +194,14 @@ const ensureUserRecord = async (
     if (extra.codigo_enviado_en !== undefined) insertData.codigo_enviado_en = extra.codigo_enviado_en;
     if (extra.preguntas_seguridad !== undefined) insertData.preguntas_seguridad = extra.preguntas_seguridad;
     if (extra.verificado !== undefined) insertData.verificado = extra.verificado;
+  }
+
+  if (!extra?.preguntas_seguridad && sessionUserMetadata?.security_questions) {
+    insertData.preguntas_seguridad = sessionUserMetadata.security_questions;
+  }
+
+  if (insertData.verificado === undefined && sessionUserEmailConfirmed) {
+    insertData.verificado = true;
   }
 
   const { error: insertError } = await supabase.from("usuarios").insert(insertData);
@@ -702,7 +725,6 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   if (lowerMethod === "post" && route === "/auth/login") {
     const { email, password } = payload || {};
 
-    // Verificar si el usuario está bloqueado por rate limiting
     const existingUser = await getUserRecordByEmail(email);
     if (existingUser && existingUser.bloqueado_hasta) {
       const blockUntil = new Date(existingUser.bloqueado_hasta).getTime();
@@ -711,67 +733,46 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
         const remainingMinutes = Math.ceil((blockUntil - now) / 60000);
         createApiError(`Cuenta bloqueada temporalmente por exceso de intentos fallidos. Intente de nuevo en ${remainingMinutes} minutos.`, 423);
       } else {
-        // Bloqueo expiró, resetear contadores en DB
         await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", existingUser.id);
-        existingUser.intentos_fallidos = 0;
-        existingUser.bloqueado_hasta = null;
       }
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      const normalized = error.message?.toLowerCase() || "";
+      if (normalized.includes("email not confirmed") || normalized.includes("confirm your email")) {
+        createApiError("Tu correo no ha sido confirmado. Revisa el enlace enviado a tu correo y luego vuelve a iniciar sesión.", 401);
+      }
+
       if (existingUser) {
         const nextAttempts = (existingUser.intentos_fallidos || 0) + 1;
         let updateFields: any = { intentos_fallidos: nextAttempts };
 
         if (nextAttempts >= 5) {
-          // Bloqueo: 5 fallos -> 5 minutos la primera vez, y aumenta 5 minutos adicionales por cada fallo posterior
           const factor = (nextAttempts - 5) + 1;
           const waitMinutes = 5 * factor;
-          const blockUntil = new Date(Date.now() + waitMinutes * 60000).toISOString();
-          updateFields.bloqueado_hasta = blockUntil;
-
+          updateFields.bloqueado_hasta = new Date(Date.now() + waitMinutes * 60000).toISOString();
           await supabase.from("usuarios").update(updateFields).eq("id", existingUser.id);
           createApiError(`Credenciales incorrectas. Demasiados intentos fallidos. Cuenta bloqueada por ${waitMinutes} minutos.`, 423);
         } else {
           await supabase.from("usuarios").update(updateFields).eq("id", existingUser.id);
         }
       }
+
       createApiError(error.message || "Credenciales incorrectas", 401);
     }
-    
+
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
-
-    // Reiniciar intentos fallidos en login correcto
-    if (existingUser) {
-      await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", existingUser.id);
-    }
 
     let profile = await getUserRecordByEmail(email as string);
     if (!profile) {
       await ensureUserRecord(email as string, "turista");
       profile = await getUserRecordByEmail(email as string);
     }
-    
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
 
-    // Si la cuenta no está verificada, enviamos o reenviamos automáticamente el código
-    if (!profile.verificado) {
-      const code = generateVerificationCode();
-      const nowStr = new Date().toISOString();
-      await supabase.from("usuarios").update({
-        codigo_verificacion: code,
-        codigo_enviado_en: nowStr
-      }).eq("id", profile.id);
-
-      await sendVerificationCodeEmail(profile.email, code);
-
-      // Sincronizar estado en la respuesta de perfil
-      profile.verificado = false;
-      profile.codigo_verificacion = code;
-      profile.codigo_enviado_en = nowStr;
-    }
+    await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", profile.id);
 
     return buildResponse({ token: (session as any).access_token, user: profile });
   }
@@ -788,6 +789,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       email,
       password,
       options: {
+        emailRedirectTo: getEmailRedirectUrl(),
         data: {
           role,
           full_name: name,
@@ -798,18 +800,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     if (signUpError) createApiError(signUpError.message);
 
-    const code = generateVerificationCode();
-    const nowStr = new Date().toISOString();
-
-    await ensureUserRecord(email, role, {
-      codigo_verificacion: code,
-      codigo_enviado_en: nowStr,
-      verificado: false,
-    });
-
-    await sendVerificationCodeEmail(email, code);
-
-    return buildResponse({ message: "Usuario registrado por el administrador. El código de verificación ha sido enviado por correo." }, 201);
+    return buildResponse({ message: "Usuario registrado por el administrador. Revisa el correo para confirmar la cuenta." }, 201);
   }
 
   if (lowerMethod === "post" && route === "/auth/register") {
@@ -835,83 +826,23 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       role,
       full_name: name,
       phone,
+      security_questions: hashedQuestions,
     };
 
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: getEmailRedirectUrl(),
         data: profileData,
       },
     });
 
     if (error) createApiError(error.message);
 
-    const code = generateVerificationCode();
-    const nowStr = new Date().toISOString();
-
-    await ensureUserRecord(email, role || "turista", {
-      codigo_verificacion: code,
-      codigo_enviado_en: nowStr,
-      preguntas_seguridad: hashedQuestions,
-      verificado: false,
-    });
-
-    // Enviar código de verificación por correo
-    await sendVerificationCodeEmail(email, code);
-
-    return buildResponse({ message: "Usuario registrado exitosamente. Se ha enviado un código de verificación." }, 201);
+    return buildResponse({ message: "Registro exitoso. Revisa tu correo para confirmar tu cuenta." }, 201);
   }
 
-  if (lowerMethod === "post" && route === "/auth/verify-code") {
-    const { email, code } = payload || {};
-    const normalizedEmail = normalizeEmail(email);
-    const user = await getUserRecordByEmail(normalizedEmail);
-    if (!user) createApiError("Usuario no encontrado", 404);
-
-    if (!user || user.codigo_verificacion !== code) {
-      createApiError("Código de verificación incorrecto", 400);
-    }
-
-    // Comprobar expiración del código (máximo 10 minutos)
-    if (user && user.codigo_enviado_en) {
-      const sentTime = new Date(user.codigo_enviado_en).getTime();
-      const now = Date.now();
-      if (now - sentTime > 10 * 60 * 1000) {
-        createApiError("El código ha expirado (máximo 10 minutos). Solicita un nuevo código.", 400);
-      }
-    }
-
-    const { error } = await supabase
-      .from("usuarios")
-      .update({ verificado: true, codigo_verificacion: null, codigo_enviado_en: null })
-      .eq("id", user!.id);
-
-    if (error) createApiError(error.message);
-
-    return buildResponse({ success: true, message: "Cuenta verificada con éxito" });
-  }
-
-  if (lowerMethod === "post" && route === "/auth/resend-code") {
-    const { email } = payload || {};
-    const normalizedEmail = normalizeEmail(email);
-    const user = await getUserRecordByEmail(normalizedEmail);
-    if (!user) createApiError("Usuario no encontrado", 404);
-
-    const code = generateVerificationCode();
-    const nowStr = new Date().toISOString();
-
-    const { error } = await supabase
-      .from("usuarios")
-      .update({ codigo_verificacion: code, codigo_enviado_en: nowStr })
-      .eq("id", user!.id);
-
-    if (error) createApiError(error.message);
-
-    await sendVerificationCodeEmail(email, code);
-
-    return buildResponse({ success: true, message: "Se ha reenviado un nuevo código a tu correo." });
-  }
 
   if (lowerMethod === "post" && route === "/auth/recover-questions") {
     const { email } = payload || {};

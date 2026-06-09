@@ -19,7 +19,7 @@ import InstallPWA from "./components/InstallPWA";
 import { NetworkBanner } from "./components/NetworkBanner";
 import { useAuthStore } from "./store/useAuthStore";
 import { normalizeAuthUser } from "./utils/authUser";
-import VerificationModal from "./components/VerificationModal";
+import EmailConfirmationView from "./views/EmailConfirmationView";
 
 function App() {
   const { initializeTheme } = useThemeStore();
@@ -81,12 +81,9 @@ function App() {
         {/* Global Network Connectivity Banner */}
         <NetworkBanner />
 
-        {/* Global Account Verification Modal */}
-        <VerificationModal />
-
         <Navbar />
 
-        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-[110px] md:pb-6 md:pt-4 transition-all duration-200 z-10">
+        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-28 md:pb-6 md:pt-4 transition-all duration-200 z-10">
           <main className="w-full flex flex-col bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
             <Routes>
               <Route path="/" element={<HomeView />} />
@@ -95,6 +92,7 @@ function App() {
               <Route path="/login" element={<LoginView />} />
               <Route path="/perfil" element={<ProfileView />} />
               <Route path="/registro-operador" element={<RegisterOperatorView />} />
+              <Route path="/auth/confirm" element={<EmailConfirmationView />} />
               <Route path="/operador/:id" element={<OperatorDetailView />} />
               <Route path="/operador/:id/escanear-qr" element={<QRScannerView />} />
               <Route path="/admin" element={<AdminDashboardView />} />

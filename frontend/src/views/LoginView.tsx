@@ -209,7 +209,7 @@ const LoginView = () => {
         securityQuestions
       });
 
-      setSuccess("Registro exitoso. Se ha enviado un código de verificación a tu correo. ¡Inicia sesión para validarlo!");
+      setSuccess("Registro exitoso. Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.");
       
       setIsLogin(true);
       setPassword("");
