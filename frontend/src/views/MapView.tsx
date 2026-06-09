@@ -124,7 +124,7 @@ const MapView = () => {
     <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row bg-slate-50/30 dark:bg-slate-900/20">
       
       {/* Sidebar Panel */}
-      <div className="w-full md:w-[320px] lg:w-[380px] shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-stone-200/80 dark:border-white/10 flex flex-col z-20 shadow-lg md:shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:md:shadow-[4px_0_24px_rgba(0,0,0,0.2)] md:z-20 overflow-hidden transition-all duration-300">
+      <div className="w-full md:w-[320px] lg:w-95 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-stone-200/80 dark:border-white/10 flex flex-col z-20 shadow-lg md:shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:md:shadow-[4px_0_24px_rgba(0,0,0,0.2)] md:z-20 overflow-hidden transition-all duration-300">
         
         {/* Header / Toggle Button */}
         <div 
@@ -194,7 +194,7 @@ const MapView = () => {
       {/* Map Area */}
       <div className="flex-1 relative h-[60vh] md:h-auto w-full z-10">
         {/* Floating Action Button (Locate Me) */}
-        <div className="absolute bottom-6 right-4 md:bottom-8 md:right-8 z-[1000] pointer-events-auto">
+        <div className="absolute bottom-6 right-4 md:bottom-8 md:right-8 z-1000 pointer-events-auto">
           <button 
             onClick={handleLocateMe}
             disabled={loadingLoc}
@@ -243,7 +243,7 @@ const MapView = () => {
               icon={createDivIcon("bg-brand-blue dark:bg-brand-light", '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.53.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.53.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.53.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.53.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 10V7"/></svg>')}
             >
               <Popup>
-                <div className="p-1 max-w-[200px]">
+                <div className="p-1 max-w-50">
                   <h3 className="font-display font-bold text-sm text-slate-800 dark:text-white mb-0.5">{op.nombre_taller}</h3>
                   <div className="text-[10px] text-brand-blue dark:text-brand-light font-semibold mb-2 flex items-center gap-1">
                     <Tag size={10} /> {op.categoria_nombre}
@@ -274,7 +274,7 @@ const MapView = () => {
               icon={createDivIcon("bg-brand-gold", '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>')}
             >
               <Popup>
-                <div className="p-1 max-w-[200px]">
+                <div className="p-1 max-w-50">
                   <span className="bg-amber-100 dark:bg-amber-950/30 text-brand-gold text-[9px] font-bold px-2 py-0.5 rounded-full mb-1 inline-block">
                     Feria / Evento
                   </span>

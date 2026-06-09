@@ -207,10 +207,12 @@ const ensureUserRecord = async (
   const { error: insertError } = await supabase.from("usuarios").insert(insertData);
 
   if (insertError) {
-    // Carrera: otro proceso creó el usuario; devolver el registro existente
-    if (insertError.code === "23505") {
+    // Duplicate key (race condition or RLS made SELECT return empty): fetch existing record
+    if (insertError.code === "23505" || insertError.message?.includes("duplicate key") || insertError.message?.includes("unique constraint")) {
       const retry = await getUserRecordByEmail(email);
       if (retry) return retry;
+      // If still null (RLS blocking read), return a minimal placeholder to avoid crashing
+      return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null };
     }
     createApiError(insertError.message || "Error al crear usuario");
   }
@@ -746,7 +748,14 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     let profile = await getUserRecordByEmail(email as string);
     if (!profile) {
-      await ensureUserRecord(email as string, "turista");
+      try {
+        await ensureUserRecord(email as string, "turista");
+      } catch (e: any) {
+        // If duplicate key, the record already exists — just fetch it
+        if (!e?.message?.includes("duplicate key") && !e?.message?.includes("unique constraint") && e?.response?.status !== 409) {
+          throw e;
+        }
+      }
       profile = await getUserRecordByEmail(email as string);
     }
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
