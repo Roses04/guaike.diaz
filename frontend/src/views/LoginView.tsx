@@ -350,8 +350,8 @@ const LoginView = () => {
   };
 
   return (
-    <div className="login-mobile-bg w-full min-h-screen md:min-h-0 flex-grow flex items-center justify-center p-4 sm:py-16">
-      <div className="max-w-md w-full glass-panel p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+    <div className="login-mobile-bg w-full flex-grow flex items-center justify-center p-4 py-6 md:py-16 min-h-[calc(100vh-140px)] md:min-h-0">
+      <div className="max-w-md w-full glass-panel p-5 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
         {/* Glow border line */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 
@@ -530,16 +530,16 @@ const LoginView = () => {
         ) : (
           /* --- 2. VISTAS DE LOGIN Y REGISTRO --- */
           <div>
-            <div className="flex justify-center mb-6">
-              <div className="bg-brand-blue/10 dark:bg-brand-light/10 p-4.5 rounded-full text-brand-blue dark:text-brand-light">
-                {isLogin ? <LogIn size={32} /> : <UserPlus size={32} />}
+            <div className="flex justify-center mb-4 md:mb-6">
+              <div className="bg-brand-blue/10 dark:bg-brand-light/10 p-4 rounded-full text-brand-blue dark:text-brand-light">
+                {isLogin ? <LogIn size={28} /> : <UserPlus size={28} />}
               </div>
             </div>
             
-            <h2 className="text-3xl font-display font-extrabold mb-1 text-center text-slate-800 dark:text-white">
+            <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-1 text-center text-slate-800 dark:text-white">
               {isLogin ? "Bienvenido" : "Crea tu Cuenta"}
             </h2>
-            <p className="text-center text-slate-500 dark:text-slate-400 text-sm mb-6">
+            <p className="text-center text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-5 md:mb-6 leading-tight">
               {isLogin ? "Accede al Sistema Geoespacial de GUAIKE.DÍAZ" : "Regístrate en la plataforma del Municipio Díaz"}
             </p>
 
@@ -765,7 +765,7 @@ const LoginView = () => {
               </button>
             </form>
             
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 text-center">
+            <div className="mt-5 pt-5 md:mt-8 md:pt-6 border-t border-gray-200 dark:border-white/10 text-center">
               {isLogin ? (
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   ¿No tienes cuenta?{" "}

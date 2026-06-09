@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="mt-6 w-full bg-slate-900/95 text-slate-300 border border-slate-800/80 backdrop-blur-md z-10 overflow-hidden relative rounded-3xl shadow-xl">
+    <footer className="hidden md:block mt-6 w-full bg-slate-900/95 text-slate-300 border border-slate-800/80 backdrop-blur-md z-10 overflow-hidden relative rounded-3xl shadow-xl">
       {/* Top thin accent gradient line */}
       <div className="absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 

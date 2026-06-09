@@ -68,9 +68,9 @@ const DirectoryView = () => {
   return (
     <div className="w-full px-4 py-8">
       <div className="text-center max-w-xl mx-auto mb-6">
-        <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-2">
+        <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-2">
           Directorio de Talleres y Creadores
-        </h2>
+        </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Usa los filtros para buscar por especialidad artesanal, parroquia o nombre del artesano.
         </p>

@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import L from "leaflet";
 import { Link, useLocation } from "react-router-dom";
-import { Navigation, Tag, Map } from "lucide-react";
+import { Navigation, Tag, Map, ChevronUp, ChevronDown } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
 import {
   MunicipioBoundsController,
@@ -52,6 +52,7 @@ const MapView = () => {
   );
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   const operatorsOnMap = operators.filter((op: { latitud: number; longitud: number; coordsValidas?: boolean }) =>
     op.coordsValidas ?? isValidMunicipioCoord(op.latitud, op.longitud)
@@ -120,56 +121,91 @@ const MapView = () => {
   };
 
   return (
-    <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row -mx-0 md:mx-0">
-      {/* Floating Top Elements (like Google Maps Chips) */}
-      <div className="absolute mobile-offset-top left-0 right-0 z-[1000] px-4 pointer-events-none md:top-4">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pointer-events-auto pb-2">
-          {/* Module Title Chip */}
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center gap-2 shrink-0">
-            <Map size={14} className="text-brand-blue dark:text-brand-light" />
-            <span className="font-display font-bold text-sm text-brand-blue dark:text-white tracking-wide">Mapa</span>
-          </div>
-          
-          {/* Legend Chips */}
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3.5 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center gap-2 shrink-0">
-            <span className="w-3 h-3 rounded-full bg-brand-blue border-[1.5px] border-white shadow-sm"></span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Talleres ({operatorsOnMap.length})</span>
-          </div>
-
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3.5 py-2.5 rounded-full shadow-lg border border-stone-200/80 dark:border-white/10 flex items-center gap-2 shrink-0">
-            <span className="w-3 h-3 rounded-full bg-brand-gold border-[1.5px] border-white shadow-sm"></span>
-            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Eventos ({eventsOnMap.length})</span>
-          </div>
-
-          {eventsMissingLocation && (
-            <div className="bg-amber-50 dark:bg-amber-950/40 backdrop-blur-md px-3.5 py-2.5 rounded-full shadow-lg border border-amber-200 dark:border-amber-500/30 flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">Sin ubicación en mapa</span>
+    <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row bg-slate-50/30 dark:bg-slate-900/20">
+      
+      {/* Sidebar Panel */}
+      <div className="w-full md:w-[320px] lg:w-[380px] shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-stone-200/80 dark:border-white/10 flex flex-col z-20 shadow-lg md:shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:md:shadow-[4px_0_24px_rgba(0,0,0,0.2)] md:z-20 overflow-hidden transition-all duration-300">
+        
+        {/* Header / Toggle Button */}
+        <div 
+           onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+           className="w-full p-4 md:p-8 flex items-center justify-between text-left cursor-pointer md:cursor-default bg-transparent"
+           role="button"
+           tabIndex={0}
+        >
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/10 dark:bg-brand-blue/20 text-brand-blue dark:text-brand-light text-xs font-bold md:mb-4 border border-brand-blue/20">
+              <Map size={14} strokeWidth={2.5} /> <span className="md:hidden">Mapa:</span> Municipio Díaz
             </div>
-          )}
-          
-          {userLocation && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/40 backdrop-blur-md px-3.5 py-2.5 rounded-full shadow-lg border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1.5 shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Tu Ubicación</span>
-            </div>
-          )}
+            <h1 className="hidden md:block text-2xl sm:text-3xl font-display font-extrabold text-slate-900 dark:text-white tracking-tight">Municipio Díaz</h1>
+          </div>
+          <div className="md:hidden p-2 bg-stone-100 dark:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 hover:bg-stone-200 dark:hover:bg-slate-700 transition-colors">
+             {isSidebarExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+        </div>
+
+        {/* Collapsible Content */}
+        <div className={`px-4 pb-4 md:px-8 md:pb-8 flex-col flex-1 overflow-y-auto ${isSidebarExpanded ? 'flex' : 'hidden md:flex'}`}>
+           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+             Explora la ubicación de talleres, ferias y eventos. Usa los controles para centrarte y descubrir actividades cercanas de nuestros artesanos.
+           </p>
+
+           {/* Legend / Stats */}
+           <div className="flex flex-col gap-3 mt-auto md:mt-8">
+             <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Leyenda y Filtros</h3>
+             
+             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200/80 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow">
+               <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-xl bg-brand-blue/10 dark:bg-brand-blue/20 flex items-center justify-center">
+                   <span className="w-3.5 h-3.5 rounded-full bg-brand-blue border-2 border-white dark:border-slate-800 shadow-sm"></span>
+                 </div>
+                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Talleres</span>
+               </div>
+               <span className="text-xs font-black bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">{operatorsOnMap.length}</span>
+             </div>
+
+             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200/80 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow">
+               <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                   <span className="w-3.5 h-3.5 rounded-full bg-brand-gold border-2 border-white dark:border-slate-800 shadow-sm"></span>
+                 </div>
+                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Eventos</span>
+               </div>
+               <span className="text-xs font-black bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">{eventsOnMap.length}</span>
+             </div>
+
+             {eventsMissingLocation && (
+               <div className="mt-2 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-500/30 flex items-center gap-3">
+                 <div className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
+                 <span className="text-xs font-medium text-amber-700 dark:text-amber-400">Hay {events.length - eventsOnMap.length} evento(s) sin ubicación</span>
+               </div>
+             )}
+             
+             {userLocation && (
+               <div className="mt-2 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-500/30 flex items-center gap-3">
+                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)] shrink-0"></span>
+                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Tu Ubicación Activa</span>
+               </div>
+             )}
+           </div>
         </div>
       </div>
 
-      {/* Floating Action Button (Locate Me) - Google Maps Style */}
-      <div className="absolute mobile-fab-bottom right-4 z-[1000] pointer-events-auto">
-        <button 
-          onClick={handleLocateMe}
-          disabled={loadingLoc}
-          className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 text-brand-blue dark:text-brand-light shadow-[0_8px_20px_rgba(15,76,129,0.2)] border border-stone-100 dark:border-white/10 flex items-center justify-center hover:bg-stone-50 dark:hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-          title="Centrar en mi ubicación"
-        >
-          <Navigation size={20} strokeWidth={2.5} className={`${loadingLoc ? "animate-spin" : ""}`} />
-        </button>
-      </div>
+      {/* Map Area */}
+      <div className="flex-1 relative h-[60vh] md:h-auto w-full z-10">
+        {/* Floating Action Button (Locate Me) */}
+        <div className="absolute bottom-6 right-4 md:bottom-8 md:right-8 z-[1000] pointer-events-auto">
+          <button 
+            onClick={handleLocateMe}
+            disabled={loadingLoc}
+            className="w-14 h-14 rounded-full bg-white dark:bg-slate-800 text-brand-blue dark:text-brand-light shadow-[0_8px_20px_rgba(15,76,129,0.2)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)] border border-stone-100 dark:border-white/10 flex items-center justify-center hover:bg-stone-50 dark:hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+            title="Centrar en mi ubicación"
+          >
+            <Navigation size={24} strokeWidth={2.5} className={`${loadingLoc ? "animate-spin" : "group-hover:text-brand-blue/80 dark:group-hover:text-white transition-colors"}`} />
+          </button>
+        </div>
 
-      {/* Leaflet Map */}
-      <div className="flex-grow h-full w-full z-0 relative">
+
         <MapContainer
           center={MUNICIPIO_DIAZ_CENTER}
           zoom={MUNICIPIO_DEFAULT_ZOOM}

@@ -68,7 +68,7 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-surface transition-colors duration-200 relative overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-surface transition-colors duration-200 relative overflow-clip flex flex-col">
         {/* Ambient Aurora Glow Background */}
         <div className="aurora-bg">
           <div className="aurora-glow-1"></div>
@@ -83,8 +83,8 @@ function App() {
 
         <Navbar />
 
-        <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 pb-28 md:pb-6 md:pt-4 transition-all duration-200 z-10">
-          <main className="w-full flex flex-col bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
+        <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto px-4 md:px-6 pb-16 md:pb-6 md:pt-4 transition-all duration-200 z-10">
+          <main className="flex-1 w-full flex flex-col bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
             <Routes>
               <Route path="/" element={<HomeView />} />
               <Route path="/directorio" element={<DirectoryView />} />

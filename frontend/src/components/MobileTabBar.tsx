@@ -26,32 +26,41 @@ const MobileTabBar = () => {
 
   return (
     <nav
-      className="md:hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[min(96%,420px)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-stone-200/80 dark:border-white/10 shadow-xl rounded-2xl"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-[24px] border-t border-stone-200/50 dark:border-white/5 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]"
       aria-label="Navegación principal"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div
-        className="flex items-center justify-around max-w-lg mx-auto h-17.5 px-3"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
-      >
+      {/* Decorative premium top gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold opacity-80"></div>
+      
+      <div className="flex items-center justify-around w-full h-[64px] px-2 relative pt-0.5">
         {tabs.map(({ to, icon: Icon, label, isActive }) => {
           const active = isActive(path);
           return (
             <Link
               key={to}
               to={to}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 min-h-17.5 py-1 px-1 transition-colors duration-150 relative select-none
+              className={`flex flex-1 flex-col items-center justify-center h-full transition-all duration-300 relative select-none
                 ${active
                   ? "text-brand-blue dark:text-brand-light"
-                  : "text-slate-500 dark:text-slate-400 active:text-brand-blue"
+                  : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 }`}
             >
-              <Icon size={24} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-[11px] font-semibold leading-tight ${active ? "font-bold" : ""}`}>
-                {label}
-              </span>
-              {active && (
-                <span className="absolute -top-2 w-2 h-2 rounded-full bg-brand-blue dark:bg-brand-light shadow-md" />
-              )}
+              {/* Active pill background */}
+              <div className={`flex flex-col items-center justify-center w-[68px] py-1.5 rounded-2xl transition-all duration-300 ${
+                active ? "bg-brand-blue/10 dark:bg-brand-light/15 scale-105" : "bg-transparent scale-100"
+              }`}>
+                <div className="relative mb-0.5">
+                  <Icon size={22} strokeWidth={active ? 2.5 : 2} className={`transition-transform duration-300 ${active ? '-translate-y-0.5' : ''}`} />
+                  {/* Active glowing dot */}
+                  {active && (
+                    <span className="absolute -bottom-1.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full bg-brand-blue dark:bg-brand-light shadow-[0_0_8px_currentColor]"></span>
+                  )}
+                </div>
+                <span className={`text-[10px] tracking-tight transition-all duration-300 ${active ? "font-bold opacity-100" : "font-medium opacity-80"}`}>
+                  {label}
+                </span>
+              </div>
             </Link>
           );
         })}

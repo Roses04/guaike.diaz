@@ -15,6 +15,7 @@ import {
   MoreVertical,
   Search,
 } from "lucide-react";
+import ConfirmModal from "./ui/ConfirmModal";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/": "Inicio",
@@ -45,6 +46,7 @@ const Navbar = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileSearch, setMobileSearch] = useState("");
 
   useEffect(() => {
@@ -75,7 +77,7 @@ const Navbar = () => {
       to={to}
       className={`nav-item-anim flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-150 border-2
         ${isActive
-          ? "text-white bg-gradient-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20 border-transparent"
+          ? "text-white bg-linear-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20 border-transparent"
           : "text-slate-700 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/5 dark:hover:bg-brand-light/5 border-transparent hover:border-brand-blue/70 dark:hover:border-brand-light/70"
         }`}
     >
@@ -118,7 +120,7 @@ const Navbar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/10 shadow-sm">
+    <header className="sticky top-0 md:static z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/10 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-14 md:h-16 gap-2">
 
@@ -196,14 +198,26 @@ const Navbar = () => {
             )}
 
             {user && (
-              <button
-                type="button"
-                onClick={logout}
-                className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition text-sm font-bold"
-              >
-                <LogOut size={18} />
-                <span className="hidden xl:inline">Salir</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition text-sm font-bold"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden xl:inline">Salir</span>
+                </button>
+                <ConfirmModal
+                  open={showLogoutConfirm}
+                  title="Cerrar sesión"
+                  username={user?.email || user?.role || null}
+                  description="¿Estás seguro que deseas cerrar sesión?"
+                  confirmLabel="Sí, cerrar sesión"
+                  cancelLabel="Cancelar"
+                  onClose={() => setShowLogoutConfirm(false)}
+                  onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
+                />
+              </>
             )}
 
             {user?.role === "admin" && (
@@ -235,7 +249,7 @@ const Navbar = () => {
                         <Link to={profileRoute} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Perfil</Link>
                       </li>
                       <li>
-                        <button onClick={() => { setMenuOpen(false); logout(); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700">Cerrar sesión</button>
+                        <button onClick={() => { setMenuOpen(false); setShowLogoutConfirm(true); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700">Cerrar sesión</button>
                       </li>
                     </>
                   ) : (

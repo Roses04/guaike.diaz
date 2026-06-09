@@ -899,22 +899,46 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   if (lowerMethod === "post" && route === "/auth/send-recovery-email") {
     const { email } = payload || {};
     const normalizedEmail = normalizeEmail(email);
-    const user = await getUserRecordByEmail(normalizedEmail);
-    if (!user) createApiError("Usuario no registrado", 404);
+    if (!normalizedEmail) createApiError("Email inválido", 400);
 
-    const code = generateVerificationCode();
-    const nowStr = new Date().toISOString();
+    // Intentar usar el flujo de recuperación de contraseña de Supabase (link)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: getEmailRedirectUrl(),
+      } as any);
 
-    const { error } = await supabase.from("usuarios").update({
-      codigo_verificacion: code,
-      codigo_enviado_en: nowStr
-    }).eq("id", user!.id);
+      if (resetError) {
+        // Si Supabase devolvió error, caer en flujo legacy de código por correo
+        const user = await getUserRecordByEmail(normalizedEmail);
+        if (!user) createApiError("Usuario no registrado", 404);
 
-    if (error) createApiError(error.message);
+        const code = generateVerificationCode();
+        const nowStr = new Date().toISOString();
 
-    await sendRecoveryCodeEmail(email, code);
+        const { error } = await supabase.from("usuarios").update({
+          codigo_verificacion: code,
+          codigo_enviado_en: nowStr,
+        }).eq("id", user!.id);
 
-    return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
+        if (error) createApiError(error.message);
+
+        await sendRecoveryCodeEmail(email, code);
+
+        return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
+      }
+    } catch (e) {
+      // En caso de excepción en la llamada a Supabase, intentar fallback
+      console.warn("Error al solicitar reset de contraseña en Supabase:", e);
+    }
+
+    // Asegurar existencia del registro en tabla `usuarios` (no falla si ya existe)
+    try {
+      await ensureUserRecord(normalizedEmail, "turista");
+    } catch (e) {
+      console.warn("No se pudo asegurar registro de usuario local:", e);
+    }
+
+    return buildResponse({ success: true, message: "Si la cuenta existe, recibirás un correo para restablecer la contraseña." });
   }
 
   if (lowerMethod === "post" && route === "/auth/verify-recovery-code") {

@@ -132,9 +132,9 @@ const HomeView = () => {
               Tradición Viva
             </span>
           </h1>
-          <h1 className="hero-subtitle gradient-text text-xl sm:text-2xl lg:text-3xl font-display font-bold text-slate-600 dark:text-slate-400 tracking-tight mb-5 leading-[1.2] animate-fade-in-up anim-delay-100">
+          <h2 className="hero-subtitle gradient-text text-xl sm:text-2xl lg:text-3xl font-display font-bold text-slate-600 dark:text-slate-400 tracking-tight mb-5 leading-[1.2] animate-fade-in-up anim-delay-100">
             Municipio Díaz
-          </h1>
+          </h2>
           <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base lg:text-lg font-normal leading-relaxed mb-6 animate-fade-in-up anim-delay-200">
             El corazón artesanal de la Isla de Margarita. Un santuario de
             palmeras datileras, tejedores sabios y sabores criollos que trascienden generaciones.
