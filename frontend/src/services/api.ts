@@ -672,27 +672,6 @@ const sendEmailViaVercel = async (to: string, subject: string, text: string, htm
     console.error("Error llamando a la función de correo:", error);
   }
 };
-
-const sendVerificationCodeEmail = async (email: string, code: string) => {
-  const subject = "Verifica tu cuenta en GUAIKE.DÍAZ";
-  const text = `Tu código de verificación de 8 dígitos es: ${code}. Este código expira en 10 minutos.`;
-  const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-      <h2 style="color: #0093d9; text-align: center;">Bienvenido a GUAIKE.DÍAZ</h2>
-      <p style="font-size: 16px; color: #334155; line-height: 1.6;">
-        Gracias por registrarte en el Sistema de Información Geoespacial del Municipio Díaz. Para completar tu registro y verificar tu cuenta, ingresa el siguiente código de 8 dígitos:
-      </p>
-      <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #003366;">
-        ${code}
-      </div>
-      <p style="font-size: 13px; color: #64748b; text-align: center; margin-top: 20px;">
-        Este código expira en 10 minutos (máximo). Si no solicitaste este correo, puedes ignorarlo.
-      </p>
-    </div>
-  `;
-  await sendEmailViaVercel(email, subject, text, html);
-};
-
 const sendRecoveryCodeEmail = async (email: string, code: string) => {
   const subject = "Recuperación de contraseña en GUAIKE.DÍAZ";
   const text = `Tu código de recuperación de contraseña es: ${code}. Este código expira en 10 minutos.`;
