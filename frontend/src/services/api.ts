@@ -167,7 +167,8 @@ const fetchUsuarioProfile = async () => {
   }
   const profile = await getUserRecordByEmail(userEmail as string);
   if (!profile) {
-    await ensureUserRecord(userEmail as string, "turista");
+    // Retry once after a delay (trigger race condition)
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return await getUserRecordByEmail(userEmail as string);
   }
   return profile;
@@ -702,18 +703,106 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
 
-    let profile = await getUserRecordByEmail(email as string);
-    if (!profile) {
-      try {
-        await ensureUserRecord(email as string, "turista");
-      } catch (e: any) {
-        // If duplicate key, the record already exists — just fetch it
-        if (!e?.message?.includes("duplicate key") && !e?.message?.includes("unique constraint") && e?.response?.status !== 409) {
-          throw e;
-        }
+    // Buscar el perfil primero por ID de auth (más confiable con RLS) y luego por correo
+    const authUserId = session!.user?.id;
+    
+    let profile = null;
+    
+    // Intento 1: buscar por ID de auth (evita problemas de RLS con correo)
+    if (authUserId) {
+      const { data: profileById } = await supabase
+        .from("usuarios")
+        .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
+        .eq("id", authUserId)
+        .maybeSingle();
+      
+      if (profileById) {
+        const role = await resolveRoleName(profileById.rol_id, profileById.roles);
+        profile = {
+          id: profileById.id,
+          email: profileById.correo,
+          role,
+          verificado: profileById.verificado,
+          codigo_verificacion: profileById.codigo_verificacion,
+          codigo_enviado_en: profileById.codigo_enviado_en,
+          preguntas_seguridad: profileById.preguntas_seguridad,
+          intentos_fallidos: profileById.intentos_fallidos || 0,
+          bloqueado_hasta: profileById.bloqueado_hasta,
+          requiere_cambio_clave: profileById.requiere_cambio_clave,
+          clave_temporal_expira: profileById.clave_temporal_expira,
+        };
       }
+    }
+
+    // Intento 2: fallback por correo
+    if (!profile) {
       profile = await getUserRecordByEmail(email as string);
     }
+
+    // Intento 3: esperar y reintentar (trigger race condition)
+    if (!profile) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (authUserId) {
+        const { data: retryById } = await supabase
+          .from("usuarios")
+          .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
+          .eq("id", authUserId)
+          .maybeSingle();
+        if (retryById) {
+          const role = await resolveRoleName(retryById.rol_id, retryById.roles);
+          profile = {
+            id: retryById.id,
+            email: retryById.correo,
+            role,
+            verificado: retryById.verificado,
+            codigo_verificacion: retryById.codigo_verificacion,
+            codigo_enviado_en: retryById.codigo_enviado_en,
+            preguntas_seguridad: retryById.preguntas_seguridad,
+            intentos_fallidos: retryById.intentos_fallidos || 0,
+            bloqueado_hasta: retryById.bloqueado_hasta,
+            requiere_cambio_clave: retryById.requiere_cambio_clave,
+            clave_temporal_expira: retryById.clave_temporal_expira,
+          };
+        }
+      }
+    }
+
+    // Intento 4: si el trigger no está activo, crear el registro con upsert seguro (no falla si ya existe)
+    if (!profile && authUserId) {
+      const { data: roleRow } = await supabase.from("roles").select("id").eq("nombre", "turista").maybeSingle();
+      const rolId = roleRow?.id || null;
+      
+      // ignoreDuplicates = true evita el error de duplicate key si ya existe
+      await supabase.from("usuarios").upsert(
+        { id: authUserId, correo: normalizeEmail(email as string), rol_id: rolId, verificado: false },
+        { onConflict: "id", ignoreDuplicates: true }
+      );
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const { data: finalProfile } = await supabase
+        .from("usuarios")
+        .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
+        .eq("id", authUserId)
+        .maybeSingle();
+      
+      if (finalProfile) {
+        const role = await resolveRoleName(finalProfile.rol_id, finalProfile.roles);
+        profile = {
+          id: finalProfile.id,
+          email: finalProfile.correo,
+          role,
+          verificado: finalProfile.verificado,
+          codigo_verificacion: finalProfile.codigo_verificacion,
+          codigo_enviado_en: finalProfile.codigo_enviado_en,
+          preguntas_seguridad: finalProfile.preguntas_seguridad,
+          intentos_fallidos: finalProfile.intentos_fallidos || 0,
+          bloqueado_hasta: finalProfile.bloqueado_hasta,
+          requiere_cambio_clave: finalProfile.requiere_cambio_clave,
+          clave_temporal_expira: finalProfile.clave_temporal_expira,
+        };
+      }
+    }
+
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
 
     // Verificar si es una contraseña temporal y si ya expiró
