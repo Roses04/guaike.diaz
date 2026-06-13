@@ -97,7 +97,7 @@ const getUserRecordByEmail = async (email: string) => {
 
   const { data, error } = await supabase
     .from("usuarios")
-    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, roles(nombre)")
+    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
     .eq("correo", normalizedEmail)
     .maybeSingle();
 
@@ -119,6 +119,8 @@ const getUserRecordByEmail = async (email: string) => {
     preguntas_seguridad: data.preguntas_seguridad,
     intentos_fallidos: data.intentos_fallidos || 0,
     bloqueado_hasta: data.bloqueado_hasta,
+    requiere_cambio_clave: data.requiere_cambio_clave,
+    clave_temporal_expira: data.clave_temporal_expira
   };
 };
 
@@ -136,88 +138,17 @@ const ensureUserRecord = async (
   const existing = await getUserRecordByEmail(email);
   if (existing) return existing;
 
-  // Try to get current authenticated supabase user to store auth_id and metadata
-  let sessionUserId: string | null = null;
-  let sessionUserMetadata: any = null;
-  let sessionUserEmailConfirmed = false;
-  try {
-    const session = await supabase.auth.getUser();
-    sessionUserId = session?.data?.user?.id || null;
-    sessionUserMetadata = session?.data?.user?.user_metadata || null;
-    sessionUserEmailConfirmed = Boolean(session?.data?.user?.email_confirmed_at);
-  } catch (e) {
-    sessionUserId = null;
-    sessionUserMetadata = null;
-    sessionUserEmailConfirmed = false;
-  }
+  // Since we implemented a DB Trigger to automatically insert the user into `public.usuarios` 
+  // upon creation in `auth.users`, we shouldn't attempt an INSERT here.
+  // The insert would fail anyway due to RLS policies preventing direct inserts.
+  // If we reach here, it might be a race condition, so we can wait a bit and retry.
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  const retry = await getUserRecordByEmail(email);
+  if (retry) return retry;
 
-  const { data: roleData, error: roleError } = await supabase
-    .from("roles")
-    .select("id,nombre")
-    .eq("nombre", roleName)
-    .maybeSingle();
-
-  if (roleError) {
-    createApiError(roleError.message || "Error al obtener rol");
-  }
-
-  let roleId = roleData?.id;
-  if (!roleId) {
-    const { data: insertedRole, error: insertRoleError } = await supabase
-      .from("roles")
-      .insert({ nombre: roleName })
-      .select("id")
-      .maybeSingle();
-
-    if (insertRoleError) {
-      createApiError(insertRoleError.message || "Error al crear rol");
-    }
-    roleId = insertedRole?.id;
-  }
-
-  if (!roleId) {
-    createApiError("No se pudo determinar el rol del usuario");
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-
-  const insertData: any = {
-    correo: normalizedEmail,
-    contrasena: "",
-    rol_id: roleId,
-  };
-
-  if (sessionUserId) insertData.auth_id = sessionUserId;
-
-  if (extra) {
-    if (extra.codigo_verificacion !== undefined) insertData.codigo_verificacion = extra.codigo_verificacion;
-    if (extra.codigo_enviado_en !== undefined) insertData.codigo_enviado_en = extra.codigo_enviado_en;
-    if (extra.preguntas_seguridad !== undefined) insertData.preguntas_seguridad = extra.preguntas_seguridad;
-    if (extra.verificado !== undefined) insertData.verificado = extra.verificado;
-  }
-
-  if (!extra?.preguntas_seguridad && sessionUserMetadata?.security_questions) {
-    insertData.preguntas_seguridad = sessionUserMetadata.security_questions;
-  }
-
-  if (insertData.verificado === undefined && sessionUserEmailConfirmed) {
-    insertData.verificado = true;
-  }
-
-  const { error: insertError } = await supabase.from("usuarios").insert(insertData);
-
-  if (insertError) {
-    // Duplicate key (race condition or RLS made SELECT return empty): fetch existing record
-    if (insertError.code === "23505" || insertError.message?.includes("duplicate key") || insertError.message?.includes("unique constraint")) {
-      const retry = await getUserRecordByEmail(email);
-      if (retry) return retry;
-      // If still null (RLS blocking read), return a minimal placeholder to avoid crashing
-      return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null };
-    }
-    createApiError(insertError.message || "Error al crear usuario");
-  }
-
-  return await getUserRecordByEmail(email);
+  // If it's still null, return a fallback object.
+  return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null };
 };
 
 const getSessionUser = async () => {
@@ -441,6 +372,9 @@ const createOperator = async (payload: any) => {
 };
 
 const getEvents = async () => {
+  // Llamar al RPC para purgar eventos expirados silenciosamente
+  await supabase.rpc("purge_old_events").catch(() => {});
+
   const { data, error } = await supabase
     .from("eventos")
     .select("id,titulo,descripcion,url_imagen,fecha_inicio,fecha_fin,ubicacion")
@@ -472,6 +406,28 @@ const createEvent = async (payload: any) => {
 
   if (error) createApiError(error.message);
   return { message: "Evento publicado exitosamente sobre el mapa.", event: data?.[0] };
+};
+
+const updateEvent = async (id: string, payload: any) => {
+  // Primero verificar que no haya iniciado
+  const { data: eventData, error: eventError } = await supabase.from("eventos").select("fecha_inicio").eq("id", id).single();
+  if (eventError) createApiError(eventError.message);
+  
+  if (new Date(eventData.fecha_inicio) <= new Date()) {
+    createApiError("No se puede modificar un evento que ya ha comenzado o finalizado.", 403);
+  }
+
+  const { error } = await supabase.from("eventos").update({
+    titulo: payload.titulo,
+    descripcion: payload.descripcion,
+    ubicacion: `SRID=4326;POINT(${payload.longitud} ${payload.latitud})`,
+    fecha_inicio: payload.fecha_inicio,
+    fecha_fin: payload.fecha_fin,
+    url_imagen: payload.url_imagen,
+  }).eq("id", id);
+
+  if (error) createApiError(error.message);
+  return { message: "Evento modificado con éxito." };
 };
 
 const deleteEvent = async (id: string) => {
@@ -760,23 +716,42 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     }
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
 
+    // Verificar si es una contraseña temporal y si ya expiró
+    if (profile.requiere_cambio_clave) {
+      if (profile.clave_temporal_expira && new Date(profile.clave_temporal_expira) < new Date()) {
+        createApiError("Tu contraseña temporal ha expirado. Por favor, contacta al administrador.", 403);
+      }
+      
+      // Si la contraseña temporal es válida, restablecemos los intentos fallidos
+      await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", profile.id);
+
+      // Devolvemos el perfil con el flag para que el frontend inicie el flujo de forzar cambio
+      return buildResponse({ 
+        token: (session as any).access_token, 
+        user: profile,
+        forcePasswordChange: true 
+      });
+    }
+
     await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", profile.id);
 
     return buildResponse({ token: (session as any).access_token, user: profile });
   }
 
   if (lowerMethod === "post" && route === "/auth/admin-register-user") {
-    let { email, password, role, name, phone } = payload || {};
+    let { email, password, role, name, phone, operatorData } = payload || {};
     email = normalizeEmail(email);
 
     if (!email || !password || !role || !name) {
       createApiError("Todos los campos obligatorios para el registro administrativo deben estar completos.");
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    // 1. Create the user in Supabase Auth
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        // Admin creates it, maybe auto-confirm if possible, or just send the email
         emailRedirectTo: getEmailRedirectUrl(),
         data: {
           role,
@@ -788,7 +763,52 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     if (signUpError) createApiError(signUpError.message);
 
-    return buildResponse({ message: "Usuario registrado por el administrador. Revisa el correo para confirmar la cuenta." }, 201);
+    // Give the DB trigger a moment to run
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // 2. Fetch the newly created user from public.usuarios
+    const newUsuario = await getUserRecordByEmail(email);
+    if (!newUsuario) {
+      createApiError("El usuario fue creado en Auth pero falló la sincronización. Contacte soporte.");
+    }
+
+    // 3. Update the role and set temporary password flags
+    const { data: roleData } = await supabase.from("roles").select("id").eq("nombre", role).maybeSingle();
+    
+    // Calcula fecha de expiración (10 días a partir de hoy)
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + 10);
+
+    const { error: updateError } = await supabase.from("usuarios").update({
+      rol_id: roleData?.id || newUsuario.role_id,
+      requiere_cambio_clave: true,
+      clave_temporal_expira: expirationDate.toISOString()
+    }).eq("id", newUsuario.id);
+
+    if (updateError) console.error("Error setting temp password flags:", updateError);
+
+    // 4. If it's an operator, insert operator data
+    if (role === "operador" && operatorData) {
+      const opPayload: any = {
+        usuario_id: newUsuario.id,
+        nombre_taller: operatorData.nombre_taller,
+        categoria_id: operatorData.categoria_id,
+        parroquia_id: operatorData.parroquia_id,
+        ubicacion: `SRID=4326;POINT(${operatorData.longitud} ${operatorData.latitud})`,
+        telefono_whatsapp: phone || null,
+        es_verificado: true // Admin created operators are verified by default
+      };
+
+      const { error: opError } = await supabase.from("operadores").insert([opPayload]);
+      if (opError) console.error("Error creating operator details:", opError);
+      
+      // We don't fail the request if operator fails, just log it, but ideally we should rollback or return a warning.
+    }
+
+    // Opcional: Enviar correo personalizado con la contraseña temporal
+    // sendEmailViaVercel(email, "Bienvenido: Tus Credenciales de Acceso", `Tu contraseña temporal es: ${password}. Tienes 10 días para cambiarla.`, "...");
+
+    return buildResponse({ message: "Usuario registrado por el administrador. Se le ha asignado una contraseña temporal con validez de 10 días." }, 201);
   }
 
   if (lowerMethod === "post" && route === "/auth/register") {
@@ -1032,6 +1052,12 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse(result, 201);
   }
 
+  if (lowerMethod === "put" && route.startsWith("/events/")) {
+    const id = route.split("/").pop() || "";
+    const result = await updateEvent(id, payload);
+    return buildResponse(result);
+  }
+
   if (lowerMethod === "delete" && route.startsWith("/events/")) {
     const id = route.split("/").pop() || "";
     const result = await deleteEvent(id);
@@ -1059,6 +1085,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 const api = {
   get: async (url: string, config?: any) => callEndpoint("get", url, config?.params),
   post: async (url: string, data?: any) => callEndpoint("post", url, data),
+  put: async (url: string, data?: any) => callEndpoint("put", url, data),
   patch: async (url: string, data?: any) => callEndpoint("patch", url, data),
   delete: async (url: string, data?: any) => callEndpoint("delete", url, data),
   request: async (config: any) => callEndpoint(config.method || "get", config.url, config.data || config.params),
@@ -1067,6 +1094,7 @@ const api = {
 export { getOfflineQueue, syncOfflineQueue };
 export const get = api.get;
 export const post = api.post;
+export const put = api.put;
 export const patch = api.patch;
 export const del = api.delete;
 export const request = api.request;

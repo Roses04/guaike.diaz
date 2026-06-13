@@ -18,6 +18,11 @@ const PREDEFINED_QUESTIONS = [
 const LoginView = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isForcePasswordChange, setIsForcePasswordChange] = useState(false);
+  const [tempToken, setTempToken] = useState("");
+  const [tempUser, setTempUser] = useState<any>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,6 +44,51 @@ const LoginView = () => {
     { label: "Estados Unidos +1", value: "+1" },
     { label: "España +34", value: "+34" },
   ];
+
+  const handleForcePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      if (!password || !confirmPassword) {
+        setError("Las contraseñas son obligatorias.");
+        setLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Las contraseñas no coinciden.");
+        setLoading(false);
+        return;
+      }
+      const pwError = validatePasswordStrength(password);
+      if (pwError) {
+        setError(pwError);
+        setLoading(false);
+        return;
+      }
+
+      // Llamada especial para cambiar la clave temporal. Se puede enviar con el token temporal en la cabecera.
+      const res = await api.post("/auth/reset-password", { email: tempUser.email, newPassword: password }, {
+        headers: { Authorization: `Bearer ${tempToken}` }
+      });
+
+      setSuccess("Contraseña actualizada exitosamente. Iniciando sesión...");
+      
+      setTimeout(() => {
+        setIsForcePasswordChange(false);
+        localStorage.setItem("auth_user", JSON.stringify(tempUser));
+        setAuth(tempUser, tempToken);
+        navigate(tempUser.role === "admin" ? "/admin" : "/perfil");
+      }, 1500);
+
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Ocurrió un error al cambiar la contraseña.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const normalizePhoneNumber = (value: string, countryCode: string) => {
     let digits = value.replace(/\D/g, "");
@@ -134,6 +184,13 @@ const LoginView = () => {
 
       const response = await api.post("/auth/login", { email, password });
       
+      if (response.data.forcePasswordChange) {
+        setTempToken(response.data.token);
+        setTempUser(response.data.user);
+        setIsForcePasswordChange(true);
+        return;
+      }
+
       // Guardar sesión y redirigir
       localStorage.setItem("auth_user", JSON.stringify(response.data.user));
       setAuth(response.data.user, response.data.token);
@@ -791,6 +848,69 @@ const LoginView = () => {
           </div>
         )}
       </div>
+
+      {isForcePasswordChange && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full relative shadow-2xl">
+            <h3 className="text-xl font-display font-bold text-slate-800 dark:text-white mb-2">Cambio de Contraseña Requerido</h3>
+            <p className="text-sm text-slate-500 mb-6">Por motivos de seguridad, debes actualizar tu contraseña temporal antes de continuar.</p>
+            
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm mb-4">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 p-3 rounded-xl text-sm mb-4">
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={handleForcePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Nueva Contraseña</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock size={18} className="text-slate-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-blue"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Confirmar Nueva Contraseña</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock size={18} className="text-slate-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-brand-blue"
+                    placeholder="Repite la contraseña"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-brand-gold hover:bg-brand-gold/90 text-slate-900 font-bold py-3.5 rounded-2xl transition duration-300"
+              >
+                {loading ? "Actualizando..." : "Actualizar Contraseña y Entrar"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -31,7 +31,9 @@ import {
   Trash2,
   TrendingUp,
   BarChart3,
-  ListTodo
+  ListTodo,
+  AlertCircle,
+  Edit
 } from "lucide-react";
 
 const AdminDashboardView = () => {
@@ -88,6 +90,7 @@ const AdminDashboardView = () => {
   const [publishingEvent, setPublishingEvent] = useState(false);
   const [eventSuccess, setEventSuccess] = useState("");
   const [eventError, setEventError] = useState("");
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
   // Tab 3: Stats States
   const [stats, setStats] = useState<any>(null);
@@ -102,6 +105,15 @@ const AdminDashboardView = () => {
   const [adminError, setAdminError] = useState("");
   const [adminSuccess, setAdminSuccess] = useState("");
   const [adminLoading, setAdminLoading] = useState(false);
+  
+  // Operator Registration Additional States
+  const [adminWorkshopName, setAdminWorkshopName] = useState("");
+  const [adminCategoryId, setAdminCategoryId] = useState("");
+  const [adminParroquiaId, setAdminParroquiaId] = useState("");
+  const [adminLocation, setAdminLocation] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
+  
+  const [staticCategories, setStaticCategories] = useState([]);
+  const [staticParroquias, setStaticParroquias] = useState([]);
 
   // Global Action Notification State
   const [alertMsg, setAlertMsg] = useState("");
@@ -152,6 +164,14 @@ const AdminDashboardView = () => {
       loadEventsList();
     } else if (activeTab === "stats") {
       loadStats();
+    } else if (activeTab === "users") {
+      // Load static data for operator registration if not loaded
+      if (staticCategories.length === 0) {
+        api.get("/operators/static-data").then(res => {
+          setStaticCategories(res.data.categorias || []);
+          setStaticParroquias(res.data.parroquias || []);
+        }).catch(err => console.error(err));
+      }
     }
   }, [activeTab]);
 
@@ -191,8 +211,13 @@ const AdminDashboardView = () => {
         url_imagen: eventImageUrl
       };
 
-      await api.post("/events", payload);
-      setEventSuccess("¡Feria/Evento cultural publicado exitosamente en el mapa!");
+      if (editingEventId) {
+        await api.put(`/events/${editingEventId}`, payload);
+        setEventSuccess("¡Evento modificado exitosamente!");
+      } else {
+        await api.post("/events", payload);
+        setEventSuccess("¡Feria/Evento cultural publicado exitosamente en el mapa!");
+      }
       
       // Clear form
       setEventTitle("");
@@ -201,13 +226,32 @@ const AdminDashboardView = () => {
       setEventEnd("");
       setEventImageUrl("");
       setEventLocation(MUNICIPIO_DIAZ_CENTER);
+      setEditingEventId(null);
 
       loadEventsList();
     } catch (err: any) {
-      setEventError(err.response?.data?.message || "Error al crear el evento.");
+      setEventError(err.response?.data?.message || "Error al guardar el evento.");
     } finally {
       setPublishingEvent(false);
     }
+  };
+
+  const handleEditClick = (ev: any) => {
+    const isStarted = new Date(ev.fecha_inicio) <= new Date();
+    if (isStarted) {
+      alert("No puedes editar un evento que ya ha comenzado.");
+      return;
+    }
+    setEditingEventId(ev.id);
+    setEventTitle(ev.titulo || "");
+    setEventDescription(ev.descripcion || "");
+    setEventStart(ev.fecha_inicio ? ev.fecha_inicio.slice(0, 16) : "");
+    setEventEnd(ev.fecha_fin ? ev.fecha_fin.slice(0, 16) : "");
+    setEventImageUrl(ev.url_imagen || "");
+    if (ev.latitud && ev.longitud) {
+      setEventLocation([ev.latitud, ev.longitud]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Event Delete Action
@@ -236,20 +280,39 @@ const AdminDashboardView = () => {
         return;
       }
 
-      await api.post("/auth/admin-register-user", {
+      let operatorData = undefined;
+      if (adminRole === "operador") {
+        if (!adminWorkshopName || !adminCategoryId || !adminParroquiaId) {
+          setAdminError("Completa todos los datos obligatorios del operador (Taller, Categoría, Parroquia).");
+          setAdminLoading(false);
+          return;
+        }
+        operatorData = {
+          nombre_taller: adminWorkshopName,
+          categoria_id: adminCategoryId,
+          parroquia_id: adminParroquiaId,
+          latitud: adminLocation[0],
+          longitud: adminLocation[1]
+        };
+      }
+
+      const res = await api.post("/auth/admin-register-user", {
         email: adminEmail,
         password: adminPassword,
         role: adminRole,
         name: adminName,
         phone: adminPhone,
+        operatorData
       });
 
-      setAdminSuccess("Usuario creado correctamente. Se ha enviado el código de verificación.");
+      setAdminSuccess(res.data?.message || "Usuario creado correctamente.");
       setAdminEmail("");
       setAdminPassword("");
       setAdminName("");
       setAdminPhone("");
       setAdminRole("turista");
+      setAdminWorkshopName("");
+      setAdminLocation(MUNICIPIO_DIAZ_CENTER);
     } catch (err: any) {
       setAdminError(err.response?.data?.message || "No se pudo crear el usuario.");
     } finally {
@@ -477,8 +540,70 @@ const AdminDashboardView = () => {
                 className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
                 placeholder="Ej. +584121234567"
               />
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">El teléfono es opcional y se guarda como dato de contacto. La verificación se envía por email OTP.</p>
             </div>
+
+            {adminRole === "operador" && (
+              <div className="space-y-4 md:col-span-2 border-t border-slate-200 dark:border-white/10 pt-4 mt-2">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">Datos del Operador (Taller/Servicio)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3 md:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nombre del Taller o Emprendimiento *</label>
+                    <input
+                      type="text"
+                      value={adminWorkshopName}
+                      onChange={(e) => setAdminWorkshopName(e.target.value)}
+                      className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                      placeholder="Ej. Tejidos Margarita"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Categoría *</label>
+                    <select
+                      value={adminCategoryId}
+                      onChange={(e) => setAdminCategoryId(e.target.value)}
+                      className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                    >
+                      <option value="">Selecciona Categoría</option>
+                      {staticCategories.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Parroquia *</label>
+                    <select
+                      value={adminParroquiaId}
+                      onChange={(e) => setAdminParroquiaId(e.target.value)}
+                      className="w-full rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-blue/30"
+                    >
+                      <option value="">Selecciona Parroquia</option>
+                      {staticParroquias.map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-3 md:col-span-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ubicación (Mueve el marcador)</label>
+                    <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 z-0">
+                      <MapContainer
+                        center={adminLocation}
+                        zoom={13}
+                        className="h-full w-full"
+                        maxBounds={MUNICIPIO_MAX_BOUNDS}
+                        maxBoundsViscosity={1.0}
+                        minZoom={12}
+                      >
+                        <TileLayer {...getMapTileConfig(isDarkMode)} />
+                        <MunicipioMaskLayer />
+                        <MunicipioBorderLayer />
+                        <MunicipioBoundsController isDarkMode={isDarkMode} />
+                        <MunicipioLocationPicker position={adminLocation} setPosition={setAdminLocation} />
+                      </MapContainer>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="md:col-span-2 pt-2">
               <button
@@ -501,7 +626,7 @@ const AdminDashboardView = () => {
             <div className="absolute top-0 left-0 right-0 h-1 bg-brand-gold"></div>
             <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-200/80 dark:border-white/5 pb-4">
               <Calendar size={20} className="text-brand-gold" />
-              Publicar Feria o Evento
+              {editingEventId ? "Editar Feria o Evento" : "Publicar Feria o Evento"}
             </h2>
 
             {eventSuccess && (
@@ -597,13 +722,32 @@ const AdminDashboardView = () => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={publishingEvent}
-              className="w-full bg-brand-gold hover:bg-brand-gold/90 text-black font-bold py-3 rounded-2xl transition disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer text-sm"
-            >
-              <Plus size={16} /> {publishingEvent ? "Publicando..." : "Publicar en Mapa"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={publishingEvent}
+                className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-black font-bold py-3 rounded-2xl transition disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer text-sm"
+              >
+                <Plus size={16} /> {publishingEvent ? "Guardando..." : editingEventId ? "Actualizar Evento" : "Publicar en Mapa"}
+              </button>
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingEventId(null);
+                    setEventTitle("");
+                    setEventDescription("");
+                    setEventStart("");
+                    setEventEnd("");
+                    setEventImageUrl("");
+                    setEventLocation(MUNICIPIO_DIAZ_CENTER);
+                  }}
+                  className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white font-bold py-3 px-4 rounded-2xl transition cursor-pointer text-sm"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
 
           {/* Active Events List */}
@@ -632,12 +776,27 @@ const AdminDashboardView = () => {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteEvent(ev.id)}
-                      className="bg-red-50 dark:bg-red-950/20 text-red-500 hover:bg-red-100 p-2.5 rounded-xl transition cursor-pointer"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditClick(ev)}
+                        className={`p-2.5 rounded-xl transition ${
+                          new Date(ev.fecha_inicio) <= new Date() 
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed" 
+                            : "bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20 dark:bg-brand-light/10 dark:text-brand-light dark:hover:bg-brand-light/20 cursor-pointer"
+                        }`}
+                        title={new Date(ev.fecha_inicio) <= new Date() ? "No se puede editar un evento en curso o finalizado" : "Editar evento"}
+                        disabled={new Date(ev.fecha_inicio) <= new Date()}
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="bg-red-50 dark:bg-red-950/20 text-red-500 hover:bg-red-100 p-2.5 rounded-xl transition cursor-pointer"
+                        title="Eliminar evento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -785,7 +944,16 @@ const AdminDashboardView = () => {
               </div>
             </>
           ) : (
-            <p className="text-center text-slate-400">Error al cargar estadísticas.</p>
+            <div className="glass-panel p-10 rounded-3xl text-center space-y-4 shadow-xl">
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                <AlertCircle size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white">Problema al cargar métricas</h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">No pudimos conectar con la base de datos para obtener las estadísticas. Por favor, intenta recargar la página más tarde.</p>
+              <button onClick={loadStats} className="mt-4 px-6 py-2 bg-brand-blue/10 text-brand-blue dark:bg-brand-light/10 dark:text-brand-light font-bold rounded-xl text-sm transition hover:bg-brand-blue/20">
+                Reintentar
+              </button>
+            </div>
           )}
         </div>
       )}
