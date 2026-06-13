@@ -21,7 +21,7 @@ const LoginView = () => {
   const [isForcePasswordChange, setIsForcePasswordChange] = useState(false);
   const [tempToken, setTempToken] = useState("");
   const [tempUser, setTempUser] = useState<any>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, _setShowPassword] = useState(false);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -70,9 +70,7 @@ const LoginView = () => {
       }
 
       // Llamada especial para cambiar la clave temporal. Se puede enviar con el token temporal en la cabecera.
-      const res = await api.post("/auth/reset-password", { email: tempUser.email, newPassword: password }, {
-        headers: { Authorization: `Bearer ${tempToken}` }
-      });
+      await api.post("/auth/reset-password", { email: tempUser.email, newPassword: password });
 
       setSuccess("Contraseña actualizada exitosamente. Iniciando sesión...");
       

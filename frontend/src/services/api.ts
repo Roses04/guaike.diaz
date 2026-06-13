@@ -128,7 +128,7 @@ const getUserRecordByEmail = async (email: string) => {
 const ensureUserRecord = async (
   email: string,
   roleName: string,
-  extra?: {
+  _extra?: {
     codigo_verificacion?: string | null;
     codigo_enviado_en?: string | null;
     preguntas_seguridad?: any;
@@ -372,8 +372,7 @@ const createOperator = async (payload: any) => {
 };
 
 const getEvents = async () => {
-  // Llamar al RPC para purgar eventos expirados silenciosamente
-  await supabase.rpc("purge_old_events").catch(() => {});
+  await supabase.rpc("purge_old_events");
 
   const { data, error } = await supabase
     .from("eventos")
@@ -412,8 +411,9 @@ const updateEvent = async (id: string, payload: any) => {
   // Primero verificar que no haya iniciado
   const { data: eventData, error: eventError } = await supabase.from("eventos").select("fecha_inicio").eq("id", id).single();
   if (eventError) createApiError(eventError.message);
+  if (!eventData) createApiError("Evento no encontrado", 404);
   
-  if (new Date(eventData.fecha_inicio) <= new Date()) {
+  if (new Date(eventData!.fecha_inicio) <= new Date()) {
     createApiError("No se puede modificar un evento que ya ha comenzado o finalizado.", 403);
   }
 
@@ -747,7 +747,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     }
 
     // 1. Create the user in Supabase Auth
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -780,17 +780,17 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     expirationDate.setDate(expirationDate.getDate() + 10);
 
     const { error: updateError } = await supabase.from("usuarios").update({
-      rol_id: roleData?.id || newUsuario.role_id,
+      rol_id: roleData?.id || (newUsuario as any).rol_id || null,
       requiere_cambio_clave: true,
       clave_temporal_expira: expirationDate.toISOString()
-    }).eq("id", newUsuario.id);
+    }).eq("id", newUsuario!.id);
 
     if (updateError) console.error("Error setting temp password flags:", updateError);
 
     // 4. If it's an operator, insert operator data
     if (role === "operador" && operatorData) {
       const opPayload: any = {
-        usuario_id: newUsuario.id,
+        usuario_id: newUsuario!.id,
         nombre_taller: operatorData.nombre_taller,
         categoria_id: operatorData.categoria_id,
         parroquia_id: operatorData.parroquia_id,

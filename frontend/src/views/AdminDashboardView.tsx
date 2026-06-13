@@ -594,9 +594,9 @@ const AdminDashboardView = () => {
                         minZoom={12}
                       >
                         <TileLayer {...getMapTileConfig(isDarkMode)} />
-                        <MunicipioMaskLayer />
-                        <MunicipioBorderLayer />
-                        <MunicipioBoundsController isDarkMode={isDarkMode} />
+                        <MunicipioMaskLayer isDarkMode={isDarkMode} />
+                        <MunicipioBorderLayer isDarkMode={isDarkMode} />
+                        <MunicipioBoundsController />
                         <MunicipioLocationPicker position={adminLocation} setPosition={setAdminLocation} />
                       </MapContainer>
                     </div>
