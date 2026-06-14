@@ -40,6 +40,7 @@ const EmailConfirmationView = () => {
         })();
       } else {
         setFlow("confirm");
+        navigate("/login?verified=true", { replace: true });
       }
     } catch (e) {
       setFlow("other");

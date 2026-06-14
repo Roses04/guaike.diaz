@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
@@ -130,7 +130,17 @@ const LoginView = () => {
   const isOffline = !navigator.onLine;
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth, token } = useAuthStore();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("verified") === "true") {
+      setSuccess("Se ha verificado tu cuenta exitosamente.");
+      // Optional: Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location]);
 
   const validateEmail = (mail: string) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;

@@ -142,7 +142,7 @@ const ensureUserRecord = async (
   // upon creation in `auth.users`, we shouldn't attempt an INSERT here.
   // The insert would fail anyway due to RLS policies preventing direct inserts.
   // If we reach here, it might be a race condition, so we can wait a bit and retry.
-  
+
   await new Promise(resolve => setTimeout(resolve, 1000));
   const retry = await getUserRecordByEmail(email);
   if (retry) return retry;
@@ -215,10 +215,10 @@ const loadOperators = async (params: any = {}) => {
     supabase.from("parroquias").select("id,nombre"),
     operatorIds.length > 0
       ? supabase
-          .from("operador_imagenes")
-          .select("operador_id,url_imagen,es_principal")
-          .in("operador_id", operatorIds)
-          .eq("es_principal", true)
+        .from("operador_imagenes")
+        .select("operador_id,url_imagen,es_principal")
+        .in("operador_id", operatorIds)
+        .eq("es_principal", true)
       : { data: [], error: null },
   ]);
 
@@ -402,9 +402,10 @@ const createEvent = async (payload: any) => {
       fecha_fin: payload.fecha_fin,
       url_imagen: payload.url_imagen,
     },
-  ]);
+  ]).select();
 
   if (error) createApiError(error.message);
+
   return { message: "Evento publicado exitosamente sobre el mapa.", event: data?.[0] };
 };
 
@@ -413,7 +414,7 @@ const updateEvent = async (id: string, payload: any) => {
   const { data: eventData, error: eventError } = await supabase.from("eventos").select("fecha_inicio").eq("id", id).single();
   if (eventError) createApiError(eventError.message);
   if (!eventData) createApiError("Evento no encontrado", 404);
-  
+
   if (new Date(eventData!.fecha_inicio) <= new Date()) {
     createApiError("No se puede modificar un evento que ya ha comenzado o finalizado.", 403);
   }
@@ -703,104 +704,30 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
 
-    // Buscar el perfil primero por ID de auth (más confiable con RLS) y luego por correo
+    // Buscar el perfil por correo (la columna `id` de public.usuarios es BIGSERIAL, no UUID,
+    // por lo que no se puede comparar directamente con auth.users.id)
     const authUserId = session!.user?.id;
-    
-    let profile = null;
-    
-    // Intento 1: buscar por ID de auth (evita problemas de RLS con correo)
-    if (authUserId) {
-      const { data: profileById } = await supabase
-        .from("usuarios")
-        .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
-        .eq("id", authUserId)
-        .maybeSingle();
-      
-      if (profileById) {
-        const role = await resolveRoleName(profileById.rol_id, profileById.roles);
-        profile = {
-          id: profileById.id,
-          email: profileById.correo,
-          role,
-          verificado: profileById.verificado,
-          codigo_verificacion: profileById.codigo_verificacion,
-          codigo_enviado_en: profileById.codigo_enviado_en,
-          preguntas_seguridad: profileById.preguntas_seguridad,
-          intentos_fallidos: profileById.intentos_fallidos || 0,
-          bloqueado_hasta: profileById.bloqueado_hasta,
-          requiere_cambio_clave: profileById.requiere_cambio_clave,
-          clave_temporal_expira: profileById.clave_temporal_expira,
-        };
-      }
-    }
 
-    // Intento 2: fallback por correo
+    let profile = await getUserRecordByEmail(email as string);
+
+    // Intento 2: esperar y reintentar (posible race condition del trigger de auth)
     if (!profile) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
       profile = await getUserRecordByEmail(email as string);
     }
 
-    // Intento 3: esperar y reintentar (trigger race condition)
-    if (!profile) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      if (authUserId) {
-        const { data: retryById } = await supabase
-          .from("usuarios")
-          .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
-          .eq("id", authUserId)
-          .maybeSingle();
-        if (retryById) {
-          const role = await resolveRoleName(retryById.rol_id, retryById.roles);
-          profile = {
-            id: retryById.id,
-            email: retryById.correo,
-            role,
-            verificado: retryById.verificado,
-            codigo_verificacion: retryById.codigo_verificacion,
-            codigo_enviado_en: retryById.codigo_enviado_en,
-            preguntas_seguridad: retryById.preguntas_seguridad,
-            intentos_fallidos: retryById.intentos_fallidos || 0,
-            bloqueado_hasta: retryById.bloqueado_hasta,
-            requiere_cambio_clave: retryById.requiere_cambio_clave,
-            clave_temporal_expira: retryById.clave_temporal_expira,
-          };
-        }
-      }
-    }
-
-    // Intento 4: si el trigger no está activo, crear el registro con upsert seguro (no falla si ya existe)
+    // Intento 3: si el trigger no creó el registro, insertarlo con upsert usando `correo` como clave
     if (!profile && authUserId) {
       const { data: roleRow } = await supabase.from("roles").select("id").eq("nombre", "turista").maybeSingle();
       const rolId = roleRow?.id || null;
-      
-      // ignoreDuplicates = true evita el error de duplicate key si ya existe
+
+      // Upsert por correo (única restricción disponible desde el cliente)
       await supabase.from("usuarios").upsert(
-        { id: authUserId, correo: normalizeEmail(email as string), rol_id: rolId, verificado: false },
-        { onConflict: "id", ignoreDuplicates: true }
+        { correo: normalizeEmail(email as string), rol_id: rolId, verificado: false },
+        { onConflict: "correo", ignoreDuplicates: true }
       );
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const { data: finalProfile } = await supabase
-        .from("usuarios")
-        .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
-        .eq("id", authUserId)
-        .maybeSingle();
-      
-      if (finalProfile) {
-        const role = await resolveRoleName(finalProfile.rol_id, finalProfile.roles);
-        profile = {
-          id: finalProfile.id,
-          email: finalProfile.correo,
-          role,
-          verificado: finalProfile.verificado,
-          codigo_verificacion: finalProfile.codigo_verificacion,
-          codigo_enviado_en: finalProfile.codigo_enviado_en,
-          preguntas_seguridad: finalProfile.preguntas_seguridad,
-          intentos_fallidos: finalProfile.intentos_fallidos || 0,
-          bloqueado_hasta: finalProfile.bloqueado_hasta,
-          requiere_cambio_clave: finalProfile.requiere_cambio_clave,
-          clave_temporal_expira: finalProfile.clave_temporal_expira,
-        };
-      }
+      profile = await getUserRecordByEmail(email as string);
     }
 
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
@@ -810,15 +737,15 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       if (profile.clave_temporal_expira && new Date(profile.clave_temporal_expira) < new Date()) {
         createApiError("Tu contraseña temporal ha expirado. Por favor, contacta al administrador.", 403);
       }
-      
+
       // Si la contraseña temporal es válida, restablecemos los intentos fallidos
       await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", profile.id);
 
       // Devolvemos el perfil con el flag para que el frontend inicie el flujo de forzar cambio
-      return buildResponse({ 
-        token: (session as any).access_token, 
+      return buildResponse({
+        token: (session as any).access_token,
         user: profile,
-        forcePasswordChange: true 
+        forcePasswordChange: true
       });
     }
 
@@ -863,7 +790,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     // 3. Update the role and set temporary password flags
     const { data: roleData } = await supabase.from("roles").select("id").eq("nombre", role).maybeSingle();
-    
+
     // Calcula fecha de expiración (10 días a partir de hoy)
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 10);
@@ -890,7 +817,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
       const { error: opError } = await supabase.from("operadores").insert([opPayload]);
       if (opError) console.error("Error creating operator details:", opError);
-      
+
       // We don't fail the request if operator fails, just log it, but ideally we should rollback or return a warning.
     }
 
@@ -903,7 +830,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   if (lowerMethod === "post" && route === "/auth/register") {
     let { email, password, role, name, phone, securityQuestions } = payload || {};
     email = normalizeEmail(email);
-    
+
     // Validar y normalizar preguntas de seguridad antes de hashear
     let hashedQuestions = null;
     if (Array.isArray(securityQuestions) && securityQuestions.length > 0) {

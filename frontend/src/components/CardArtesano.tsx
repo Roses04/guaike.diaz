@@ -33,11 +33,11 @@ const CardArtesano = ({ operator }: { operator: Operator }) => {
           </div>
         )}
       </div>
-      <div className="p-5 flex-grow flex flex-col">
+      <div className="p-5 grow flex flex-col">
         <h3 className="font-display font-bold text-xl text-slate-800 dark:text-slate-100 group-hover:text-brand-blue dark:group-hover:text-brand-light transition duration-200 mb-2">
           {operator.nombre_taller}
         </h3>
-        <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-4 flex-grow">
+        <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-3 mb-4 grow">
           {operator.descripcion || "Artesano tradicional verificado del Municipio Díaz."}
         </p>
         <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
