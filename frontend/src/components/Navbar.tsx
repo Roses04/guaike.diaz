@@ -1,3 +1,12 @@
+/**
+ * COMPONENTE NAVBAR (Barra de Navegación Principal)
+ * 
+ * Se muestra en la parte superior de todas las pantallas.
+ * Cambia dinámicamente dependiendo de si el usuario ha iniciado sesión 
+ * y qué rol tiene (ej. oculta el botón "Admin" si no eres administrador).
+ * También incluye un buscador para móviles y un interruptor de Modo Oscuro.
+ */
+
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
@@ -14,9 +23,10 @@ import {
   Users,
   MoreVertical,
   Search,
-} from "lucide-react";
+} from "lucide-react"; // Iconos vectoriales
 import ConfirmModal from "./ui/ConfirmModal";
 
+// Diccionario para cambiar el título de la barra en móviles según la URL
 const ROUTE_TITLES: Record<string, string> = {
   "/": "Inicio",
   "/directorio": "Directorio",

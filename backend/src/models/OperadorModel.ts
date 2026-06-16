@@ -1,7 +1,19 @@
-import pool from "../config/database.js";
+/**
+ * MODELO DE OPERADORES (Capa de Acceso a Datos)
+ * 
+ * Aquí se definen todas las consultas (Queries) directas a PostgreSQL 
+ * relacionadas con la tabla 'operadores' y sus dependencias.
+ * Utiliza PostGIS (ST_X, ST_Y, ST_MakePoint) para manejar datos geoespaciales.
+ */
+
+import pool, { executeWithRLS } from "../config/database.js";
 import type { Operador, Producto, Resena, OpcionAccesibilidad, OperadorImagen } from "../types/database.types.js";
 
 export class OperadorModel {
+  /**
+   * Encuentra todos los operadores verificados, aplicando filtros opcionales.
+   * Utiliza funciones JSON de Postgres (json_agg) para devolver las accesibilidades anidadas.
+   */
   public static async findVerified(filters?: { parroquiaId?: number; categoriaId?: number; query?: string }): Promise<any[]> {
     let sql = `
       SELECT o.id, o.nombre_taller, o.descripcion, o.telefono_whatsapp, o.es_verificado, o.qr_codigo_unico,
@@ -48,6 +60,9 @@ export class OperadorModel {
     return result.rows;
   }
 
+  /**
+   * Obtiene la lista de operadores pendientes de revisión por un administrador.
+   */
   public static async findPending(): Promise<any[]> {
     const sql = `
       SELECT o.id, o.nombre_taller, o.descripcion, o.telefono_whatsapp, o.es_verificado, o.direccion_detallada,
@@ -67,6 +82,10 @@ export class OperadorModel {
     return result.rows;
   }
 
+  /**
+   * Obtiene el perfil completo de un operador, agrupando datos de varias tablas
+   * (Galería, Accesibilidad, Productos, Reseñas).
+   */
   public static async findById(id: number): Promise<any | null> {
     const operatorResult = await pool.query(
       `SELECT o.id, o.usuario_id, o.nombre_taller, o.descripcion, o.telefono_whatsapp, o.es_verificado, 
@@ -87,14 +106,14 @@ export class OperadorModel {
 
     const operator = operatorResult.rows[0];
 
-    // Load gallery images
+    // Cargar galería de imágenes
     const imagesResult = await pool.query(
       "SELECT id, url_imagen, es_principal FROM operador_imagenes WHERE operador_id = $1 ORDER BY es_principal DESC, id ASC",
       [id]
     );
     operator.imagenes = imagesResult.rows;
 
-    // Load accessibilities
+    // Cargar etiquetas de accesibilidad
     const accessResult = await pool.query(
       `SELECT oa.id, oa.etiqueta, oa.icono 
        FROM opciones_accesibilidad oa
@@ -104,14 +123,14 @@ export class OperadorModel {
     );
     operator.accesibilidades = accessResult.rows;
 
-    // Load product catalog
+    // Cargar catálogo de productos activos
     const productsResult = await pool.query(
       "SELECT id, nombre, descripcion, precio, url_imagen, esta_disponible FROM productos WHERE operador_id = $1 AND esta_disponible = true ORDER BY id DESC",
       [id]
     );
     operator.productos = productsResult.rows;
 
-    // Load verified reviews
+    // Cargar reseñas verificadas
     const reviewsResult = await pool.query(
       `SELECT r.id, r.puntuacion, r.comentario, r.qr_verificado, r.fecha_creacion, u.correo as usuario_correo
        FROM resenas r
@@ -122,7 +141,7 @@ export class OperadorModel {
     );
     operator.resenas = reviewsResult.rows;
 
-    // Average rating
+    // Calcular promedio de calificación
     const ratingResult = await pool.query(
       "SELECT AVG(puntuacion)::float as promedio, COUNT(*)::int as total FROM resenas WHERE operador_id = $1",
       [id]
@@ -133,6 +152,10 @@ export class OperadorModel {
     return operator;
   }
 
+  /**
+   * Busca un operador usando el ID de usuario autenticado (para verificar 
+   * si el usuario logueado ya es un operador).
+   */
   public static async findByUsuarioId(usuarioId: number): Promise<any | null> {
     const result = await pool.query("SELECT id FROM operadores WHERE usuario_id = $1", [usuarioId]);
     if (result.rows.length === 0) {
@@ -141,7 +164,12 @@ export class OperadorModel {
     return this.findById(result.rows[0].id);
   }
 
+  /**
+   * Inserta un nuevo operador en la base de datos de manera transaccional.
+   * Si algo falla, revierte (ROLLBACK) todo el proceso para no dejar datos huérfanos.
+   */
   public static async create(
+    user: any,
     usuarioId: number,
     parroquiaId: number,
     categoriaId: number,
@@ -155,11 +183,10 @@ export class OperadorModel {
     galeriaUrls: string[],
     accesibilidadIds: number[]
   ): Promise<number> {
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
+    return executeWithRLS(user, async (client) => {
+      await client.query("BEGIN"); // Iniciar transacción
 
-      // Insert core operator profile using PostGIS Point
+      // Insertar el perfil base usando un Punto de PostGIS
       const operatorInsert = await client.query(
         `INSERT INTO operadores 
          (usuario_id, parroquia_id, categoria_id, nombre_taller, descripcion, ubicacion, direccion_detallada, telefono_whatsapp)
@@ -170,7 +197,7 @@ export class OperadorModel {
 
       const operadorId = operatorInsert.rows[0].id;
 
-      // Insert primary image
+      // Insertar imagen principal
       if (imagenPrincipalUrl) {
         await client.query(
           `INSERT INTO operador_imagenes (operador_id, url_imagen, es_principal, subido_por_usuario_id) 
@@ -179,7 +206,7 @@ export class OperadorModel {
         );
       }
 
-      // Insert gallery images
+      // Insertar galería adicional
       if (galeriaUrls && galeriaUrls.length > 0) {
         for (const url of galeriaUrls) {
           await client.query(
@@ -190,7 +217,7 @@ export class OperadorModel {
         }
       }
 
-      // Insert accessibility tags
+      // Insertar etiquetas de accesibilidad
       if (accesibilidadIds && accesibilidadIds.length > 0) {
         for (const accId of accesibilidadIds) {
           await client.query(
@@ -201,17 +228,13 @@ export class OperadorModel {
         }
       }
 
-      await client.query("COMMIT");
+      await client.query("COMMIT"); // Confirmar transacción
       return operadorId;
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   public static async update(
+    user: any,
     id: number,
     parroquiaId: number,
     categoriaId: number,
@@ -223,11 +246,9 @@ export class OperadorModel {
     telefonoWhatsapp: string,
     accesibilidadIds: number[]
   ): Promise<void> {
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
+    return executeWithRLS(user, async (client) => {
 
-      // Update core profile
+      // Actualizar perfil base
       await client.query(
         `UPDATE operadores 
          SET parroquia_id = $1, categoria_id = $2, nombre_taller = $3, descripcion = $4,
@@ -237,7 +258,7 @@ export class OperadorModel {
         [parroquiaId, categoriaId, nombreTaller, descripcion, longitud, latitud, direccionDetallada, telefonoWhatsapp, id]
       );
 
-      // Re-insert accessibility tags
+      // Re-insertar etiquetas de accesibilidad
       await client.query("DELETE FROM operador_accesibilidad WHERE operador_id = $1", [id]);
       if (accesibilidadIds && accesibilidadIds.length > 0) {
         for (const accId of accesibilidadIds) {
@@ -248,23 +269,24 @@ export class OperadorModel {
           );
         }
       }
-
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
-  public static async verify(id: number, esVerificado: boolean): Promise<void> {
-    await pool.query(
-      "UPDATE operadores SET es_verificado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2",
-      [esVerificado, id]
-    );
+  /**
+   * Cambia el estatus de un operador (Aprobado/Rechazado)
+   */
+  public static async verify(user: any, id: number, esVerificado: boolean): Promise<void> {
+    return executeWithRLS(user, async (client) => {
+      await client.query(
+        "UPDATE operadores SET es_verificado = $1, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = $2",
+        [esVerificado, id]
+      );
+    });
   }
 
+  /**
+   * Obtiene los datos estáticos que no cambian a menudo.
+   */
   public static async getStaticData(): Promise<{ categorias: any[]; parroquias: any[]; accesibilidades: any[] }> {
     const cats = await pool.query("SELECT id, nombre, descripcion FROM categorias ORDER BY nombre ASC");
     const parrs = await pool.query("SELECT id, nombre FROM parroquias ORDER BY nombre ASC");

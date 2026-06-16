@@ -15,6 +15,7 @@ export class EventController {
 
   public static async createEvent(req: AuthRequest, res: Response): Promise<void> {
     const { titulo, descripcion, longitud, latitud, fecha_inicio, fecha_fin, url_imagen } = req.body;
+    const user = req.user;
 
     if (!titulo || !longitud || !latitud || !fecha_inicio || !fecha_fin) {
       res.status(400).json({
@@ -25,6 +26,7 @@ export class EventController {
 
     try {
       const event = await EventoModel.create(
+        user,
         titulo,
         descripcion || "",
         parseFloat(longitud),
@@ -38,17 +40,22 @@ export class EventController {
         message: "Evento publicado exitosamente sobre el mapa.",
         event,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al crear evento:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      if (error.code === '42501') {
+        res.status(403).json({ message: "No tienes permisos suficientes (RLS) para crear eventos" });
+      } else {
+        res.status(500).json({ message: "Error interno del servidor" });
+      }
     }
   }
 
   public static async deleteEvent(req: AuthRequest, res: Response): Promise<void> {
     const { id } = req.params;
+    const user = req.user;
 
     try {
-      const deleted = await EventoModel.delete(parseInt(id as string));
+      const deleted = await EventoModel.delete(user, parseInt(id as string));
       if (!deleted) {
         res.status(404).json({ message: "Evento no encontrado" });
         return;

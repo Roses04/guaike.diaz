@@ -1,8 +1,20 @@
+/**
+ * COMPONENTE RAÍZ (ENRUTADOR Y LAYOUT GLOBAL)
+ * 
+ * Aquí se define la estructura general de la aplicación web:
+ * - Navbar (Barra de navegación superior)
+ * - Footer (Pie de página)
+ * - MobileTabBar (Barra inferior para móviles)
+ * - El sistema de rutas (react-router-dom) que decide qué "Vista" cargar según la URL.
+ */
+
 import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import MobileTabBar from "./components/MobileTabBar";
 import Footer from "./components/Footer";
+
+// Vistas (Pantallas completas)
 import HomeView from "./views/HomeView";
 import DirectoryView from "./views/DirectoryView";
 import MapView from "./views/MapView";
@@ -13,22 +25,25 @@ import QRScannerView from "./views/QRScannerView";
 import AdminDashboardView from "./views/AdminDashboardView";
 import ItineraryView from "./views/ItineraryView";
 import ProfileView from "./views/ProfileView";
+import EmailConfirmationView from "./views/EmailConfirmationView";
+
+// Estado Global y Utilidades
 import { useThemeStore } from "./store/useThemeStore";
 import api, { syncOfflineQueue } from "./services/api";
 import InstallPWA from "./components/InstallPWA";
 import { NetworkBanner } from "./components/NetworkBanner";
 import { useAuthStore } from "./store/useAuthStore";
 import { normalizeAuthUser } from "./utils/authUser";
-import EmailConfirmationView from "./views/EmailConfirmationView";
 
 function App() {
   const { initializeTheme } = useThemeStore();
   const { token, user, setAuth } = useAuthStore();
 
   useEffect(() => {
+    // 1. Inicializa el tema (Claro/Oscuro) basado en las preferencias del usuario
     initializeTheme();
 
-    // Restaurar sesión si hay token guardado pero no usuario en memoria
+    // 2. Restaurar sesión si hay token guardado pero no usuario en memoria
     if (token && !user) {
       api.get("/auth/profile")
         .then((res) => {
@@ -38,6 +53,7 @@ function App() {
           }
         })
         .catch(() => {
+          // Si falla (ej. sin internet), intenta cargar el usuario de la caché local
           const cachedUser = localStorage.getItem("auth_user");
           if (cachedUser) {
             try {
@@ -54,7 +70,7 @@ function App() {
         });
     }
 
-    // Sincronizar cola pendiente si hay conexión al iniciar
+    // 3. PWA Offline: Sincronizar cola pendiente (peticiones fallidas) si hay conexión al iniciar
     if (navigator.onLine) {
       syncOfflineQueue();
     }
@@ -78,13 +94,16 @@ function App() {
         {/* Global PWA Install Banner */}
         <InstallPWA />
 
-        {/* Global Network Connectivity Banner */}
+        {/* Global Network Connectivity Banner (Aparece si se pierde la conexión) */}
         <NetworkBanner />
 
         <Navbar />
 
+        {/* Contenedor Principal (Main Content) */}
         <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto px-4 md:px-6 pb-16 md:pb-6 md:pt-4 transition-all duration-200 z-10">
           <main className="flex-1 w-full flex flex-col bg-white/80 dark:bg-slate-900/40 backdrop-blur-sm md:backdrop-blur-2xl md:border md:border-stone-200/90 md:dark:border-white/5 md:shadow-2xl md:rounded-[40px] md:overflow-hidden">
+            
+            {/* SISTEMA DE RUTAS: Aquí se "inyecta" la vista correspondiente según la URL */}
             <Routes>
               <Route path="/" element={<HomeView />} />
               <Route path="/directorio" element={<DirectoryView />} />
@@ -98,14 +117,16 @@ function App() {
               <Route path="/admin" element={<AdminDashboardView />} />
               <Route path="/itinerarios" element={<ItineraryView />} />
             </Routes>
+
           </main>
           <Footer />
         </div>
 
+        {/* Barra inferior para móviles */}
         <MobileTabBar />
       </div>
     </Router>
   );
 }
 
-export default App;
+export default App;

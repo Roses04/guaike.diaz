@@ -1,3 +1,17 @@
+/**
+ * VISTA: REGISTRO DE OPERADOR (Artesano)
+ * 
+ * Pantalla dedicada a los usuarios con rol = "operador" para que completen
+ * su "Ficha Técnica". Una vez enviada, el taller queda "pendiente" (es_verificado = false)
+ * hasta que un Administrador lo apruebe desde el Dashboard.
+ * 
+ * Funcionalidades clave:
+ * - Localización GPS con marcador en el mapa.
+ * - Subida de imágenes a Cloudinary (con un fallback a Base64 si falla).
+ * - Carga de documento de identidad (Cédula/RIF).
+ * - Selección de categoría y parroquia (Cargadas dinámicamente desde el backend).
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -16,17 +30,7 @@ import {
 } from "../components/map/MunicipioMapLayers";
 import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 import { 
-  Store, 
-  MapPin, 
-  Tag, 
-  Upload, 
-  Camera, 
-  Trash2, 
-  Compass, 
-  Check, 
-  Info, 
-  AlertTriangle,
-  FileText
+  Store, MapPin, Tag, Upload, Camera, Trash2, Compass, Check, Info, AlertTriangle, FileText
 } from "lucide-react";
 
 const RegisterOperatorView = () => {
@@ -35,6 +39,7 @@ const RegisterOperatorView = () => {
   const navigate = useNavigate();
 
   // Redirect if not logged in or not an operator role
+
   useEffect(() => {
     if (!token) {
       navigate("/login");

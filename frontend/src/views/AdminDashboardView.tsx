@@ -1,3 +1,17 @@
+/**
+ * VISTA: PANEL DE CONTROL DE ADMINISTRADOR
+ * 
+ * Este componente es accesible SOLO por usuarios con rol = "admin".
+ * Sirve como el "Cockpit de Moderación" de la Alcaldía.
+ * Contiene tres secciones principales controladas por "Pestañas" (Tabs):
+ * 
+ * 1. SOLICITUDES (requests): Muestra artesanos que se registraron y están esperando
+ *    ser aprobados para aparecer en el mapa público.
+ * 2. FERIAS Y EVENTOS (events): Permite al administrador crear, editar y eliminar
+ *    eventos culturales que aparecen en el Home (y guardar coordenadas GPS).
+ * 3. USUARIOS (users): Permite crear otros usuarios (turistas, operadores o admins) manualmente.
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer } from "react-leaflet";
@@ -14,30 +28,15 @@ import {
   getMapTileConfig,
   MUNICIPIO_DIAZ_CENTER,
   MUNICIPIO_DEFAULT_ZOOM,
-} from "../components/map/MunicipioMapLayers";
+} from "../components/map/MunicipioMapLayers"; // Componentes del Mapa Leaflet
 import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
 import {
-  Users,
-  Store,
-  Calendar,
-  MessageSquare,
-  Award,
-  ShieldCheck,
-  CheckCircle,
-  XCircle,
-  FileText,
-  MapPin,
-  Plus,
-  Trash2,
-  TrendingUp,
-  BarChart3,
-  ListTodo,
-  AlertCircle,
-  Edit
-} from "lucide-react";
+  Users, Store, Calendar, MessageSquare, Award, ShieldCheck, CheckCircle,
+  XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit
+} from "lucide-react"; // Iconos
 
 const AdminDashboardView = () => {
-  const { user, token } = useAuthStore();
+  const { user, token } = useAuthStore(); // Obtener sesión actual
   const { isDarkMode } = useThemeStore();
   const navigate = useNavigate();
 
@@ -331,7 +330,7 @@ const AdminDashboardView = () => {
         actions={
           <TabSwitcher
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={(id: string) => setActiveTab(id as any)}
             tabs={[
               { id: "requests", label: "Solicitudes", icon: ListTodo },
               { id: "events", label: "Ferias", icon: Calendar },

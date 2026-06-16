@@ -1,7 +1,20 @@
+/**
+ * SERVICIO CENTRAL DE LA API Y BASE DE DATOS
+ * 
+ * ¡ATENCIÓN! Este archivo es vital. Contiene TODAS las funciones que se comunican
+ * con Supabase (Base de datos remota) y con el Backend Express local/Vercel.
+ * Aquí se implementa:
+ * 1. Sincronización Offline (PWA): Guarda peticiones si no hay internet y las envía luego.
+ * 2. Autenticación de usuarios (Supabase Auth).
+ * 3. Operaciones CRUD (Crear, Leer, Actualizar, Borrar) de operadores, eventos y reseñas.
+ */
+
 import { supabase } from "./supabase";
 import { normalizeLocation, parseUbicacionForMunicipio } from "../utils/geo";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs"; // Utilizado en lógica del lado del cliente simulando backend
 
+// ── COLA OFFLINE (PWA) ────────────────────────────────────────────────────────
+// Guarda peticiones localmente cuando el dispositivo pierde conexión
 const QUEUE_KEY = "offline_queue";
 
 const getOfflineQueue = (): any[] => {
@@ -151,6 +164,10 @@ const ensureUserRecord = async (
   return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null };
 };
 
+/**
+ * Obtiene el perfil de usuario actual en sesión desde Supabase.
+ * Retorna null si no hay sesión activa.
+ */
 const getSessionUser = async () => {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
@@ -192,6 +209,11 @@ const getStaticData = async () => {
   };
 };
 
+/**
+ * Carga el directorio principal de operadores (Artesanos).
+ * Solo muestra los que tienen es_verificado = true.
+ * @param params { categoria_id, parroquia_id, q } filtros opcionales
+ */
 const loadOperators = async (params: any = {}) => {
   let query = supabase.from("operadores").select(
     "id,usuario_id,nombre_taller,descripcion,telefono_whatsapp,es_verificado,qr_codigo_unico,parroquia_id,categoria_id,ubicacion"

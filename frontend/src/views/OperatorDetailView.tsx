@@ -1,21 +1,23 @@
+/**
+ * VISTA: DETALLE DE OPERADOR (Ficha del Artesano)
+ * 
+ * Se muestra cuando un turista hace clic en un artesano desde el Directorio o Mapa.
+ * Contiene:
+ * - Carrusel de imágenes (Galería).
+ * - Detalles completos (Dirección, Descripción, etc).
+ * - Botón para contactar por WhatsApp.
+ * - Catálogo de productos.
+ * - Sistema de Reseñas y Puntuación.
+ * - Soporte OFFLINE (Carga el operador guardado en caché si no hay internet y encola reseñas).
+ */
+
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { 
-  MapPin, 
-  Phone, 
-  QrCode, 
-  Star, 
-  CheckCircle, 
-  MessageSquare, 
-  WifiOff, 
-  Send, 
-  ArrowLeft,
-  ShoppingBag,
-  Info,
-  AlertTriangle,
-  Award
+  MapPin, Phone, QrCode, Star, CheckCircle, MessageSquare, 
+  WifiOff, Send, ArrowLeft, ShoppingBag, Info, AlertTriangle, Award
 } from "lucide-react";
 
 interface Operator {

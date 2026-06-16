@@ -1,9 +1,21 @@
+/**
+ * VISTA DE INICIO (HOME)
+ * 
+ * Esta es la pantalla principal o "Landing Page" de la aplicación.
+ * Contiene:
+ * - Un "Hero Section" (Encabezado) con el título principal y botones de acción.
+ * - Una sección de "Tesoros y Saberes" que destaca lugares/cultura estáticos.
+ * - Una sección dinámica de "Próximas Ferias y Eventos" que carga de la Base de Datos.
+ * - Manejo de estado Offline (Si no hay internet, muestra eventos en caché).
+ */
+
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import * as api from "../services/api";
-import { WifiOff, ZoomIn } from "lucide-react";
-import ContentModal, { type ContentModalItem } from "../components/ui/ContentModal";
-import RevealOnScroll from "../components/ui/RevealOnScroll";
+import { WifiOff, ZoomIn } from "lucide-react"; // Iconos vectoriales
+import ContentModal, { type ContentModalItem } from "../components/ui/ContentModal"; // Modal para mostrar más información
+import RevealOnScroll from "../components/ui/RevealOnScroll"; // Componente para animar elementos al hacer scroll
+
 
 const HERO_BG_IMAGE = "/images/San_Juan_Valley.jpg";
 
