@@ -425,57 +425,77 @@ const OperatorDetailView = () => {
             </div>
           )}
 
-          {isQrVerified && (
-            <div className="mb-6 chip-gold border border-brand-gold/40 dark:border-brand-gold/30 p-4 rounded-2xl flex items-center gap-3">
-              <Award className="text-brand-gold animate-bounce" size={24} />
-              <div>
-                <p className="text-xs font-extrabold text-brand-gold uppercase tracking-wider">¡Felicidades!</p>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold leading-snug">Visita física comprobada. Tu reseña llevará el sello oficial dorado de veracidad.</p>
+          {isQrVerified ? (
+            <>
+              <div className="mb-6 chip-gold border border-brand-gold/40 dark:border-brand-gold/30 p-4 rounded-2xl flex items-center gap-3">
+                <Award className="text-brand-gold animate-bounce" size={24} />
+                <div>
+                  <p className="text-xs font-extrabold text-brand-gold uppercase tracking-wider">¡Felicidades!</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold leading-snug">Visita física comprobada. Tu reseña llevará el sello oficial dorado de veracidad.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Calificación</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className="p-1 text-slate-300 hover:text-brand-gold dark:text-slate-700 dark:hover:text-brand-gold transition duration-150 cursor-pointer"
+                      >
+                        <Star 
+                          size={28} 
+                          fill={star <= rating ? "#F59E0B" : "none"} 
+                          className={star <= rating ? "text-brand-gold" : "text-slate-300 dark:text-slate-600"} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Tu Comentario</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="¿Qué te pareció el taller, el trato y sus productos artesanales?..."
+                    className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingReview}
+                  className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer text-sm"
+                >
+                  <Send size={14} /> {submittingReview ? "Enviando..." : "Publicar Reseña"}
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-brand-blue/5 border border-brand-blue/15 dark:border-white/5 p-5 rounded-2xl flex flex-col items-center text-center space-y-3">
+                <div className="bg-brand-blue/10 text-brand-blue dark:bg-brand-light/10 dark:text-brand-light p-3 rounded-full">
+                  <QrCode size={32} />
+                </div>
+                <h3 className="font-bold text-sm text-slate-850 dark:text-slate-100">Validación por QR Requerida</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs">
+                  Para publicar una opinión debes haber visitado físicamente el taller y escaneado su código QR único.
+                </p>
+                <Link
+                  to={`/operador/${operator.id}/escanear-qr`}
+                  className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-xl font-bold hover:shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer text-sm mt-2"
+                >
+                  <QrCode size={16} /> Escanear Código QR para Reseñar
+                </Link>
               </div>
             </div>
           )}
-
-          <form onSubmit={handleReviewSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Calificación</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    className="p-1 text-slate-300 hover:text-brand-gold dark:text-slate-700 dark:hover:text-brand-gold transition duration-150 cursor-pointer"
-                  >
-                    <Star 
-                      size={28} 
-                      fill={star <= rating ? "#F59E0B" : "none"} 
-                      className={star <= rating ? "text-brand-gold" : "text-slate-300 dark:text-slate-600"} 
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Tu Comentario</label>
-              <textarea
-                required
-                rows={3}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="¿Qué te pareció el taller, el trato y sus productos artesanales?..."
-                className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submittingReview}
-              className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer text-sm"
-            >
-              <Send size={14} /> {submittingReview ? "Enviando..." : "Publicar Reseña"}
-            </button>
-          </form>
         </div>
 
         {/* Reviews Feed Column */}

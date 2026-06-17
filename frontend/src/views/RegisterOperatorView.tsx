@@ -96,6 +96,7 @@ const RegisterOperatorView = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Load Categories and Accessibility Tags
   useEffect(() => {
@@ -111,6 +112,51 @@ const RegisterOperatorView = () => {
     };
     fetchStatic();
   }, []);
+
+  // Load existing operator details for editing
+  useEffect(() => {
+    const loadMyOperator = async () => {
+      try {
+        const res = await api.get("/operators/my-operator");
+        if (res.data) {
+          const op = res.data;
+          setIsEditing(true);
+          setNombreTaller(op.nombre_taller || "");
+          setDescripcion(op.descripcion || "");
+          setTelefonoWhatsapp(op.telefono_whatsapp || "");
+          setCategoriaId(op.categoria_id ? op.categoria_id.toString() : "");
+          setParroquiaId(op.parroquia_id ? op.parroquia_id.toString() : "");
+          setDireccionDetallada(op.direccion_detallada || "");
+          
+          if (op.latitud !== undefined && op.longitud !== undefined) {
+            setLocation([op.latitud, op.longitud]);
+          }
+          
+          if (Array.isArray(op.imagenes)) {
+            const primary = op.imagenes.find((img: any) => img.es_principal);
+            if (primary) {
+              setPrimaryImage(primary.url_imagen);
+            }
+            const gallery = op.imagenes.filter((img: any) => !img.es_principal).map((img: any) => img.url_imagen);
+            setGalleryImages(gallery);
+          }
+          
+          if (Array.isArray(op.accesibilidades)) {
+            setSelectedAccessibilities(op.accesibilidades.map((a: any) => a.id));
+          }
+
+          // Mock bypass since document is not directly queried and already validated in backend
+          setCedulaRifDoc("documento_ya_verificado");
+        }
+      } catch (err) {
+        console.log("No se pudo obtener el perfil del operador o no existe aún:", err);
+      }
+    };
+
+    if (token && user && user.role === "operador") {
+      loadMyOperator();
+    }
+  }, [token, user]);
 
   // Try to locate operator's current location using GPS
   const handleGPSLocation = () => {
@@ -234,20 +280,25 @@ const RegisterOperatorView = () => {
     };
 
     try {
-      const res = await api.post("/operators", payload);
-      setSuccess(res.data.message || "¡Registro enviado con éxito!");
-      
-      // Clear form
-      setNombreTaller("");
-      setDescripcion("");
-      setParroquiaId("");
-      setCategoriaId("");
-      setDireccionDetallada("");
-      setTelefonoWhatsapp("");
-      setPrimaryImage("");
-      setGalleryImages([]);
-      setCedulaRifDoc("");
-      setSelectedAccessibilities([]);
+      if (isEditing) {
+        const res = await api.put("/operators/my-operator", payload);
+        setSuccess(res.data.message || "¡Taller actualizado con éxito!");
+      } else {
+        const res = await api.post("/operators", payload);
+        setSuccess(res.data.message || "¡Registro enviado con éxito!");
+        
+        // Clear form
+        setNombreTaller("");
+        setDescripcion("");
+        setParroquiaId("");
+        setCategoriaId("");
+        setDireccionDetallada("");
+        setTelefonoWhatsapp("");
+        setPrimaryImage("");
+        setGalleryImages([]);
+        setCedulaRifDoc("");
+        setSelectedAccessibilities([]);
+      }
 
       // Redirect operator after short delay
       setTimeout(() => {
@@ -264,20 +315,20 @@ const RegisterOperatorView = () => {
   return (
     <>
       <SEO
-        title="Registro de Operador"
-        description="Inscribe tu taller artesanal en la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación."
+        title={isEditing ? "Gestionar tu Taller" : "Registro de Operador"}
+        description={isEditing ? "Edita la información de tu taller artesanal en la red patrimonial GUAIKE.DÍAZ." : "Inscribe tu taller artesanal en la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación."}
         canonical="/registro-operador"
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
       <header className="mb-8 text-center max-w-2xl mx-auto">
         <span className="text-xs uppercase tracking-widest font-extrabold text-brand-blue dark:text-brand-light bg-brand-blue/10 dark:bg-brand-light/10 px-3.5 py-1.5 rounded-full mb-3 inline-block">
-          Registro de Operador
+          {isEditing ? "Gestión de Taller" : "Registro de Operador"}
         </span>
         <h1 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight mb-2 text-slate-800 dark:text-white">
-          Inscribe tu Taller
+          {isEditing ? "Gestionar tu Taller" : "Inscribe tu Taller"}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
-          Únete a la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación y exponga tus obras al turismo regional.
+          {isEditing ? "Actualiza la información, geolocalización y galería de tu taller artesanal." : "Únete a la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación y exponga tus obras al turismo regional."}
         </p>
       </header>
 
@@ -292,7 +343,7 @@ const RegisterOperatorView = () => {
         <div className="mb-6 bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-5 rounded-2xl text-sm flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
             <Check size={20} className="text-emerald-500" />
-            <span className="font-bold text-base">¡Formulario de Registro Enviado!</span>
+            <span className="font-bold text-base">{isEditing ? "¡Taller Actualizado!" : "¡Formulario de Registro Enviado!"}</span>
           </div>
           <p>{success}</p>
           <p className="text-xs text-slate-400">Serás redirigido al catálogo principal en unos momentos...</p>
@@ -486,7 +537,9 @@ const RegisterOperatorView = () => {
                   <FileText className="text-brand-blue dark:text-brand-light" size={24} />
                   <div>
                     <p className="text-sm font-semibold">Documento de Verificación Cargado</p>
-                    <p className="text-xs text-slate-400">Verificable por la junta de desarrollo cultural.</p>
+                    <p className="text-xs text-slate-400">
+                      {isEditing ? "Documento verificado previamente. Si deseas actualizarlo, elimínalo y sube uno nuevo." : "Verificable por la junta de desarrollo cultural."}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -635,7 +688,9 @@ const RegisterOperatorView = () => {
             disabled={loadingSubmit}
             className="w-full sm:w-auto bg-brand-blue dark:bg-brand-light text-white font-bold px-8 py-3.5 rounded-2xl hover:shadow-lg hover:shadow-brand-blue/20 transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer text-sm"
           >
-            {loadingSubmit ? "Registrando taller..." : "Enviar Inscripción"}
+            {loadingSubmit 
+              ? (isEditing ? "Guardando cambios..." : "Registrando taller...") 
+              : (isEditing ? "Guardar Cambios" : "Enviar Inscripción")}
           </button>
         </div>
       </form>

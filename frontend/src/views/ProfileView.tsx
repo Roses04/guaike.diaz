@@ -162,7 +162,10 @@ const ProfileView = () => {
   const userRole = profile?.role || user?.role || "turista";
   const email = profile?.email || user?.email || "-";
   const userName = profile?.full_name || profile?.name || email.split("@")[0] || "Usuario";
-  const createdAt = profile?.fecha_creacion || profile?.created_at || "-";
+  const createdAtRaw = profile?.fecha_creacion || profile?.created_at || user?.fecha_creacion || "-";
+  const createdAt = createdAtRaw !== "-" && !isNaN(Date.parse(createdAtRaw))
+    ? new Date(createdAtRaw).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+    : "-";
 
   const getRoleDescription = () => {
     switch (userRole) {

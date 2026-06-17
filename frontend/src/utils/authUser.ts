@@ -3,6 +3,9 @@ export interface AuthUser {
   email: string;
   role: string;
   verificado?: boolean;
+  full_name?: string;
+  telefono?: string;
+  fecha_creacion?: string;
 }
 
 /** Normaliza respuestas de login, profile o caché al formato del store. */
@@ -29,11 +32,17 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
   }
 
   const verificado = row.verificado === undefined ? undefined : Boolean(row.verificado);
+  const full_name = (row.full_name ?? row.name) as string | undefined;
+  const telefono = (row.telefono ?? row.phone) as string | undefined;
+  const fecha_creacion = (row.fecha_creacion ?? row.created_at) as string | undefined;
 
   return {
     id: Number(id),
     email,
     role: (role || "turista").toLowerCase(),
     verificado,
+    full_name,
+    telefono,
+    fecha_creacion,
   };
 }

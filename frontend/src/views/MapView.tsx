@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import L from "leaflet";
 import { Link, useLocation } from "react-router-dom";
-import { Navigation, Tag, Map, ChevronUp, ChevronDown } from "lucide-react";
+import { Navigation, Tag, Map, ChevronUp, ChevronDown, MapPin } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
 import SEO from "../components/SEO";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../components/map/MunicipioMapLayers";
 import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 import { isValidMunicipioCoord } from "../utils/geo";
+import { puntosInteres } from "../data/puntosInteres";
 
 
 
@@ -54,6 +55,14 @@ const MapView = () => {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+  // Filter states
+  const [showOperators, setShowOperators] = useState(true);
+  const [showEvents, setShowEvents] = useState(true);
+  const [showPOIs, setShowPOIs] = useState(true);
+  const [selectedPoiCategories, setSelectedPoiCategories] = useState<string[]>([
+    "religion", "turismo", "comida", "educacion", "servicios"
+  ]);
 
   const operatorsOnMap = operators.filter((op: { latitud: number; longitud: number; coordsValidas?: boolean }) =>
     op.coordsValidas ?? isValidMunicipioCoord(op.latitud, op.longitud)
@@ -161,7 +170,13 @@ const MapView = () => {
            <div className="flex flex-col gap-3 mt-auto md:mt-8">
              <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Leyenda y Filtros</h3>
              
-             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200/80 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow">
+             <button
+               type="button"
+               onClick={() => setShowOperators(!showOperators)}
+               className={`flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border shadow-sm hover:shadow-md transition cursor-pointer text-left w-full ${
+                 showOperators ? "border-brand-blue/30" : "border-stone-200/80 dark:border-white/5 opacity-50"
+               }`}
+             >
                <div className="flex items-center gap-3">
                  <div className="w-8 h-8 rounded-xl bg-brand-blue/10 dark:bg-brand-blue/20 flex items-center justify-center">
                    <span className="w-3.5 h-3.5 rounded-full bg-brand-blue border-2 border-white dark:border-slate-800 shadow-sm"></span>
@@ -169,9 +184,15 @@ const MapView = () => {
                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Talleres</span>
                </div>
                <span className="text-xs font-black bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">{operatorsOnMap.length}</span>
-             </div>
+             </button>
 
-             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-stone-200/80 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow">
+             <button
+               type="button"
+               onClick={() => setShowEvents(!showEvents)}
+               className={`flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border shadow-sm hover:shadow-md transition cursor-pointer text-left w-full ${
+                 showEvents ? "border-brand-gold/40" : "border-stone-200/80 dark:border-white/5 opacity-50"
+               }`}
+             >
                <div className="flex items-center gap-3">
                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
                    <span className="w-3.5 h-3.5 rounded-full bg-brand-gold border-2 border-white dark:border-slate-800 shadow-sm"></span>
@@ -179,7 +200,64 @@ const MapView = () => {
                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Eventos</span>
                </div>
                <span className="text-xs font-black bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">{eventsOnMap.length}</span>
-             </div>
+             </button>
+
+             {/* Puntos de Interés Toggle */}
+             <button
+               type="button"
+               onClick={() => setShowPOIs(!showPOIs)}
+               className={`flex items-center justify-between p-3.5 rounded-2xl bg-white dark:bg-slate-800 border shadow-sm hover:shadow-md transition cursor-pointer text-left w-full ${
+                 showPOIs ? "border-purple-600/30" : "border-stone-200/80 dark:border-white/5 opacity-50"
+               }`}
+             >
+               <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                   <span className="w-3.5 h-3.5 rounded-full bg-purple-600 border-2 border-white dark:border-slate-800 shadow-sm"></span>
+                 </div>
+                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Sitios Históricos y POIs</span>
+               </div>
+               <span className="text-xs font-black bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg">
+                 {puntosInteres.length}
+               </span>
+             </button>
+
+             {/* Sub-categorias de POIs */}
+             {showPOIs && (
+               <div className="pl-3.5 pr-2.5 py-2.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20 border border-stone-200/50 dark:border-white/5 space-y-2">
+                 <h4 className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Categorías de Sitios</h4>
+                 <div className="space-y-1.5">
+                   {[
+                     { id: "religion", label: "⛪ Iglesias / Cultura", colorClass: "text-purple-600 dark:text-purple-400" },
+                     { id: "turismo", label: "🏖️ Playas y Turismo", colorClass: "text-teal-600 dark:text-teal-400" },
+                     { id: "comida", label: "🍲 Restaurantes / Comida", colorClass: "text-amber-600 dark:text-amber-400" },
+                     { id: "educacion", label: "🎓 Escuelas y Liceos", colorClass: "text-indigo-600 dark:text-indigo-400" },
+                     { id: "servicios", label: "✈️ Servicios / Aeropuerto", colorClass: "text-slate-600 dark:text-slate-400" }
+                   ].map((cat) => {
+                     const isSelected = selectedPoiCategories.includes(cat.id);
+                     return (
+                       <label 
+                         key={cat.id} 
+                         className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none py-1 hover:text-slate-800 dark:hover:text-white transition"
+                       >
+                         <input
+                           type="checkbox"
+                           checked={isSelected}
+                           onChange={() => {
+                             if (isSelected) {
+                               setSelectedPoiCategories(selectedPoiCategories.filter(c => c !== cat.id));
+                             } else {
+                               setSelectedPoiCategories([...selectedPoiCategories, cat.id]);
+                             }
+                           }}
+                           className="rounded text-brand-blue focus:ring-brand-blue border-gray-300 dark:border-white/10"
+                         />
+                         <span className={cat.colorClass}>{cat.label}</span>
+                       </label>
+                     );
+                   })}
+                 </div>
+               </div>
+             )}
 
              {eventsMissingLocation && (
                <div className="mt-2 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-500/30 flex items-center gap-3">
@@ -243,7 +321,7 @@ const MapView = () => {
           )}
 
           {/* Operator Markers */}
-          {operatorsOnMap.map((op: any) => (
+          {showOperators && operatorsOnMap.map((op: any) => (
             <Marker 
               key={`op-${op.id}`} 
               position={[op.latitud, op.longitud]}
@@ -274,7 +352,7 @@ const MapView = () => {
           ))}
 
           {/* Event Markers */}
-          {eventsOnMap.map((ev: any) => (
+          {showEvents && eventsOnMap.map((ev: any) => (
             <Marker 
               key={`ev-${ev.id}`} 
               position={[ev.latitud, ev.longitud]}
@@ -303,6 +381,65 @@ const MapView = () => {
               </Popup>
             </Marker>
           ))}
+
+          {/* POI Markers */}
+          {showPOIs && puntosInteres
+            .filter((poi) => selectedPoiCategories.includes(poi.categoria))
+            .map((poi) => {
+              const markerColor = 
+                poi.categoria === "religion" ? "bg-purple-600" :
+                poi.categoria === "turismo" ? "bg-teal-500" :
+                poi.categoria === "comida" ? "bg-amber-500" :
+                poi.categoria === "educacion" ? "bg-indigo-600" :
+                "bg-slate-500";
+                
+              const markerIconHtml = 
+                poi.categoria === "religion" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-church"><path d="M12 2v20M17 5H7M15 9H9"/></svg>' :
+                poi.categoria === "turismo" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>' :
+                poi.categoria === "comida" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utensils"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>' :
+                poi.categoria === "educacion" ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' :
+                '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plane"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.7-.2-1.5 0-2 .5l-.5.5c-.3.3-.3.8-.1 1.1l7.1 5.9-1.9 1.9-4.3-.9c-.4-.1-.8.1-1 .4l-.5.5c-.3.3-.2.8.1 1l4.4 2.8c.3.2.8.2 1.1-.1l1.9-1.9 5.9 7.1c.3.2.8.2 1.1-.1l.5-.5c.4-.5.6-1.3.4-2z"/></svg>';
+
+              return (
+                <Marker 
+                  key={`poi-${poi.id}`} 
+                  position={[poi.latitud, poi.longitud]}
+                  icon={createDivIcon(markerColor, markerIconHtml)}
+                >
+                  <Popup>
+                    <div className="p-1 max-w-50">
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full mb-1 inline-block ${
+                        poi.categoria === "religion" ? "bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300" :
+                        poi.categoria === "turismo" ? "bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300" :
+                        poi.categoria === "comida" ? "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300" :
+                        poi.categoria === "educacion" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300" :
+                        "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300"
+                      }`}>
+                        {poi.categoria === "religion" ? "Religión / Cultura" :
+                         poi.categoria === "turismo" ? "Turismo / Naturaleza" :
+                         poi.categoria === "comida" ? "Gastronomía / Popular" :
+                         poi.categoria === "educacion" ? "Educación / Liceo" :
+                         "Servicio / Aeropuerto"}
+                      </span>
+                      <h3 className="font-display font-bold text-sm text-slate-800 dark:text-white mb-1 leading-snug">{poi.nombre}</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal mb-2">{poi.descripcion}</p>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mb-3 flex items-start gap-1">
+                        <MapPin size={10} className="mt-0.5 shrink-0" />
+                        <span>{poi.direccion}</span>
+                      </div>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${poi.latitud},${poi.longitud}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl block text-center font-bold transition"
+                      >
+                        Cómo llegar
+                      </a>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
         </MapContainer>
         <MunicipioMapLegend />
       </div>

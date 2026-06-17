@@ -110,7 +110,7 @@ const getUserRecordByEmail = async (email: string) => {
 
   const { data, error } = await supabase
     .from("usuarios")
-    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, roles(nombre)")
+    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, fecha_creacion, roles(nombre)")
     .eq("correo", normalizedEmail)
     .maybeSingle();
 
@@ -133,7 +133,10 @@ const getUserRecordByEmail = async (email: string) => {
     intentos_fallidos: data.intentos_fallidos || 0,
     bloqueado_hasta: data.bloqueado_hasta,
     requiere_cambio_clave: data.requiere_cambio_clave,
-    clave_temporal_expira: data.clave_temporal_expira
+    clave_temporal_expira: data.clave_temporal_expira,
+    fecha_creacion: data.fecha_creacion,
+    full_name: "",
+    telefono: ""
   };
 };
 
@@ -161,7 +164,7 @@ const ensureUserRecord = async (
   if (retry) return retry;
 
   // If it's still null, return a fallback object.
-  return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null };
+  return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null, fecha_creacion: null, full_name: "", telefono: "" };
 };
 
 /**
@@ -186,8 +189,15 @@ const fetchUsuarioProfile = async () => {
   if (!profile) {
     // Retry once after a delay (trigger race condition)
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return await getUserRecordByEmail(userEmail as string);
+    const retriedProfile = await getUserRecordByEmail(userEmail as string);
+    if (retriedProfile) {
+      retriedProfile.full_name = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
+      retriedProfile.telefono = sessionUser?.user_metadata?.phone || "";
+    }
+    return retriedProfile;
   }
+  profile.full_name = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
+  profile.telefono = sessionUser?.user_metadata?.phone || "";
   return profile;
 };
 
@@ -553,6 +563,109 @@ const verifyOperator = async (id: string, body: any) => {
   return { message: `Operador ${body.es_verificado ? "verificado" : "desverificado"} con éxito.` };
 };
 
+const getMyOperator = async () => {
+  const sessionUser = await getSessionUser();
+  const userEmail = sessionUser?.email;
+  if (!userEmail) createApiError("No autorizado", 401);
+
+  const usuario = await getUserRecordByEmail(userEmail as string);
+  if (!usuario) createApiError("Usuario no encontrado", 404);
+
+  const { data: operator, error } = await supabase
+    .from("operadores")
+    .select("id")
+    .eq("usuario_id", (usuario as any).id)
+    .maybeSingle();
+
+  if (error) createApiError(error.message);
+  if (!operator) return null;
+
+  const fullDetail = await getOperatorDetail(operator.id);
+  return fullDetail;
+};
+
+const updateOperator = async (payload: any) => {
+  const sessionUser = await getSessionUser();
+  const userEmail = sessionUser?.email;
+  if (!userEmail) createApiError("No autorizado", 401);
+
+  const usuario = await getUserRecordByEmail(userEmail as string);
+  if (!usuario) createApiError("Usuario no encontrado", 404);
+
+  const { data: currentOp, error: findError } = await supabase
+    .from("operadores")
+    .select("id")
+    .eq("usuario_id", (usuario as any).id)
+    .maybeSingle();
+
+  if (findError || !currentOp) createApiError("No se encontró el perfil de operador para actualizar", 404);
+  const operatorId = currentOp!.id;
+
+  const { error: opError } = await supabase
+    .from("operadores")
+    .update({
+      parroquia_id: payload.parroquia_id,
+      categoria_id: payload.categoria_id,
+      nombre_taller: payload.nombre_taller,
+      descripcion: payload.descripcion,
+      ubicacion: `SRID=4326;POINT(${payload.longitud} ${payload.latitud})`,
+      direccion_detallada: payload.direccion_detallada,
+      telefono_whatsapp: payload.telefono_whatsapp,
+    })
+    .eq("id", operatorId);
+
+  if (opError) createApiError(opError.message);
+
+  const { error: deleteAccessError } = await supabase
+    .from("operador_accesibilidad")
+    .delete()
+    .eq("operador_id", operatorId);
+
+  if (deleteAccessError) createApiError(deleteAccessError.message);
+
+  if (Array.isArray(payload.accesibilidad_ids) && payload.accesibilidad_ids.length > 0) {
+    const accessibilityData = payload.accesibilidad_ids.map((accId: number) => ({
+      operador_id: operatorId,
+      accesibilidad_id: accId
+    }));
+    const { error: accessError } = await supabase.from("operador_accesibilidad").insert(accessibilityData);
+    if (accessError) createApiError(accessError.message);
+  }
+
+  const { error: deleteImagesError } = await supabase
+    .from("operador_imagenes")
+    .delete()
+    .eq("operador_id", operatorId);
+
+  if (deleteImagesError) createApiError(deleteImagesError.message);
+
+  const images = [] as any[];
+  if (payload.imagen_principal) {
+    images.push({
+      operador_id: operatorId,
+      url_imagen: payload.imagen_principal,
+      es_principal: true,
+      subido_por_usuario_id: (usuario as any).id
+    });
+  }
+  if (Array.isArray(payload.galeria)) {
+    payload.galeria.forEach((url: string) => {
+      images.push({
+        operador_id: operatorId,
+        url_imagen: url,
+        es_principal: false,
+        subido_por_usuario_id: (usuario as any).id
+      });
+    });
+  }
+  if (images.length > 0) {
+    const { error: imageError } = await supabase.from("operador_imagenes").insert(images);
+    if (imageError) createApiError(imageError.message);
+  }
+
+  return { message: "Perfil de operador actualizado con éxito." };
+};
+
 const getAdminStats = async () => {
   const [verifiedRes, pendingRes, reviewsRes, usersRes, catStatsRes, parrStatsRes, timelineRes] = await Promise.all([
     supabase.from("operadores").select("id", { count: "exact" }).eq("es_verificado", true),
@@ -742,12 +855,18 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     // Intento 3: si el trigger no creó el registro, insertarlo con upsert usando `correo` como clave
     if (!profile && authUserId) {
-      const { data: roleRow } = await supabase.from("roles").select("id").eq("nombre", "turista").maybeSingle();
+      const registeredRole = session!.user?.user_metadata?.role || "turista";
+      const { data: roleRow } = await supabase.from("roles").select("id").eq("nombre", registeredRole).maybeSingle();
       const rolId = roleRow?.id || null;
 
       // Upsert por correo (única restricción disponible desde el cliente)
       await supabase.from("usuarios").upsert(
-        { correo: normalizeEmail(email as string), rol_id: rolId, verificado: false },
+        { 
+          correo: normalizeEmail(email as string), 
+          rol_id: rolId, 
+          verificado: false,
+          auth_id: authUserId
+        },
         { onConflict: "correo", ignoreDuplicates: true }
       );
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -755,6 +874,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     }
 
     if (!profile) return createApiError("No se pudo obtener perfil de usuario");
+
+    profile.full_name = session!.user?.user_metadata?.full_name || session!.user?.user_metadata?.name || "";
+    profile.telefono = session!.user?.user_metadata?.phone || "";
 
     // Verificar si es una contraseña temporal y si ya expiró
     if (profile.requiere_cambio_clave) {
@@ -1060,6 +1182,16 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   if (lowerMethod === "get" && route === "/operators/static-data") {
     const data = await getStaticData();
     return buildResponse(data);
+  }
+
+  if (lowerMethod === "get" && route === "/operators/my-operator") {
+    const operator = await getMyOperator();
+    return buildResponse(operator);
+  }
+
+  if (lowerMethod === "put" && route === "/operators/my-operator") {
+    const result = await updateOperator(payload);
+    return buildResponse(result);
   }
 
   if (lowerMethod === "get" && route === "/operators") {
