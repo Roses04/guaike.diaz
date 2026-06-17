@@ -6,6 +6,7 @@ import L from "leaflet";
 import { Link, useLocation } from "react-router-dom";
 import { Navigation, Tag, Map, ChevronUp, ChevronDown } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
+import SEO from "../components/SEO";
 import {
   MunicipioBoundsController,
   MunicipioMaskLayer,
@@ -121,7 +122,13 @@ const MapView = () => {
   };
 
   return (
-    <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row bg-slate-50/30 dark:bg-slate-900/20">
+    <>
+      <SEO
+        title="Mapa Interactivo"
+        description="Explora la ubicación de talleres artesanales, ferias culturales y eventos en el Municipio Díaz, Nueva Esparta. Mapa interactivo con geolocalización."
+        canonical="/mapa"
+      />
+      <div className="min-h-map-mobile w-full relative flex flex-col md:flex-row bg-slate-50/30 dark:bg-slate-900/20">
       
       {/* Sidebar Panel */}
       <div className="w-full md:w-[320px] lg:w-95 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-stone-200/80 dark:border-white/10 flex flex-col z-20 shadow-lg md:shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:md:shadow-[4px_0_24px_rgba(0,0,0,0.2)] md:z-20 overflow-hidden transition-all duration-300">
@@ -300,6 +307,7 @@ const MapView = () => {
         <MunicipioMapLegend />
       </div>
     </div>
+    </>
   );
 };
 

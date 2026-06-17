@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 import { useThemeStore } from "../store/useThemeStore";
+import SEO from "../components/SEO";
 import {
   MunicipioBoundsController,
   MunicipioMaskLayer,
@@ -467,7 +468,13 @@ const ItineraryView = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <>
+      <SEO
+        title="Rutas e Itinerarios"
+        description="Diseña tu propio tour cultural en el Municipio Díaz. Elige entre rutas temáticas curadas o calcula una ruta inteligente optimizada."
+        canonical="/itinerarios"
+      />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
       <PageHeader
         badge="Planificación Geoespacial"
         title="Rutas e Itinerarios"
@@ -1065,6 +1072,7 @@ const ItineraryView = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

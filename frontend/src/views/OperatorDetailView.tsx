@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
+import SEO from "../components/SEO";
 import { 
   MapPin, Phone, QrCode, Star, CheckCircle, MessageSquare, 
   WifiOff, Send, ArrowLeft, ShoppingBag, Info, AlertTriangle, Award
@@ -22,6 +23,7 @@ import {
 
 interface Operator {
   id: number;
+  usuario_id: number;
   nombre_taller: string;
   descripcion: string;
   direccion_detallada: string;
@@ -37,7 +39,7 @@ interface Operator {
   imagenes: Array<{ id: number; url_imagen: string; es_principal: boolean }>;
   accesibilidades: Array<{ id: number; etiqueta: string; icono: string }>;
   productos: Array<{ id: number; nombre: string; descripcion: string; precio: string; url_imagen: string; esta_disponible: boolean }>;
-  resenas: Array<{ id: number; puntuacion: number; comentario: string; qr_verificado: boolean; fecha_creacion: string; usuario_correo: string }>;
+  resenas: Array<{ id: number; puntuacion: number; comentario: string; qr_verificado: boolean; fecha_creacion: string; usuario_correo: string; respuesta_operador?: string; fecha_respuesta?: string }>;
 }
 
 const OperatorDetailView = () => {
@@ -57,6 +59,11 @@ const OperatorDetailView = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
+
+  // Operator reply states
+  const [replyingToId, setReplyingToId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   // Check if QR verification is active (passed in state from scanner)
   const isQrVerified = routerLocation.state?.qrVerified === true;
@@ -100,13 +107,12 @@ const OperatorDetailView = () => {
     };
   }, [id]);
 
-  // Offline review synchronization helper
+  // Offline review synchronization helper using the central queue
   const saveReviewOffline = (newReview: any) => {
-    const queue = JSON.parse(localStorage.getItem("offline_reviews_queue") || "[]");
-    queue.push(newReview);
-    localStorage.setItem("offline_reviews_queue", JSON.stringify(queue));
-    
-    // Simulate UI addition
+    // Queue it centrally using the new method
+    api.queueOffline("/reviews", newReview);
+
+    // Simulate UI addition for instant tourist feedback
     if (operator) {
       const updatedReviews = [
         {
@@ -115,6 +121,8 @@ const OperatorDetailView = () => {
           comentario: newReview.comentario,
           qr_verificado: newReview.qr_verificado,
           fecha_creacion: new Date().toISOString(),
+          respuesta_operador: "",
+          fecha_respuesta: "",
           usuario_correo: user?.email || "Tú (Offline)"
         },
         ...operator.resenas
@@ -165,6 +173,22 @@ const OperatorDetailView = () => {
     }
   };
 
+  const handleReplySubmit = async (reviewId: number) => {
+    if (!replyText.trim()) return;
+    setSubmittingReply(true);
+    try {
+      await api.post(`/reviews/${reviewId}/reply`, { respuesta: replyText.trim() });
+      setReplyingToId(null);
+      setReplyText("");
+      // Reload details to show the new reply
+      loadOperatorDetail();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Error al enviar la respuesta.");
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-4xl space-y-6">
@@ -195,8 +219,17 @@ const OperatorDetailView = () => {
   const whatsAppNumber = operator.telefono_whatsapp ? operator.telefono_whatsapp.replace(/\+/g, "").replace(/\s/g, "") : "";
   const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=Hola%20${encodeURIComponent(operator.nombre_taller)},%20vi%20tu%20taller%20en%20la%20plataforma%20GUAIKE.DÍAZ%20y%20me%20gustaría%20saber%20más%20de%20tus%20obras.`;
 
+  const isOwner = user && String(user.id) === String(operator.usuario_id) && user.role === "operador";
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <>
+      <SEO
+        title={operator?.nombre_taller || "Taller Artesanal"}
+        description={operator?.descripcion || "Artesano tradicional verificado del Municipio Díaz, preservando la cultura típica venezolana."}
+        canonical={`/operador/${id}`}
+        image={operator?.imagenes?.find(img => img.es_principal)?.url_imagen || "https://guaike.diaz.vercel.app/images/San_Juan_Valley.jpg"}
+      />
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
       
       {/* Offline Alert Indicator */}
       {isOffline && (
@@ -492,6 +525,73 @@ const OperatorDetailView = () => {
                     <div className="flex justify-between items-center pl-0.5 pt-1 text-[10px] text-slate-400">
                       <span>{new Date(rev.fecha_creacion).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}</span>
                     </div>
+
+                    {/* Respuesta del Operador */}
+                    {rev.respuesta_operador && (
+                      <div className="mt-4 ml-4 p-4 rounded-2xl bg-brand-blue/5 dark:bg-brand-light/5 border border-brand-blue/10 dark:border-brand-light/10 space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-brand-blue dark:text-brand-light flex items-center gap-1">
+                            <Award size={12} /> Respuesta del Artesano (Dueño)
+                          </span>
+                          {rev.fecha_respuesta && (
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(rev.fecha_respuesta).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed pl-0.5">
+                          {rev.respuesta_operador}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Botón/Acción para Responder por el Operador */}
+                    {isOwner && (
+                      <div className="mt-3 pl-1">
+                        {replyingToId === rev.id ? (
+                          <div className="mt-2 space-y-2">
+                            <textarea
+                              rows={2}
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Escribe tu respuesta como artesano..."
+                              className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-gray-200/70 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-brand-blue text-slate-800 dark:text-slate-100"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleReplySubmit(rev.id)}
+                                disabled={submittingReply}
+                                className="bg-brand-blue dark:bg-brand-light text-white font-bold px-3 py-1.5 rounded-lg text-[10px] hover:shadow-md cursor-pointer disabled:opacity-50"
+                              >
+                                {submittingReply ? "Enviando..." : "Guardar Respuesta"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReplyingToId(null);
+                                  setReplyText("");
+                                }}
+                                className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-3 py-1.5 rounded-lg text-[10px] hover:bg-slate-300 transition cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyingToId(rev.id);
+                              setReplyText(rev.respuesta_operador || "");
+                            }}
+                            className="text-xs font-bold text-brand-blue dark:text-brand-light hover:underline flex items-center gap-1 mt-1 cursor-pointer"
+                          >
+                            {rev.respuesta_operador ? "Editar Respuesta" : "Responder Reseña"}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -505,6 +605,7 @@ const OperatorDetailView = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

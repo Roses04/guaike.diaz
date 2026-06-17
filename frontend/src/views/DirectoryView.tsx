@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import CardArtesano from "../components/CardArtesano";
 import api from "../services/api";
 import { Search, Tag, MapPin, RefreshCw, WifiOff } from "lucide-react";
+import SEO from "../components/SEO";
 
 const DirectoryView = () => {
   const [operators, setOperators] = useState([]);
@@ -66,7 +67,13 @@ const DirectoryView = () => {
   };
 
   return (
-    <div className="w-full px-4 py-8">
+    <>
+      <SEO
+        title="Directorio de Artesanos"
+        description="Explora el directorio de talleres artesanales y creadores del Municipio Díaz. Filtra por especialidad, parroquia o nombre del artesano."
+        canonical="/directorio"
+      />
+      <div className="w-full px-4 py-8">
       <div className="text-center max-w-xl mx-auto mb-6">
         <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-2">
           Directorio de Talleres y Creadores
@@ -147,6 +154,7 @@ const DirectoryView = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

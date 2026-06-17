@@ -39,3 +39,10 @@ public/sw.js
 # Plan files
 GUIA_SEGURIDAD.md
 registro_verificación_ui_974912e5.plan.md
+
+# Continue AI extension files
+.continue/
+.continueignore
+
+# Raw design/media assets
+imagenes y media/

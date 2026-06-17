@@ -8,12 +8,14 @@
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css' // Estilos globales y variables Tailwind
+import { HelmetProvider } from 'react-helmet-async'
+import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  // StrictMode ayuda a detectar errores comunes en React durante el desarrollo
   <StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </StrictMode>,
 )

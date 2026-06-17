@@ -301,7 +301,7 @@ const getOperatorDetail = async (id: string) => {
     supabase.from("operador_imagenes").select("id,url_imagen,es_principal").eq("operador_id", id).order("es_principal", { ascending: false }),
     supabase.from("operador_accesibilidad").select("accesibilidad(id,etiqueta,icono)").eq("operador_id", id),
     supabase.from("productos").select("id,nombre,descripcion,precio,url_imagen,esta_disponible").eq("operador_id", id).eq("esta_disponible", true).order("id", { ascending: false }),
-    supabase.from("resenas").select("id,puntuacion,comentario,qr_verificado,fecha_creacion,usuario:usuarios(correo)").eq("operador_id", id).order("fecha_creacion", { ascending: false }),
+    supabase.from("resenas").select("id,puntuacion,comentario,qr_verificado,fecha_creacion,respuesta_operador,fecha_respuesta,usuario:usuarios(correo)").eq("operador_id", id).order("fecha_creacion", { ascending: false }),
   ]);
 
   if (catRes.error) createApiError(catRes.error.message);
@@ -317,6 +317,8 @@ const getOperatorDetail = async (id: string) => {
     comentario: item.comentario,
     qr_verificado: item.qr_verificado,
     fecha_creacion: item.fecha_creacion,
+    respuesta_operador: item.respuesta_operador,
+    fecha_respuesta: item.fecha_respuesta,
     usuario_correo: item.usuario?.correo || "Anónimo",
   }));
 
@@ -968,44 +970,25 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) createApiError("Email inválido", 400);
 
-    // Intentar usar el flujo de recuperación de contraseña de Supabase (link)
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: getEmailRedirectUrl(),
-      } as any);
-
-      if (resetError) {
-        // Si Supabase devolvió error, caer en flujo legacy de código por correo
-        const user = await getUserRecordByEmail(normalizedEmail);
-        if (!user) createApiError("Usuario no registrado", 404);
-
-        const code = generateVerificationCode();
-        const nowStr = new Date().toISOString();
-
-        const { error } = await supabase.from("usuarios").update({
-          codigo_verificacion: code,
-          codigo_enviado_en: nowStr,
-        }).eq("id", user!.id);
-
-        if (error) createApiError(error.message);
-
-        await sendRecoveryCodeEmail(email, code);
-
-        return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
-      }
-    } catch (e) {
-      // En caso de excepción en la llamada a Supabase, intentar fallback
-      console.warn("Error al solicitar reset de contraseña en Supabase:", e);
+    const user = await getUserRecordByEmail(normalizedEmail);
+    if (!user) {
+      // Devolver éxito genérico por seguridad contra enumeración de correos
+      return buildResponse({ success: true, message: "Si la cuenta existe, recibirás un código para restablecer la contraseña." });
     }
 
-    // Asegurar existencia del registro en tabla `usuarios` (no falla si ya existe)
-    try {
-      await ensureUserRecord(normalizedEmail, "turista");
-    } catch (e) {
-      console.warn("No se pudo asegurar registro de usuario local:", e);
-    }
+    const code = generateVerificationCode();
+    const nowStr = new Date().toISOString();
 
-    return buildResponse({ success: true, message: "Si la cuenta existe, recibirás un correo para restablecer la contraseña." });
+    const { error } = await supabase.from("usuarios").update({
+      codigo_verificacion: code,
+      codigo_enviado_en: nowStr,
+    }).eq("id", user.id);
+
+    if (error) createApiError(error.message);
+
+    await sendRecoveryCodeEmail(normalizedEmail, code);
+
+    return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
   }
 
   if (lowerMethod === "post" && route === "/auth/verify-recovery-code") {
@@ -1030,12 +1013,38 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
   if (lowerMethod === "post" && route === "/auth/reset-password") {
     const { email } = payload || {};
+    const password = payload?.password || payload?.newPassword;
     const normalizedEmail = normalizeEmail(email);
     const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) createApiError("Usuario no registrado", 404);
 
-    // En producción se usaría supabase.auth.admin.updateUserById para cambiar contraseñas,
-    // en esta simulación cliente-servidor limpiamos códigos e intentos e informamos éxito
+    if (!password) createApiError("La nueva contraseña es obligatoria", 400);
+
+    // 1. Restablecer contraseña en Supabase Auth mediante la función serverless
+    const secretKey = "guaike-system-default-secret-key-2026";
+    try {
+      const res = await fetch("/api/auth-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "reset",
+          email: normalizedEmail,
+          password,
+          secretKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        createApiError(errData.error || "No se pudo actualizar la contraseña en el sistema de autenticación.");
+      }
+    } catch (e: any) {
+      createApiError(e.message || "Error al intentar restablecer la contraseña en el servidor.");
+    }
+
+    // 2. Limpiar el código de recuperación en la BD pública
     const { error } = await supabase.from("usuarios").update({
       codigo_verificacion: null,
       codigo_enviado_en: null,
@@ -1112,12 +1121,172 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse(result, 201);
   }
 
+  if (lowerMethod === "get" && route === "/reviews/my-reviews") {
+    const sessionUser = await getSessionUser();
+    const userEmail = sessionUser?.email;
+    if (!userEmail) createApiError("No autorizado", 401);
+    const usuario = await getUserRecordByEmail(userEmail as string);
+    if (!usuario) createApiError("Usuario no encontrado", 404);
+
+    const { data, error } = await supabase
+      .from("resenas")
+      .select("id, operador_id, puntuacion, comentario, qr_verificado, fecha_creacion, respuesta_operador, fecha_respuesta, operadores(nombre_taller)")
+      .eq("usuario_id", (usuario as any).id)
+      .order("fecha_creacion", { ascending: false });
+
+    if (error) createApiError(error.message);
+    return buildResponse((data || []).map((item: any) => ({
+      id: item.id,
+      operador_id: item.operador_id,
+      puntuacion: item.puntuacion,
+      comentario: item.comentario,
+      qr_verificado: item.qr_verificado,
+      fecha_creacion: item.fecha_creacion,
+      respuesta_operador: item.respuesta_operador,
+      fecha_respuesta: item.fecha_respuesta,
+      nombre_taller: item.operadores?.nombre_taller || "Taller Desconocido",
+    })));
+  }
+
+  if (lowerMethod === "get" && route === "/reviews/admin") {
+    const sessionUser = await getSessionUser();
+    const userEmail = sessionUser?.email;
+    if (!userEmail) createApiError("No autorizado", 401);
+    const usuario = await getUserRecordByEmail(userEmail as string);
+    if (!usuario || usuario.role !== "admin") createApiError("Acceso denegado. Se requieren permisos de administrador.", 403);
+
+    const { data, error } = await supabase
+      .from("resenas")
+      .select("id, operador_id, usuario_id, puntuacion, comentario, qr_verificado, fecha_creacion, respuesta_operador, fecha_respuesta, operadores(nombre_taller), usuarios(correo)")
+      .order("fecha_creacion", { ascending: false });
+
+    if (error) createApiError(error.message);
+
+    let reviews = (data || []).map((item: any) => ({
+      id: item.id,
+      operador_id: item.operador_id,
+      usuario_id: item.usuario_id,
+      puntuacion: item.puntuacion,
+      comentario: item.comentario,
+      qr_verificado: item.qr_verificado,
+      fecha_creacion: item.fecha_creacion,
+      respuesta_operador: item.respuesta_operador,
+      fecha_respuesta: item.fecha_respuesta,
+      nombre_taller: item.operadores?.nombre_taller || "Taller Desconocido",
+      usuario_correo: item.usuarios?.correo || "Usuario Desconocido",
+    }));
+
+    const rating = payload?.rating;
+    const q = payload?.q;
+
+    if (rating) {
+      reviews = reviews.filter((r: any) => r.puntuacion === parseInt(rating));
+    }
+    if (q) {
+      const term = q.toLowerCase();
+      reviews = reviews.filter((r: any) => 
+        (r.comentario || "").toLowerCase().includes(term) ||
+        (r.nombre_taller || "").toLowerCase().includes(term) ||
+        (r.usuario_correo || "").toLowerCase().includes(term)
+      );
+    }
+
+    return buildResponse(reviews);
+  }
+
+  if (lowerMethod === "put" && route.startsWith("/reviews/")) {
+    const id = route.split("/").pop() || "";
+    const { puntuacion, comentario } = payload || {};
+    if (!puntuacion) createApiError("La puntuación es obligatoria", 400);
+
+    const sessionUser = await getSessionUser();
+    const userEmail = sessionUser?.email;
+    if (!userEmail) createApiError("No autorizado", 401);
+    const usuario = await getUserRecordByEmail(userEmail as string);
+    if (!usuario) createApiError("Usuario no encontrado", 404);
+
+    const { data, error } = await supabase
+      .from("resenas")
+      .update({ puntuacion, comentario })
+      .eq("id", id)
+      .eq("usuario_id", (usuario as any).id)
+      .select();
+
+    if (error) createApiError(error.message);
+    if (!data || data.length === 0) createApiError("Reseña no encontrada o no pertenece al usuario autenticado", 404);
+
+    return buildResponse({ message: "Reseña actualizada con éxito.", review: data![0] });
+  }
+
+  if (lowerMethod === "delete" && route.startsWith("/reviews/")) {
+    const id = route.split("/").pop() || "";
+    const sessionUser = await getSessionUser();
+    const userEmail = sessionUser?.email;
+    if (!userEmail) createApiError("No autorizado", 401);
+    const usuario = await getUserRecordByEmail(userEmail as string);
+    if (!usuario) createApiError("Usuario no encontrado", 404);
+
+    const isAdmin = usuario!.role === "admin";
+    let deleteQuery = supabase.from("resenas").delete().eq("id", id);
+    if (!isAdmin) {
+      deleteQuery = deleteQuery.eq("usuario_id", (usuario as any).id);
+    }
+
+    const { error } = await deleteQuery;
+    if (error) createApiError(error.message);
+
+    return buildResponse({ message: "Reseña eliminada con éxito." });
+  }
+
+  if (lowerMethod === "post" && route.startsWith("/reviews/") && route.endsWith("/reply")) {
+    const pathParts = route.split("/");
+    const id = pathParts[2]; // /reviews/:id/reply
+    const { respuesta } = payload || {};
+    if (!respuesta || !respuesta.trim()) createApiError("El texto de la respuesta es obligatorio", 400);
+
+    const sessionUser = await getSessionUser();
+    const userEmail = sessionUser?.email;
+    if (!userEmail) createApiError("No autorizado", 401);
+    const usuario = await getUserRecordByEmail(userEmail as string);
+    if (!usuario || usuario.role !== "operador") createApiError("Acceso denegado. Se requiere perfil de operador para responder.", 403);
+
+    const { data: operatorData, error: opError } = await supabase
+      .from("operadores")
+      .select("id")
+      .eq("usuario_id", (usuario as any).id)
+      .maybeSingle();
+
+    if (opError) createApiError(opError.message);
+    if (!operatorData) createApiError("El usuario no tiene un perfil de operador registrado", 404);
+
+    const { data, error } = await supabase
+      .from("resenas")
+      .update({
+        respuesta_operador: respuesta.trim(),
+        fecha_respuesta: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("operador_id", operatorData!.id)
+      .select();
+
+    if (error) createApiError(error.message);
+    if (!data || data.length === 0) createApiError("Reseña no encontrada o no pertenece a tu taller artesanal", 404);
+
+    return buildResponse({ message: "Respuesta publicada con éxito.", review: data![0] });
+  }
+
   if (lowerMethod === "get" && route === "/stats/admin") {
     const stats = await getAdminStats();
     return buildResponse(stats);
   }
 
   createApiError(`Ruta no implementada: ${method.toUpperCase()} ${route}`);
+};
+
+const queueOfflineRequest = (method: string, url: string, data: any) => {
+  const queue = getOfflineQueue();
+  queue.push({ method, url, data });
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 };
 
 const api = {
@@ -1127,9 +1296,10 @@ const api = {
   patch: async (url: string, data?: any) => callEndpoint("patch", url, data),
   delete: async (url: string, data?: any) => callEndpoint("delete", url, data),
   request: async (config: any) => callEndpoint(config.method || "get", config.url, config.data || config.params),
+  queueOffline: (url: string, data: any, method = "post") => queueOfflineRequest(method, url, data),
 };
 
-export { getOfflineQueue, syncOfflineQueue };
+export { getOfflineQueue, syncOfflineQueue, queueOfflineRequest };
 export const get = api.get;
 export const post = api.post;
 export const put = api.put;

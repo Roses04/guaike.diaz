@@ -12,9 +12,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import * as api from "../services/api";
-import { WifiOff, ZoomIn } from "lucide-react"; // Iconos vectoriales
-import ContentModal, { type ContentModalItem } from "../components/ui/ContentModal"; // Modal para mostrar más información
-import RevealOnScroll from "../components/ui/RevealOnScroll"; // Componente para animar elementos al hacer scroll
+import { WifiOff, ZoomIn } from "lucide-react";
+import ContentModal, { type ContentModalItem } from "../components/ui/ContentModal";
+import RevealOnScroll from "../components/ui/RevealOnScroll";
+import SEO from "../components/SEO";
 
 
 const HERO_BG_IMAGE = "/images/San_Juan_Valley.jpg";
@@ -114,7 +115,13 @@ const HomeView = () => {
   );
 
   return (
-    <div className="w-full px-4 py-6 md:px-6">
+    <>
+      <SEO
+        title="Inicio"
+        description="El corazón artesanal de la Isla de Margarita. Un santuario de palmeras datileras, tejedores sabios y sabores criollos del Municipio Díaz, Nueva Esparta."
+        canonical="/"
+      />
+      <div className="w-full px-4 py-6 md:px-6">
       {isOffline && (
         <div className="mb-6 bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-amber-600 dark:text-amber-400 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
           <WifiOff size={20} />
@@ -307,6 +314,7 @@ const HomeView = () => {
 
       {modalItem && <ContentModal item={modalItem} onClose={closeModal} />}
     </div>
+    </>
   );
 };
 

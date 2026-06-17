@@ -19,6 +19,7 @@ import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import SEO from "../components/SEO";
 import {
   MunicipioBoundsController,
   MunicipioMaskLayer,
@@ -261,7 +262,13 @@ const RegisterOperatorView = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <>
+      <SEO
+        title="Registro de Operador"
+        description="Inscribe tu taller artesanal en la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación."
+        canonical="/registro-operador"
+      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
       <header className="mb-8 text-center max-w-2xl mx-auto">
         <span className="text-xs uppercase tracking-widest font-extrabold text-brand-blue dark:text-brand-light bg-brand-blue/10 dark:bg-brand-light/10 px-3.5 py-1.5 rounded-full mb-3 inline-block">
           Registro de Operador
@@ -633,6 +640,7 @@ const RegisterOperatorView = () => {
         </div>
       </form>
     </div>
+    </>
   );
 };
 

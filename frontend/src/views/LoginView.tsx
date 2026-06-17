@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
+import SEO from "../components/SEO";
 import { 
   LogIn, Mail, Lock, UserPlus, Info, WifiOff, Phone, 
   FileText, ShieldCheck, HelpCircle, KeyRound, ChevronLeft, 
@@ -415,7 +416,13 @@ const LoginView = () => {
   };
 
   return (
-    <div className="login-mobile-bg w-full flex-grow flex items-center justify-center p-4 py-6 md:py-16 min-h-[calc(100vh-140px)] md:min-h-0">
+    <>
+      <SEO
+        title={isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+        description={isLogin ? "Accede al Sistema Geoespacial de GUAIKE.DÍAZ para explorar talleres artesanales del Municipio Díaz." : "Regístrate en la plataforma del Municipio Díaz para descubrir artesanía y cultura."}
+        canonical="/login"
+      />
+      <div className="login-mobile-bg w-full flex-grow flex items-center justify-center p-4 py-6 md:py-16 min-h-[calc(100vh-140px)] md:min-h-0">
       <div className="max-w-md w-full glass-panel p-5 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
         {/* Glow border line */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
@@ -920,6 +927,7 @@ const LoginView = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

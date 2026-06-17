@@ -242,6 +242,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    if (type === "reset") {
+      const { password } = req.body || {};
+      if (!password) { res.status(400).json({ error: "La contraseña es obligatoria para el restablecimiento." }); return; }
+
+      // 1. Obtener el auth_id del usuario desde la tabla usuarios
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from("usuarios")
+        .select("auth_id")
+        .eq("correo", email)
+        .maybeSingle();
+
+      if (profileError || !profile || !profile.auth_id) {
+        res.status(404).json({ error: "Usuario no registrado o no tiene una cuenta de autenticación vinculada." });
+        return;
+      }
+
+      // 2. Actualizar la contraseña del usuario en Supabase Auth
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(profile.auth_id, {
+        password: password,
+      });
+
+      if (updateError) {
+        res.status(400).json({ error: updateError.message });
+        return;
+      }
+
+      res.status(200).json({ message: "Contraseña restablecida exitosamente." });
+      return;
+    }
+
     res.status(400).json({ error: `Tipo de correo no reconocido: ${type}` });
   } catch (err: any) {
     console.error("[auth-email] Error:", err);

@@ -19,6 +19,7 @@ import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
+import SEO from "../components/SEO";
 import { PageHeader, TabSwitcher } from "../components/ui/PageHeader";
 import {
   MunicipioBoundsController,
@@ -32,7 +33,7 @@ import {
 import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
 import {
   Users, Store, Calendar, MessageSquare, Award, ShieldCheck, CheckCircle,
-  XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit
+  XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit, Star
 } from "lucide-react"; // Iconos
 
 const AdminDashboardView = () => {
@@ -70,12 +71,18 @@ const AdminDashboardView = () => {
     );
   }
 
-  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats" | "users">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats" | "users" | "reviews">("requests");
   
   // Tab 1: Operator Requests States
   const [pendingOperators, setPendingOperators] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [activeDocument, setActiveDocument] = useState<string | null>(null); // Inline document viewer modal
+
+  // Tab 5: Reviews Moderation States
+  const [adminReviews, setAdminReviews] = useState<any[]>([]);
+  const [loadingAdminReviews, setLoadingAdminReviews] = useState(false);
+  const [adminReviewsSearch, setAdminReviewsSearch] = useState("");
+  const [adminReviewsRatingFilter, setAdminReviewsRatingFilter] = useState("");
 
   // Tab 2: Event Creator States
   const [events, setEvents] = useState([]);
@@ -156,6 +163,35 @@ const AdminDashboardView = () => {
     }
   };
 
+  // Load Admin Reviews
+  const loadAdminReviews = async () => {
+    setLoadingAdminReviews(true);
+    try {
+      const params: any = {};
+      if (adminReviewsRatingFilter) params.rating = adminReviewsRatingFilter;
+      if (adminReviewsSearch) params.q = adminReviewsSearch;
+      const res = await api.get("/reviews/admin", { params });
+      setAdminReviews(res.data);
+    } catch (err) {
+      console.error("Error loading admin reviews:", err);
+    } finally {
+      setLoadingAdminReviews(false);
+    }
+  };
+
+  const handleAdminDeleteReview = async (id: number) => {
+    if (!window.confirm("¿Seguro que deseas eliminar esta reseña como moderador?")) return;
+    try {
+      await api.delete(`/reviews/${id}`);
+      setAlertMsg("Reseña eliminada correctamente por el administrador.");
+      loadAdminReviews();
+      setTimeout(() => setAlertMsg(""), 3500);
+    } catch (err) {
+      console.error("Error deleting review as admin:", err);
+      alert("No se pudo eliminar la reseña.");
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "requests") {
       loadPending();
@@ -163,6 +199,8 @@ const AdminDashboardView = () => {
       loadEventsList();
     } else if (activeTab === "stats") {
       loadStats();
+    } else if (activeTab === "reviews") {
+      loadAdminReviews();
     } else if (activeTab === "users") {
       // Load static data for operator registration if not loaded
       if (staticCategories.length === 0) {
@@ -172,7 +210,7 @@ const AdminDashboardView = () => {
         }).catch(err => console.error(err));
       }
     }
-  }, [activeTab]);
+  }, [activeTab, adminReviewsRatingFilter]);
 
   // Operator Verification Actions
   const handleVerifyOperator = async (operatorId: number, approve: boolean) => {
@@ -320,7 +358,13 @@ const AdminDashboardView = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl grow">
+    <>
+      <SEO
+        title="Panel de Administración"
+        description="Panel de moderación y gestión de la plataforma GUAIKE.DÍAZ. Administra solicitudes de artesanos, ferias culturales y estadísticas del Municipio Díaz."
+        canonical="/admin"
+      />
+      <div className="container mx-auto px-4 py-8 max-w-7xl grow">
       <PageHeader
         align="left"
         badge="Módulo Gubernamental · Alcaldía"
@@ -334,6 +378,7 @@ const AdminDashboardView = () => {
             tabs={[
               { id: "requests", label: "Solicitudes", icon: ListTodo },
               { id: "events", label: "Ferias", icon: Calendar },
+              { id: "reviews", label: "Reseñas", icon: MessageSquare },
               { id: "stats", label: "Estadísticas", icon: BarChart3 },
             ]}
           />
@@ -957,6 +1002,116 @@ const AdminDashboardView = () => {
         </div>
       )}
 
+      {/* Tab 5: MODERACION DE RESEÑAS */}
+      {activeTab === "reviews" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/5 pb-4">
+            <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white">
+              Moderación de Reseñas ({adminReviews.length})
+            </h2>
+            
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Buscar comentario, taller, usuario..."
+                  value={adminReviewsSearch}
+                  onChange={(e) => setAdminReviewsSearch(e.target.value)}
+                  className="rounded-xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+                  onKeyDown={(e) => e.key === "Enter" && loadAdminReviews()}
+                />
+                <button
+                  type="button"
+                  onClick={loadAdminReviews}
+                  className="bg-brand-blue text-white px-4 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition cursor-pointer"
+                >
+                  Buscar
+                </button>
+              </div>
+
+              <select
+                value={adminReviewsRatingFilter}
+                onChange={(e) => setAdminReviewsRatingFilter(e.target.value)}
+                className="rounded-xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 px-3 py-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none"
+              >
+                <option value="">Todas las estrellas</option>
+                <option value="5">5 Estrellas</option>
+                <option value="4">4 Estrellas</option>
+                <option value="3">3 Estrellas</option>
+                <option value="2">2 Estrellas</option>
+                <option value="1">1 Estrella</option>
+              </select>
+            </div>
+          </div>
+
+          {loadingAdminReviews ? (
+            <div className="text-center py-12 text-slate-400">
+              <div className="w-10 h-10 border-4 border-brand-blue dark:border-brand-light border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <span>Cargando reseñas...</span>
+            </div>
+          ) : adminReviews.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200/80 dark:border-white/5 text-[10px] uppercase tracking-wider text-slate-400">
+                    <th className="pb-3.5 pl-2">Taller</th>
+                    <th className="pb-3.5">Usuario</th>
+                    <th className="pb-3.5">Calificación</th>
+                    <th className="pb-3.5">Comentario</th>
+                    <th className="pb-3.5">Respuesta de Taller</th>
+                    <th className="pb-3.5 text-right pr-2">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/80 dark:divide-white/5 text-xs text-slate-700 dark:text-slate-300">
+                  {adminReviews.map((rev: any) => (
+                    <tr key={rev.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/10 transition">
+                      <td className="py-4 pl-2 font-bold">{rev.nombre_taller}</td>
+                      <td className="py-4 text-slate-500">{rev.usuario_correo}</td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{rev.puntuacion}</span>
+                          <Star size={12} fill="#F59E0B" className="text-brand-gold shrink-0" />
+                          {rev.qr_verificado && (
+                            <span className="text-[8px] uppercase tracking-widest chip-gold px-1.5 py-0.5 rounded-full font-extrabold ml-1">QR</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-4 max-w-xs truncate" title={rev.comentario}>
+                        {rev.comentario || <span className="text-slate-400 italic">Sin comentario</span>}
+                      </td>
+                      <td className="py-4 max-w-xs truncate" title={rev.respuesta_operador}>
+                        {rev.respuesta_operador ? (
+                          <span className="text-brand-blue dark:text-brand-light font-medium">{rev.respuesta_operador}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Sin respuesta</span>
+                        )}
+                      </td>
+                      <td className="py-4 text-right pr-2">
+                        <button
+                          type="button"
+                          onClick={() => handleAdminDeleteReview(rev.id)}
+                          className="bg-red-50 dark:bg-red-950/20 text-red-500 hover:bg-red-100 p-2 rounded-xl transition cursor-pointer flex items-center justify-center ml-auto"
+                          title="Eliminar Reseña"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-16 text-slate-400 dark:text-slate-500">
+              <MessageSquare size={48} className="mx-auto mb-2 opacity-50 text-slate-300" />
+              <p className="font-semibold text-sm">No se encontraron reseñas.</p>
+              <p className="text-xs text-slate-400">Intenta cambiar los filtros o realizar otra búsqueda.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Document verification Modal */}
       {activeDocument && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-100 flex items-center justify-center p-4">
@@ -977,6 +1132,7 @@ const AdminDashboardView = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
