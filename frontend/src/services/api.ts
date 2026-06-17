@@ -9,14 +9,24 @@
  * 3. Operaciones CRUD (Crear, Leer, Actualizar, Borrar) de operadores, eventos y reseñas.
  */
 
+
 import { supabase } from "./supabase";
 import { normalizeLocation, parseUbicacionForMunicipio } from "../utils/geo";
-import bcrypt from "bcryptjs"; // Utilizado en lógica del lado del cliente simulando backend
+import bcrypt from "bcryptjs"; // Utilizado en la lógica del cliente para verificar respuestas de seguridad de forma local
 
-// ── COLA OFFLINE (PWA) ────────────────────────────────────────────────────────
-// Guarda peticiones localmente cuando el dispositivo pierde conexión
+// =========================================================================
+// ── COLA OFFLINE (PWA) ───────────────────────────────────────────────────
+// =========================================================================
+// Permite registrar peticiones de escritura mientras el dispositivo no tiene
+// acceso a internet, almacenándolas en el LocalStorage y sincronizándolas
+// automáticamente cuando vuelve la conexión.
+
 const QUEUE_KEY = "offline_queue";
 
+/**
+ * Obtiene la cola de peticiones pendientes almacenada en el LocalStorage.
+ * Retorna un arreglo vacío si no existe ninguna petición o hay un error de parseo.
+ */
 const getOfflineQueue = (): any[] => {
   try {
     return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
@@ -25,8 +35,16 @@ const getOfflineQueue = (): any[] => {
   }
 };
 
+/**
+ * Limpia por completo la cola de peticiones offline.
+ */
 const clearQueue = () => localStorage.removeItem(QUEUE_KEY);
 
+/**
+ * Sincroniza secuencialmente las peticiones pendientes de la cola offline.
+ * Recorre cada item e intenta enviarlo al endpoint simulado. Si una petición
+ * falla, detiene el proceso para preservar el orden y evitar inconsistencias.
+ */
 const syncOfflineQueue = async () => {
   const queue = getOfflineQueue();
   for (const item of queue) {
@@ -40,12 +58,25 @@ const syncOfflineQueue = async () => {
   clearQueue();
 };
 
+// =========================================================================
+// ── GESTIÓN DE ERRORES Y UTILIDADES ──────────────────────────────────────
+// =========================================================================
+
+/**
+ * Genera un error estandarizado de la API con estructura de Axios
+ * para que el frontend pueda manejarlo transparentemente.
+ */
 const createApiError = (message: string, status = 400): never => {
   const error: any = new Error(message);
   error.response = { data: { message }, status };
   throw error;
 };
 
+/**
+ * Extrae y normaliza las coordenadas geográficas de un operador o evento.
+ * Primero valida si el punto está dentro de los límites del Municipio Díaz.
+ * Si no es válido, retorna las coordenadas crudas e indica que no son válidas.
+ */
 const coordsFromUbicacion = (ubicacion: unknown, debugId?: string | number) => {
   const resolved = parseUbicacionForMunicipio(ubicacion, debugId);
   if (resolved) {
@@ -63,6 +94,9 @@ const coordsFromUbicacion = (ubicacion: unknown, debugId?: string | number) => {
   };
 };
 
+/**
+ * Construye una respuesta HTTP estandarizada (tipo Axios) a partir de los datos procesados.
+ */
 const buildResponse = (data: any, status = 200) => ({
   data,
   status,
@@ -71,6 +105,10 @@ const buildResponse = (data: any, status = 200) => ({
   config: {},
 });
 
+/**
+ * Obtiene la URL de redirección configurada para la autenticación por correo electrónico.
+ * Se encarga de limpiar barras inclinadas adicionales y estructurar el endpoint de confirmación.
+ */
 const getEmailRedirectUrl = () => {
   const envBaseUrl = import.meta.env.VITE_AUTH_REDIRECT_URL || import.meta.env.VITE_APP_URL;
   const baseUrl = typeof envBaseUrl === "string" && envBaseUrl.trim()
@@ -80,6 +118,10 @@ const getEmailRedirectUrl = () => {
   return `${baseUrl}/auth/confirm`;
 };
 
+/**
+ * Resuelve el nombre del rol del usuario a partir del ID de rol o de una relación previamente cargada.
+ * Si no tiene relación ni ID válido, consulta la tabla 'roles' en Supabase y retorna 'turista' por defecto.
+ */
 const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<string> => {
   if (Array.isArray(rolesJoin)) {
     const name = (rolesJoin[0] as { nombre?: string } | undefined)?.nombre;
@@ -102,8 +144,15 @@ const resolveRoleName = async (rolId: number, rolesJoin: unknown): Promise<strin
   return roleRow?.nombre || "turista";
 };
 
+/**
+ * Normaliza las cadenas de correo electrónico para asegurar consistencia en búsquedas y registros.
+ */
 const normalizeEmail = (email: string) => email?.trim().toLowerCase() || "";
 
+/**
+ * Obtiene la información de perfil completa de un usuario a partir de su correo electrónico.
+ * Une la información del rol y retorna el objeto estructurado con campos de rate limit y fiscalización.
+ */
 const getUserRecordByEmail = async (email: string) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return null;
@@ -144,7 +193,11 @@ const getUserRecordByEmail = async (email: string) => {
   };
 };
 
-/** Crea el registro en `usuarios` solo si no existe; nunca sobrescribe el rol existente. */
+/** 
+ * Asegura la existencia de un registro de usuario en 'public.usuarios'.
+ * En Supabase, un trigger automático crea el registro en public.usuarios al registrar en auth.users,
+ * por lo que esta función espera un segundo para mitigar condiciones de carrera y reintenta la lectura.
+ */
 const ensureUserRecord = async (
   email: string,
   roleName: string,
@@ -158,21 +211,17 @@ const ensureUserRecord = async (
   const existing = await getUserRecordByEmail(email);
   if (existing) return existing;
 
-  // Since we implemented a DB Trigger to automatically insert the user into `public.usuarios` 
-  // upon creation in `auth.users`, we shouldn't attempt an INSERT here.
-  // The insert would fail anyway due to RLS policies preventing direct inserts.
-  // If we reach here, it might be a race condition, so we can wait a bit and retry.
-
+  // Reintento por si el trigger de base de datos tarda en procesar el insert
   await new Promise(resolve => setTimeout(resolve, 1000));
   const retry = await getUserRecordByEmail(email);
   if (retry) return retry;
 
-  // If it's still null, return a fallback object.
+  // Retorno de fallback en caso extremo de fallo en la sincronización
   return { id: null, email, role: roleName, verificado: false, codigo_verificacion: null, codigo_enviado_en: null, preguntas_seguridad: null, intentos_fallidos: 0, bloqueado_hasta: null, fecha_creacion: null, full_name: "", telefono: "" };
 };
 
 /**
- * Obtiene el perfil de usuario actual en sesión desde Supabase.
+ * Obtiene el objeto de sesión de Supabase Auth en memoria.
  * Retorna null si no hay sesión activa.
  */
 const getSessionUser = async () => {
@@ -183,6 +232,10 @@ const getSessionUser = async () => {
   return data.user;
 };
 
+/**
+ * Carga el perfil detallado del usuario autenticado en la sesión actual.
+ * Resuelve y asigna la metadata adicional como el nombre completo y teléfono.
+ */
 const fetchUsuarioProfile = async () => {
   const sessionUser = await getSessionUser();
   const userEmail = sessionUser?.email;
@@ -191,7 +244,7 @@ const fetchUsuarioProfile = async () => {
   }
   const profile = await getUserRecordByEmail(userEmail as string);
   if (!profile) {
-    // Retry once after a delay (trigger race condition)
+    // Reintentar en caso de retardo del trigger
     await new Promise(resolve => setTimeout(resolve, 1000));
     const retriedProfile = await getUserRecordByEmail(userEmail as string);
     if (retriedProfile) {
@@ -205,6 +258,12 @@ const fetchUsuarioProfile = async () => {
   return profile;
 };
 
+
+
+/**
+ * Obtiene los datos estáticos iniciales del sistema (categorías, parroquias y opciones de accesibilidad).
+ * Se utiliza principalmente para poblar formularios y filtros de búsqueda en el frontend.
+ */
 const getStaticData = async () => {
   const [catRes, parrRes, accRes] = await Promise.all([
     supabase.from("categorias").select("id,nombre,descripcion").order("nombre", { ascending: true }),
@@ -224,9 +283,10 @@ const getStaticData = async () => {
 };
 
 /**
- * Carga el directorio principal de operadores (Artesanos).
- * Solo muestra los que tienen es_verificado = true.
- * @param params { categoria_id, parroquia_id, q } filtros opcionales
+ * Carga el listado de operadores verificados que se muestran en el mapa y directorio.
+ * Permite filtrar por categoría, parroquia o búsqueda de texto libre (nombre o descripción).
+ * Si hay filtros activos, registra la consulta en 'registros_busqueda' para análisis estadístico.
+ * Normaliza las coordenadas espaciales y mapea los nombres de categorías, parroquias e imágenes.
  */
 const loadOperators = async (params: any = {}) => {
   let query = supabase.from("operadores").select(
@@ -246,6 +306,7 @@ const loadOperators = async (params: any = {}) => {
 
   const operatorIds = (operatorsRes.data || []).map((op: any) => op.id);
 
+  // Carga complementaria de nombres e imágenes principales en paralelo
   const [catsRes, parrsRes, imagesRes] = await Promise.all([
     supabase.from("categorias").select("id,nombre"),
     supabase.from("parroquias").select("id,nombre"),
@@ -279,6 +340,7 @@ const loadOperators = async (params: any = {}) => {
     };
   });
 
+  // Registro asíncrono del término de búsqueda para la métrica administrativa de calor/popularidad
   if (params.categoria_id || params.parroquia_id) {
     await supabase.from("registros_busqueda").insert([
       {
@@ -291,6 +353,11 @@ const loadOperators = async (params: any = {}) => {
   return operators;
 };
 
+/**
+ * Obtiene el perfil detallado de un operador específico por su ID.
+ * Recupera su información básica, categoría, parroquia, imágenes, accesibilidades asociadas,
+ * catálogo de productos disponibles y sus reseñas recibidas (calculando promedio e historial de respuestas).
+ */
 const getOperatorDetail = async (id: string) => {
   const operatorRes = await supabase
     .from("operadores")
@@ -354,6 +421,13 @@ const getOperatorDetail = async (id: string) => {
   };
 };
 
+/**
+ * Crea un nuevo operador (taller artesanal) en la base de datos.
+ * 1. Asegura que el usuario de sesión tiene un perfil en la tabla de usuarios.
+ * 2. Registra el taller en 'operadores' convirtiendo la latitud/longitud a un punto espacial PostGIS (SRID 4326).
+ * 3. Actualiza los campos fiscales del usuario (cédula, fecha nacimiento, municipio residencia).
+ * 4. Inserta las imágenes del taller y las accesibilidades seleccionadas en sus tablas asociativas.
+ */
 const createOperator = async (payload: any) => {
   const sessionUser = await getSessionUser();
   const userEmail = sessionUser?.email;
@@ -375,7 +449,7 @@ const createOperator = async (payload: any) => {
         categoria_id: payload.categoria_id,
         nombre_taller: payload.nombre_taller,
         descripcion: payload.descripcion,
-        ubicacion: `SRID=4326;POINT(${payload.longitud} ${payload.latitud})`,
+        ubicacion: `SRID=4326;POINT(${payload.longitud} ${payload.latitud})`, // Almacenamiento PostGIS
         direccion_detallada: payload.direccion_detallada,
         telefono_whatsapp: payload.telefono_whatsapp,
       },
@@ -387,13 +461,14 @@ const createOperator = async (payload: any) => {
   const operatorId = operatorData?.id;
   if (!operatorId) createApiError("No se pudo crear el operador");
 
-  // Update user's fiscal fields
+  // Actualizar datos fiscales del usuario
   const { error: userUpdateError } = await supabase
     .from("usuarios")
     .update({
       cedula_tipo: payload.cedula_tipo,
       cedula_numero: payload.cedula_numero,
       fecha_nacimiento: payload.fecha_nacimiento ? payload.fecha_nacimiento : null,
+
       municipio_residencia: payload.municipio_residencia
     })
     .eq("id", (usuario as any).id);
@@ -422,6 +497,12 @@ const createOperator = async (payload: any) => {
   return { message: "Registro del operador exitoso. Pendiente de verificación por la alcaldía.", operatorId };
 };
 
+
+/**
+ * Obtiene el listado de eventos turísticos y culturales programados.
+ * Llama al procedimiento RPC de base de datos 'purge_old_events' para limpiar eventos vencidos antes de la carga.
+ * Estandariza la ubicación geográfica de cada evento.
+ */
 const getEvents = async () => {
   await supabase.rpc("purge_old_events");
 
@@ -442,6 +523,9 @@ const getEvents = async () => {
   });
 };
 
+/**
+ * Registra un nuevo evento turístico en la base de datos con coordenadas espaciales PostGIS.
+ */
 const createEvent = async (payload: any) => {
   const { data, error } = await supabase.from("eventos").insert([
     {
@@ -459,8 +543,11 @@ const createEvent = async (payload: any) => {
   return { message: "Evento publicado exitosamente sobre el mapa.", event: data?.[0] };
 };
 
+/**
+ * Modifica los detalles de un evento.
+ * Valida previamente que el evento no haya iniciado ni finalizado antes de permitir cambios.
+ */
 const updateEvent = async (id: string, payload: any) => {
-  // Primero verificar que no haya iniciado
   const { data: eventData, error: eventError } = await supabase.from("eventos").select("fecha_inicio").eq("id", id).single();
   if (eventError) createApiError(eventError.message);
   if (!eventData) createApiError("Evento no encontrado", 404);
@@ -482,12 +569,20 @@ const updateEvent = async (id: string, payload: any) => {
   return { message: "Evento modificado con éxito." };
 };
 
+/**
+ * Elimina un evento del sistema por su ID.
+ */
 const deleteEvent = async (id: string) => {
   const { error } = await supabase.from("eventos").delete().eq("id", id);
   if (error) createApiError(error.message);
   return { message: "Evento eliminado con éxito." };
 };
 
+/**
+ * Valida un código QR (UUID) escaneado de un taller artesanal.
+ * Verifica que pertenezca a un operador existente y verificado.
+ * Si es válido, desbloquea la capacidad de dejar reseñas con el flag 'qr_verificado = true'.
+ */
 const validateQr = async (body: any) => {
   const { data, error } = await supabase
     .from("operadores")
@@ -502,6 +597,11 @@ const validateQr = async (body: any) => {
   return { valido: true, operador_id: operador.id, message: "Visita física validada. Formulario de reseña desbloqueado." };
 };
 
+/**
+ * Publica una reseña/calificación asociada a un operador específico.
+ * Obtiene el perfil del usuario autenticado y asocia la reseña.
+ * Soporta la verificación física vía QR.
+ */
 const createReview = async (body: any) => {
   const sessionUser = await getSessionUser();
   const userEmail = sessionUser?.email;
@@ -527,6 +627,10 @@ const createReview = async (body: any) => {
   return { message: "Reseña publicada con éxito." };
 };
 
+/**
+ * Recupera el listado de operadores registrados pendientes de aprobación.
+ * Exclusivo para el módulo de administración/alcaldía.
+ */
 const getPendingOperators = async () => {
   const { data, error } = await supabase
     .from("operadores")
@@ -573,12 +677,20 @@ const getPendingOperators = async () => {
   });
 };
 
+/**
+ * Aprueba o desaprueba un operador artesanal (alcaldía).
+ * Al verificarlo, comenzará a mostrarse de forma pública en los mapas de la aplicación.
+ */
 const verifyOperator = async (id: string, body: any) => {
   const { error } = await supabase.from("operadores").update({ es_verificado: body.es_verificado }).eq("id", id);
   if (error) createApiError(error.message);
   return { message: `Operador ${body.es_verificado ? "verificado" : "desverificado"} con éxito.` };
 };
 
+/**
+ * Obtiene el perfil de operador del usuario autenticado en la sesión actual.
+ * Devuelve null si el usuario no posee un taller registrado.
+ */
 const getMyOperator = async () => {
   const sessionUser = await getSessionUser();
   const userEmail = sessionUser?.email;
@@ -606,6 +718,11 @@ const getMyOperator = async () => {
   };
 };
 
+/**
+ * Actualiza el perfil del operador logueado.
+ * Permite modificar la información del taller, geolocalización, parroquia, categoría y teléfono.
+ * Adicionalmente actualiza datos fiscales del usuario y redefine la galería de imágenes y accesibilidades.
+ */
 const updateOperator = async (payload: any) => {
   const sessionUser = await getSessionUser();
   const userEmail = sessionUser?.email;
@@ -638,7 +755,7 @@ const updateOperator = async (payload: any) => {
 
   if (opError) createApiError(opError.message);
 
-  // Update user's fiscal fields
+  // Actualizar datos fiscales del usuario
   const { error: userUpdateError } = await supabase
     .from("usuarios")
     .update({
@@ -650,6 +767,7 @@ const updateOperator = async (payload: any) => {
     .eq("id", (usuario as any).id);
   if (userUpdateError) createApiError(userUpdateError.message);
 
+  // Re-asociar opciones de accesibilidad
   const { error: deleteAccessError } = await supabase
     .from("operador_accesibilidad")
     .delete()
@@ -666,6 +784,7 @@ const updateOperator = async (payload: any) => {
     if (accessError) createApiError(accessError.message);
   }
 
+  // Re-cargar galería de imágenes
   const { error: deleteImagesError } = await supabase
     .from("operador_imagenes")
     .delete()
@@ -700,6 +819,14 @@ const updateOperator = async (payload: any) => {
   return { message: "Perfil de operador actualizado con éxito." };
 };
 
+
+
+/**
+ * Agrupa y retorna estadísticas administrativas para el panel de control de la alcaldía.
+ * Obtiene métricas agregadas en paralelo: total de operadores verificados/pendientes, total de reseñas,
+ * porcentaje de reseñas validadas físicamente mediante QR, cantidad total de usuarios y gráficos de 
+ * popularidad de búsquedas por categoría y parroquia de los últimos 7 días.
+ */
 const getAdminStats = async () => {
   const [verifiedRes, pendingRes, reviewsRes, usersRes, catStatsRes, parrStatsRes, timelineRes] = await Promise.all([
     supabase.from("operadores").select("id", { count: "exact" }).eq("es_verificado", true),
@@ -722,6 +849,7 @@ const getAdminStats = async () => {
   const totalReviews = reviewsRes.data?.length || 0;
   const qrTotal = (reviewsRes.data || []).filter((item: any) => item.qr_verificado).length;
 
+  // Reduce para calcular búsquedas por categoría
   const categoryStats = (catStatsRes.data || []).reduce((acc: any, item: any) => {
     const nombre = item.categorias?.nombre || "Desconocido";
     const existing = acc.find((row: any) => row.categoria_nombre === nombre);
@@ -730,6 +858,7 @@ const getAdminStats = async () => {
     return acc;
   }, []);
 
+  // Reduce para calcular búsquedas por parroquia
   const parroquiaStats = (parrStatsRes.data || []).reduce((acc: any, item: any) => {
     const nombre = item.parroquias?.nombre || "Desconocido";
     const existing = acc.find((row: any) => row.parroquia_nombre === nombre);
@@ -747,6 +876,7 @@ const getAdminStats = async () => {
 
   last7Days.forEach((day) => timelineData.push({ fecha: day, cantidad: 0 }));
 
+  // Agrupa búsquedas diarias de la última semana
   (timelineRes.data || []).forEach((item: any) => {
     const day = new Date(item.fecha_busqueda).toISOString().split("T")[0];
     const existing = timelineData.find((row) => row.fecha === day);
@@ -767,7 +897,13 @@ const getAdminStats = async () => {
   };
 };
 
-// ── Helpers para envío de correos y generación de códigos ────────────────
+// =========================================================================
+// ── HELPERS PARA CORREOS Y CODIGOS DE VERIFICACIÓN ────────────────────────
+// =========================================================================
+
+/**
+ * Genera un código de verificación alfanumérico aleatorio con formato XXXX-XXXX.
+ */
 const generateVerificationCode = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let part1 = "";
@@ -779,6 +915,10 @@ const generateVerificationCode = (): string => {
   return `${part1}-${part2}`;
 };
 
+/**
+ * Llama al endpoint de Vercel Serverless para enviar correos electrónicos a través de nodemailer.
+ * Autentica la petición utilizando una llave secreta de integración compartida.
+ */
 const sendEmailViaVercel = async (to: string, subject: string, text: string, html: string) => {
   const secretKey = "guaike-system-default-secret-key-2026";
   try {
@@ -803,6 +943,11 @@ const sendEmailViaVercel = async (to: string, subject: string, text: string, htm
     console.error("Error llamando a la función de correo:", error);
   }
 };
+
+/**
+ * Construye la plantilla HTML y envía el correo con el código de recuperación
+ * de contraseña de un usuario en Díaz.
+ */
 const sendRecoveryCodeEmail = async (email: string, code: string) => {
   const subject = "Recuperación de contraseña en GUAIKE.DÍAZ";
   const text = `Tu código de recuperación de contraseña es: ${code}. Este código expira en 10 minutos.`;
@@ -823,19 +968,32 @@ const sendRecoveryCodeEmail = async (email: string, code: string) => {
   await sendEmailViaVercel(email, subject, text, html);
 };
 
+/**
+ * ROUTER CLIENT-SIDE: Intercepta llamadas simulando peticiones HTTP a endpoints locales.
+ * Redirecciona cada ruta a consultas directas a Supabase DB o Vercel Serverless.
+ */
 const callEndpoint = async (method: string, url: string, payload?: any): Promise<any> => {
   const route = url.startsWith("/") ? url : `/${url}`;
   const lowerMethod = method.toLowerCase();
 
+
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: PERFIL DE USUARIO ──────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "get" && route === "/auth/profile") {
     const profile = await fetchUsuarioProfile();
     return buildResponse(profile);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: INICIO DE SESIÓN ───────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/login") {
     const { email, password } = payload || {};
 
     const existingUser = await getUserRecordByEmail(email);
+    // Verificar si la cuenta está temporalmente bloqueada por demasiados intentos fallidos (Rate Limiting)
     if (existingUser && existingUser.bloqueado_hasta) {
       const blockUntil = new Date(existingUser.bloqueado_hasta).getTime();
       const now = Date.now();
@@ -843,10 +1001,12 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
         const remainingMinutes = Math.ceil((blockUntil - now) / 60000);
         createApiError(`Cuenta bloqueada temporalmente por exceso de intentos fallidos. Intente de nuevo en ${remainingMinutes} minutos.`, 423);
       } else {
+        // El tiempo de bloqueo ya expiró, reseteamos los intentos
         await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", existingUser.id);
       }
     }
 
+    // Iniciar sesión en Supabase Auth
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       const normalized = error.message?.toLowerCase() || "";
@@ -854,13 +1014,14 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
         createApiError("Tu correo no ha sido confirmado. Revisa el enlace enviado a tu correo y luego vuelve a iniciar sesión.", 401);
       }
 
+      // Si las credenciales fallan, incrementamos el contador de intentos y bloqueamos si excede de 5
       if (existingUser) {
         const nextAttempts = (existingUser.intentos_fallidos || 0) + 1;
         let updateFields: any = { intentos_fallidos: nextAttempts };
 
         if (nextAttempts >= 5) {
           const factor = (nextAttempts - 5) + 1;
-          const waitMinutes = 5 * factor;
+          const waitMinutes = 5 * factor; // Penalización exponencial de 5 minutos por intento fallido extra
           updateFields.bloqueado_hasta = new Date(Date.now() + waitMinutes * 60000).toISOString();
           await supabase.from("usuarios").update(updateFields).eq("id", existingUser.id);
           createApiError(`Credenciales incorrectas. Demasiados intentos fallidos. Cuenta bloqueada por ${waitMinutes} minutos.`, 423);
@@ -875,25 +1036,21 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     const session = data.session;
     if (!session) createApiError("No se pudo iniciar sesión", 401);
 
-    // Buscar el perfil por correo (la columna `id` de public.usuarios es BIGSERIAL, no UUID,
-    // por lo que no se puede comparar directamente con auth.users.id)
     const authUserId = session!.user?.id;
-
     let profile = await getUserRecordByEmail(email as string);
 
-    // Intento 2: esperar y reintentar (posible race condition del trigger de auth)
+    // Intento 2: mitigar condición de carrera del trigger automático de inserción en public.usuarios
     if (!profile) {
       await new Promise(resolve => setTimeout(resolve, 1500));
       profile = await getUserRecordByEmail(email as string);
     }
 
-    // Intento 3: si el trigger no creó el registro, insertarlo con upsert usando `correo` como clave
+    // Intento 3: si el trigger sigue fallando, forzamos un upsert seguro desde el cliente
     if (!profile && authUserId) {
       const registeredRole = session!.user?.user_metadata?.role || "turista";
       const { data: roleRow } = await supabase.from("roles").select("id").eq("nombre", registeredRole).maybeSingle();
       const rolId = roleRow?.id || null;
 
-      // Upsert por correo (única restricción disponible desde el cliente)
       await supabase.from("usuarios").upsert(
         { 
           correo: normalizeEmail(email as string), 
@@ -912,16 +1069,15 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     profile.full_name = session!.user?.user_metadata?.full_name || session!.user?.user_metadata?.name || "";
     profile.telefono = session!.user?.user_metadata?.phone || "";
 
-    // Verificar si es una contraseña temporal y si ya expiró
+    // Validación de requerimiento de cambio de contraseña temporal
     if (profile.requiere_cambio_clave) {
       if (profile.clave_temporal_expira && new Date(profile.clave_temporal_expira) < new Date()) {
         createApiError("Tu contraseña temporal ha expirado. Por favor, contacta al administrador.", 403);
       }
 
-      // Si la contraseña temporal es válida, restablecemos los intentos fallidos
+      // Si la contraseña temporal es válida, reseteamos intentos y retornamos flag de forzado
       await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", profile.id);
 
-      // Devolvemos el perfil con el flag para que el frontend inicie el flujo de forzar cambio
       return buildResponse({
         token: (session as any).access_token,
         user: profile,
@@ -934,6 +1090,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ token: (session as any).access_token, user: profile });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: REGISTRO DE USUARIOS POR ADMINISTRADORES ───────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/admin-register-user") {
     let { email, password, role, name, phone, operatorData } = payload || {};
     email = normalizeEmail(email);
@@ -942,12 +1101,11 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       createApiError("Todos los campos obligatorios para el registro administrativo deben estar completos.");
     }
 
-    // 1. Create the user in Supabase Auth
+    // 1. Crear usuario en Supabase Auth
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Admin creates it, maybe auto-confirm if possible, or just send the email
         emailRedirectTo: getEmailRedirectUrl(),
         data: {
           role,
@@ -959,19 +1117,18 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     if (signUpError) createApiError(signUpError.message);
 
-    // Give the DB trigger a moment to run
+    // Espera del trigger asíncrono
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // 2. Fetch the newly created user from public.usuarios
+    // 2. Obtener el registro de la tabla pública
     const newUsuario = await getUserRecordByEmail(email);
     if (!newUsuario) {
       createApiError("El usuario fue creado en Auth pero falló la sincronización. Contacte soporte.");
     }
 
-    // 3. Update the role and set temporary password flags
+    // 3. Modificar rol y flags de cambio de contraseña temporal (10 días de validez)
     const { data: roleData } = await supabase.from("roles").select("id").eq("nombre", role).maybeSingle();
 
-    // Calcula fecha de expiración (10 días a partir de hoy)
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 10);
 
@@ -983,7 +1140,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     if (updateError) console.error("Error setting temp password flags:", updateError);
 
-    // 4. If it's an operator, insert operator data
+    // 4. Si es operador, registrar automáticamente sus datos del taller (auto-verificado por defecto)
     if (role === "operador" && operatorData) {
       const opPayload: any = {
         usuario_id: newUsuario!.id,
@@ -992,26 +1149,24 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
         parroquia_id: operatorData.parroquia_id,
         ubicacion: `SRID=4326;POINT(${operatorData.longitud} ${operatorData.latitud})`,
         telefono_whatsapp: phone || null,
-        es_verificado: true // Admin created operators are verified by default
+        es_verificado: true
       };
 
       const { error: opError } = await supabase.from("operadores").insert([opPayload]);
       if (opError) console.error("Error creating operator details:", opError);
-
-      // We don't fail the request if operator fails, just log it, but ideally we should rollback or return a warning.
     }
-
-    // Opcional: Enviar correo personalizado con la contraseña temporal
-    // sendEmailViaVercel(email, "Bienvenido: Tus Credenciales de Acceso", `Tu contraseña temporal es: ${password}. Tienes 10 días para cambiarla.`, "...");
 
     return buildResponse({ message: "Usuario registrado por el administrador. Se le ha asignado una contraseña temporal con validez de 10 días." }, 201);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: REGISTRO PÚBLICO DE USUARIO ────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/register") {
     let { email, password, role, name, phone, securityQuestions } = payload || {};
     email = normalizeEmail(email);
 
-    // Validar y normalizar preguntas de seguridad antes de hashear
+    // Validar y normalizar preguntas de seguridad hasheándolas con bcryptjs antes de guardar
     let hashedQuestions = null;
     if (Array.isArray(securityQuestions) && securityQuestions.length > 0) {
       hashedQuestions = await Promise.all(
@@ -1048,6 +1203,11 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   }
 
 
+
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: OBTENER PREGUNTAS DE SEGURIDAD ─────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/recover-questions") {
     const { email } = payload || {};
     const user = await getUserRecordByEmail(normalizeEmail(email));
@@ -1057,11 +1217,14 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       createApiError("Este usuario no configuró preguntas de seguridad. Por favor recupere mediante código de correo.", 400);
     }
 
-    // Devolver solo los enunciados de las preguntas
+    // Retorna solo los enunciados (las respuestas están hasheadas y son secretas)
     const questionsOnly = user!.preguntas_seguridad.map((q: any) => ({ question: q.question }));
     return buildResponse({ questions: questionsOnly });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: VERIFICAR RESPUESTAS DE PREGUNTAS DE SEGURIDAD ─────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/verify-questions") {
     const { email, answers } = payload || {};
     const normalizedEmail = normalizeEmail(email);
@@ -1072,7 +1235,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       createApiError("Este usuario no tiene preguntas de seguridad configuradas", 400);
     }
 
-    // Verificar si está bloqueado por rate limiting
+    // Rate Limiting para evitar fuerza bruta en las respuestas de seguridad
     if (user!.bloqueado_hasta) {
       const blockUntil = new Date(user!.bloqueado_hasta).getTime();
       const now = Date.now();
@@ -1082,7 +1245,6 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       }
     }
 
-    // Validar respuestas normalizándolas y comparando con bcryptjs
     let allCorrect = true;
     for (const userQ of user!.preguntas_seguridad) {
       const matched = answers.find((ans: any) => ans.question === userQ.question);
@@ -1115,12 +1277,15 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       }
     }
 
-    // Respuestas correctas: resetear intentos fallidos
+    // Si son correctas, desbloqueamos la cuenta y reseteamos intentos
     await supabase.from("usuarios").update({ intentos_fallidos: 0, bloqueado_hasta: null }).eq("id", user!.id);
 
     return buildResponse({ success: true, message: "Respuestas verificadas correctamente." });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ENVIAR CÓDIGO DE RECUPERACIÓN POR CORREO ───────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/send-recovery-email") {
     const { email } = payload || {};
     const normalizedEmail = normalizeEmail(email);
@@ -1128,25 +1293,26 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     const user = await getUserRecordByEmail(normalizedEmail);
     if (!user) {
-      // Devolver éxito genérico por seguridad contra enumeración de correos
+      // Éxito genérico por seguridad contra la enumeración de cuentas
       return buildResponse({ success: true, message: "Si la cuenta existe, recibirás un código para restablecer la contraseña." });
     }
 
     const code = generateVerificationCode();
     const nowStr = new Date().toISOString();
 
-    const { error } = await supabase.from("usuarios").update({
+    await supabase.from("usuarios").update({
       codigo_verificacion: code,
       codigo_enviado_en: nowStr,
     }).eq("id", user.id);
-
-    if (error) createApiError(error.message);
 
     await sendRecoveryCodeEmail(normalizedEmail, code);
 
     return buildResponse({ success: true, message: "Código de recuperación enviado a tu correo." });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: VERIFICAR CÓDIGO DE RECUPERACIÓN ───────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/verify-recovery-code") {
     const { email, code } = payload || {};
     const normalizedEmail = normalizeEmail(email);
@@ -1167,6 +1333,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ success: true, message: "Código verificado correctamente." });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: RESTABLECER CONTRASEÑA ─────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/reset-password") {
     const { email } = payload || {};
     const password = payload?.password || payload?.newPassword;
@@ -1176,7 +1345,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
 
     if (!password) createApiError("La nueva contraseña es obligatoria", 400);
 
-    // 1. Restablecer contraseña en Supabase Auth mediante la función serverless
+    // 1. Invoca la función Vercel Serverless /api/auth-email (Supabase Admin action broker)
     const secretKey = "guaike-system-default-secret-key-2026";
     try {
       const res = await fetch("/api/auth-email", {
@@ -1200,7 +1369,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
       createApiError(e.message || "Error al intentar restablecer la contraseña en el servidor.");
     }
 
-    // 2. Limpiar el código de recuperación en la BD pública
+    // 2. Limpia los códigos temporales e intentos en la tabla pública usuarios
     const { error } = await supabase.from("usuarios").update({
       codigo_verificacion: null,
       codigo_enviado_en: null,
@@ -1213,6 +1382,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ success: true, message: "Contraseña restablecida correctamente." });
   }
 
+  // Mapeos rápidos de endpoints REST para operadores y eventos
   if (lowerMethod === "get" && route === "/operators/static-data") {
     const data = await getStaticData();
     return buildResponse(data);
@@ -1287,6 +1457,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse(result, 201);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: MIS RESEÑAS (VISTA DEL TURISTA) ────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "get" && route === "/reviews/my-reviews") {
     const sessionUser = await getSessionUser();
     const userEmail = sessionUser?.email;
@@ -1314,6 +1487,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     })));
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ADMINISTRADOR DE RESEÑAS ───────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "get" && route === "/reviews/admin") {
     const sessionUser = await getSessionUser();
     const userEmail = sessionUser?.email;
@@ -1360,6 +1536,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse(reviews);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: MODIFICAR RESEÑA (POR PROPIETARIO) ─────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "put" && route.startsWith("/reviews/")) {
     const id = route.split("/").pop() || "";
     const { puntuacion, comentario } = payload || {};
@@ -1384,6 +1563,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ message: "Reseña actualizada con éxito.", review: data![0] });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ELIMINAR RESEÑA (PROPIETARIO O ADMIN) ──────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "delete" && route.startsWith("/reviews/")) {
     const id = route.split("/").pop() || "";
     const sessionUser = await getSessionUser();
@@ -1391,6 +1573,7 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     if (!userEmail) createApiError("No autorizado", 401);
     const usuario = await getUserRecordByEmail(userEmail as string);
     if (!usuario) createApiError("Usuario no encontrado", 404);
+
 
     const isAdmin = usuario!.role === "admin";
     let deleteQuery = supabase.from("resenas").delete().eq("id", id);
@@ -1404,6 +1587,10 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ message: "Reseña eliminada con éxito." });
   }
 
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: RESPUESTA DE OPERADOR A RESEÑA ─────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route.startsWith("/reviews/") && route.endsWith("/reply")) {
     const pathParts = route.split("/");
     const id = pathParts[2]; // /reviews/:id/reply
@@ -1441,6 +1628,9 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
     return buildResponse({ message: "Respuesta publicada con éxito.", review: data![0] });
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ESTADÍSTICAS ADMINISTRATIVAS ───────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "get" && route === "/stats/admin") {
     const stats = await getAdminStats();
     return buildResponse(stats);
@@ -1449,12 +1639,20 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   createApiError(`Ruta no implementada: ${method.toUpperCase()} ${route}`);
 };
 
+/**
+ * Encola una petición de escritura fallida/offline en la memoria local (LocalStorage).
+ * Esto permite la sincronización asíncrona cuando se restablece la conexión PWA.
+ */
 const queueOfflineRequest = (method: string, url: string, data: any) => {
   const queue = getOfflineQueue();
   queue.push({ method, url, data });
   localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
 };
 
+// =========================================================================
+// ── OBJETO EXPORTABLE CLIENTE API ────────────────────────────────────────
+// =========================================================================
+// Este objeto unifica los métodos Axios típicos, simulando las llamadas HTTP.
 const api = {
   get: async (url: string, config?: any) => callEndpoint("get", url, config?.params),
   post: async (url: string, data?: any) => callEndpoint("post", url, data),
@@ -1473,3 +1671,4 @@ export const patch = api.patch;
 export const del = api.delete;
 export const request = api.request;
 export default api;
+

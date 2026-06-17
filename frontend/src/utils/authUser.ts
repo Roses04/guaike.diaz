@@ -1,3 +1,13 @@
+/**
+ * INTERFACE Y UTILIDAD DE NORMALIZACIÓN DE USUARIOS AUTENTICADOS
+ * 
+ * Este archivo centraliza la estructura del usuario en sesión (`AuthUser`) y 
+ * proporciona una función robusta de normalización (`normalizeAuthUser`). Su objetivo
+ * es unificar las respuestas provenientes de diferentes fuentes (Supabase Auth en memoria,
+ * respuestas directas de la tabla de base de datos `usuarios` o cargas de caché local)
+ * a un objeto estandarizado y tipado para su uso en toda la aplicación.
+ */
+
 export interface AuthUser {
   id: number;
   email: string;
@@ -12,7 +22,13 @@ export interface AuthUser {
   municipio_residencia?: string;
 }
 
-/** Normaliza respuestas de login, profile o caché al formato del store. */
+/**
+ * Normaliza las respuestas crudas de la API y Supabase al formato estandarizado `AuthUser`.
+ * Maneja equivalencias de campos en español e inglés (ej. `correo` vs `email`, `telefono` vs `phone`).
+ * 
+ * @param data Objeto crudo retornado por Supabase, local cache o endpoint de autenticación.
+ * @returns Un objeto `AuthUser` estructurado, o null si los datos no son válidos.
+ */
 export function normalizeAuthUser(data: unknown): AuthUser | null {
   if (!data || typeof data !== "object") return null;
 
@@ -20,9 +36,11 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
   const id = row.id;
   if (id === undefined || id === null) return null;
 
+  // Normalizar correo electrónico
   const email = (row.email ?? row.correo) as string | undefined;
   if (!email) return null;
 
+  // Extraer el rol del usuario (soporta rol crudo, relaciones anidadas o lookup en español)
   let role: string | undefined;
   if (typeof row.role === "string") {
     role = row.role;
@@ -35,6 +53,7 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
       : (roles as Record<string, unknown>).nombre as string | undefined;
   }
 
+  // Mapear campos opcionales del perfil y verificar equivalencias de idioma/base de datos
   const verificado = row.verificado === undefined ? undefined : Boolean(row.verificado);
   const full_name = (row.full_name ?? row.name) as string | undefined;
   const telefono = (row.telefono ?? row.phone) as string | undefined;
@@ -47,7 +66,7 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
   return {
     id: Number(id),
     email,
-    role: (role || "turista").toLowerCase(),
+    role: (role || "turista").toLowerCase(), // Por defecto el rol es turista
     verificado,
     full_name,
     telefono,

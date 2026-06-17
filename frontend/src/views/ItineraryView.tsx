@@ -1,3 +1,12 @@
+/**
+ * MÓDULO DE PLANIFICACIÓN DE ITINERARIOS Y RUTAS CULTURALES
+ * 
+ * Este componente permite a los usuarios diseñar, optimizar y guardar rutas turísticas 
+ * personalizadas y guiadas dentro del Municipio Díaz. Implementa un resolvedor offline 
+ * de Problema del Viajante (TSP) mediante el algoritmo del vecino más cercano,
+ * estimación de tiempos de viaje, renderizado secuencial sobre el mapa y persistencia en caché/localstorage.
+ */
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
@@ -22,6 +31,9 @@ import {
 import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
 import { PageHeader, TabSwitcher } from "../components/ui/PageHeader";
 
+/**
+ * Representa un operador o taller artesanal verificado en el sistema.
+ */
 interface Operator {
   id: number;
   nombre_taller: string;
@@ -36,6 +48,9 @@ interface Operator {
   accesibilidades?: { id: number; etiqueta: string; icono: string }[];
 }
 
+/**
+ * Estructura de datos para almacenar un itinerario guardado en el historial del usuario.
+ */
 interface SavedItinerary {
   id: string;
   name: string;
@@ -45,7 +60,8 @@ interface SavedItinerary {
   visitedIds: number[];
 }
 
-// Map bounds auto-fitter
+// Controlador auxiliar para autoajustar los límites (bounds) del mapa a las coordenadas de la ruta.
+// Se asegura de que todos los marcadores sean visibles en pantalla aplicando un margen (padding).
 const MapBoundsController = ({ points }: { points: [number, number][] }) => {
   const map = useMap();
   useEffect(() => {
@@ -57,7 +73,9 @@ const MapBoundsController = ({ points }: { points: [number, number][] }) => {
   return null;
 };
 
-// Create custom numbered markers
+// Generador de iconos numerados personalizados para los marcadores de Leaflet.
+// Representa secuencialmente cada parada de la ruta (1, 2, 3...) utilizando estilos Tailwind
+// e interactividad (escalado en hover).
 const createNumberedIcon = (num: number) => {
   return L.divIcon({
     html: `<div class="w-8 h-8 rounded-full bg-brand-blue dark:bg-brand-light text-white flex items-center justify-center border-2 border-white shadow-lg font-display font-extrabold text-sm hover:scale-110 transition duration-200">${num}</div>`,
@@ -144,7 +162,9 @@ const ItineraryView = () => {
 
   const defaultCenter: [number, number] = MUNICIPIO_DIAZ_CENTER;
 
-  // 1. Fetch operators and static configuration data
+  // 1. Carga operadores y configuración de datos estáticos
+  // Prioriza la consulta remota vía API. Si falla por falta de conectividad (offline),
+  // se recupera de manera automática el último snapshot guardado en localStorage.
   const loadData = async () => {
     setLoading(true);
     try {
@@ -158,7 +178,7 @@ const ItineraryView = () => {
       setParroquias(staticRes.data.parroquias);
       setOptionsAccs(staticRes.data.accesibilidades);
 
-      // Save to cache for offline compatibility
+      // Guardar en caché para garantizar total compatibilidad sin conexión (PWA)
       localStorage.setItem("cache_itinerarios_operadores", JSON.stringify(opsRes.data));
       localStorage.setItem("cache_itinerarios_categorias", JSON.stringify(staticRes.data.categorias));
       localStorage.setItem("cache_itinerarios_parroquias", JSON.stringify(staticRes.data.parroquias));
@@ -168,7 +188,7 @@ const ItineraryView = () => {
       console.error("Error al cargar datos de itinerarios:", error);
       setIsOffline(true);
 
-      // Offline Cache Fallbacks
+      // Fallbacks de caché local ante desconexión
       const cachedOps = localStorage.getItem("cache_itinerarios_operadores");
       const cachedCats = localStorage.getItem("cache_itinerarios_categorias");
       const cachedParrs = localStorage.getItem("cache_itinerarios_parroquias");
@@ -186,7 +206,7 @@ const ItineraryView = () => {
   useEffect(() => {
     loadData();
 
-    // Load active itinerary from localstorage
+    // Recupera la ruta actualmente activa de la sesión anterior en este dispositivo
     const savedActive = localStorage.getItem("active_itinerary");
     const savedActiveName = localStorage.getItem("active_itinerary_name");
     const savedVisited = localStorage.getItem("active_itinerary_visited");
@@ -197,17 +217,17 @@ const ItineraryView = () => {
       if (savedActiveName) setActiveItineraryName(savedActiveName);
       if (savedVisited) setVisitedStops(JSON.parse(savedVisited));
       if (savedMode) setTransportMode(savedMode as "driving" | "walking");
-      setActiveTab("active"); // default to active route if exists
+      setActiveTab("active"); // Si hay una ruta activa, redirige por defecto a esa pestaña
     }
 
-    // Load history
+    // Cargar historial de rutas guardadas
     const savedHistory = localStorage.getItem("saved_itineraries_history");
     if (savedHistory) {
       setItinerariesHistory(JSON.parse(savedHistory));
     }
   }, []);
 
-  // Save active itinerary changes to storage
+  // Persiste la información de progreso y configuración de la ruta activa localmente
   const persistActiveItinerary = (itinerary: Operator[], name: string, visited: number[], mode: "driving" | "walking") => {
     setActiveItinerary(itinerary);
     setActiveItineraryName(name);
@@ -219,7 +239,7 @@ const ItineraryView = () => {
     localStorage.setItem("active_itinerary_transport", mode);
   };
 
-  // 2. Fetch User GPS coordinates
+  // 2. Consulta y captura de coordenadas satelitales del usuario (GPS)
   const handleAcquireGps = () => {
     if (!navigator.geolocation) {
       alert("La geolocalización no está soportada en tu navegador.");
@@ -240,9 +260,11 @@ const ItineraryView = () => {
     );
   };
 
-  // Helper: Haversine distance formula in km (Orthodromic)
+  // Fórmula de Haversine en kilómetros para calcular la distancia ortodrómica en una esfera.
+  // Multiplicada por un coeficiente empírico de 1.35 para estimar mejor la trayectoria real 
+  // de las calles terrestres en comparación con la línea recta ideal (del mapa).
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // earth radius in km
+    const R = 6371; // Radio medio de la Tierra en kilómetros
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
@@ -252,12 +274,13 @@ const ItineraryView = () => {
         Math.sin(dLon / 2) *
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c * 1.35; // Multiply by 1.35 standard factor to simulate real street curvature
+    return R * c * 1.35;
   };
 
-  // Estimates travel time based on transport mode and distance
+  // Estima la duración del traslado aproximado según el modo de transporte seleccionado.
+  // Asume velocidades promedio constantes (Vehículo: 40 km/h, Caminando: 5 km/h).
   const formatTravelTime = (distanceKm: number) => {
-    const speed = transportMode === "driving" ? 40 : 5; // 40 km/h for car, 5 km/h walking
+    const speed = transportMode === "driving" ? 40 : 5;
     const hours = distanceKm / speed;
     const minutes = Math.round(hours * 60);
 
@@ -269,7 +292,9 @@ const ItineraryView = () => {
     return `${h}h ${m}m`;
   };
 
-  // 3. Nearest Neighbor Geographical TSP routing solver (Offline-First!)
+  // 3. Resolvedor Heurístico del Problema del Viajante (TSP) - Vecino Más Cercano (Offline-First)
+  // Determina un orden de paradas optimizado partiendo de una coordenada inicial y visitando el taller
+  // más cercano disponible de forma sucesiva. Esto minimiza el trayecto total recorrido.
   const generateOptimalRoute = (startCoords: [number, number], candidates: Operator[], limit: number) => {
     const route: Operator[] = [];
     const unvisited = [...candidates];
@@ -303,9 +328,10 @@ const ItineraryView = () => {
     return route;
   };
 
-  // 4. Curated recommended routes activation trigger
+  // 4. Activación de Rutas Sugeridas (Curadas)
+  // Filtra operadores verificados que coincidan con la especialidad y parroquia de la ruta sugerida,
+  // calcula el orden secuencial de visita más eficiente e inicia el recorrido activo.
   const handleLaunchCuratedRoute = (title: string, parishName: string, catName: string) => {
-    // Filter operators in cache matching curated requirements
     const filtered = operators.filter(op => 
       op.es_verificado &&
       op.parroquia_nombre.toLowerCase() === parishName.toLowerCase() &&
@@ -313,11 +339,11 @@ const ItineraryView = () => {
     );
 
     if (filtered.length === 0) {
-      alert("No se encontraron talleres verified locales para esta ruta en el momento.");
+      alert("No se encontraron talleres verificados locales para esta ruta en el momento.");
       return;
     }
 
-    // Set San Juan Bautista center as default coordinates
+    // Coordenadas base por defecto del centro de la parroquia de San Juan Bautista
     const sanJuanCoords: [number, number] = [11.0125, -63.9622];
     const optimalRoute = generateOptimalRoute(sanJuanCoords, filtered, 5);
 
@@ -325,29 +351,30 @@ const ItineraryView = () => {
     setActiveTab("active");
   };
 
-  // 5. Custom generator execution form handler
+  // 5. Manejador del Formulario del Planificador de Ruta Personalizado
+  // Realiza el filtrado dinámico multicriterio (parroquia de origen, categorías de interés,
+  // accesibilidades técnicas y límite de paradas) y resuelve el TSP para los candidatos.
   const handleLaunchCustomRoute = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Determine starting coordinates
+    // Determina las coordenadas de origen iniciales
     let startCoords: [number, number] = MUNICIPIO_DIAZ_CENTER;
     if (startPointType === "gps" && gpsLocation) {
       startCoords = gpsLocation;
     } else if (startPointType === "parish" && selectedStartParish) {
-      // Find coordinates of selected parish or fallback
       const chosenParish = parroquias.find(p => p.id === parseInt(selectedStartParish));
       if (chosenParish?.nombre.toLowerCase().includes("zabala")) {
-        startCoords = [11.0267, -63.9167]; // Zabala center
+        startCoords = [11.0267, -63.9167]; // Centro de Zabala
       } else {
-        startCoords = [11.0125, -63.9622]; // San Juan center
+        startCoords = [11.0125, -63.9622]; // Centro de San Juan Bautista
       }
     }
 
-    // Filter operators based on form selections
+    // Filtrado multicriterio de operadores candidatos
     const candidates = operators.filter(op => {
       if (!op.es_verificado) return false;
 
-      // Parish filters
+      // Filtro de ubicación en Parroquia si el inicio está limitado a una parroquia específica
       if (startPointType === "parish" && selectedStartParish) {
         const parishId = parseInt(selectedStartParish);
         const parishObj = parroquias.find(p => p.id === parishId);
@@ -356,7 +383,7 @@ const ItineraryView = () => {
         }
       }
 
-      // Categories filter
+      // Filtro por categorías seleccionadas
       if (selectedCats.length > 0) {
         const matchedCat = categories.find(c => op.categoria_nombre.toLowerCase() === c.nombre.toLowerCase());
         if (!matchedCat || !selectedCats.includes(matchedCat.id)) {
@@ -364,7 +391,7 @@ const ItineraryView = () => {
         }
       }
 
-      // Accessibility filter
+      // Filtro estricto por accesibilidad requerida (debe cumplir todas las seleccionadas)
       if (selectedAccs.length > 0) {
         if (!op.accesibilidades || op.accesibilidades.length === 0) return false;
         const opAccIds = op.accesibilidades.map(a => a.id);
@@ -380,7 +407,7 @@ const ItineraryView = () => {
       return;
     }
 
-    // Process optimal Nearest Neighbor tour
+    // Calcular el tour óptimo usando el resolvedor TSP local
     const optimalRoute = generateOptimalRoute(startCoords, candidates, maxStops);
 
     const generatedName = `Ruta Personalizada (${optimalRoute.length} paradas)`;
@@ -388,7 +415,8 @@ const ItineraryView = () => {
     setActiveTab("active");
   };
 
-  // 6. Checked stop handler
+  // 6. Registro / Alternador de Paradas Visitadas
+  // Marca o desmarca un taller como visitado dentro del itinerario actual, guardando el progreso localmente.
   const handleToggleVisited = (id: number) => {
     let nextVisited = [...visitedStops];
     if (nextVisited.includes(id)) {
@@ -400,7 +428,7 @@ const ItineraryView = () => {
     localStorage.setItem("active_itinerary_visited", JSON.stringify(nextVisited));
   };
 
-  // 7. Save route to history (with customizable name!)
+  // 7. Almacenamiento y guardado de la ruta activa en el Historial Persistente
   const handleSaveToHistory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!saveRouteName.trim()) return;
@@ -418,7 +446,7 @@ const ItineraryView = () => {
     setItinerariesHistory(nextHistory);
     localStorage.setItem("saved_itineraries_history", JSON.stringify(nextHistory));
     
-    // update current active name to show saved status
+    // Actualizar el nombre en pantalla para reflejar la ruta guardada
     setActiveItineraryName(saveRouteName);
     localStorage.setItem("active_itinerary_name", saveRouteName);
 
@@ -427,20 +455,21 @@ const ItineraryView = () => {
     setTimeout(() => setRouteSavedSuccess(false), 3000);
   };
 
-  // Load a route from history
+  // Carga un itinerario completo guardado previamente en el historial como el itinerario activo
   const handleLoadFromHistory = (route: SavedItinerary) => {
     persistActiveItinerary(route.operators, route.name, route.visitedIds, route.transportMode);
     setActiveTab("active");
   };
 
-  // Delete a route from history
+  // Elimina un itinerario del historial local
   const handleDeleteFromHistory = (id: string) => {
     const nextHistory = itinerariesHistory.filter(h => h.id !== id);
     setItinerariesHistory(nextHistory);
     localStorage.setItem("saved_itineraries_history", JSON.stringify(nextHistory));
   };
 
-  // Reset active itinerary
+  // Limpia por completo el itinerario activo actual del dispositivo, borrándolo de la memoria
+  // local e induciendo la redirección de vista hacia el planificador.
   const handleResetActiveItinerary = () => {
     if (window.confirm("¿Seguro que quieres borrar la ruta actual de la pantalla de guiado activo?")) {
       setActiveItinerary([]);
@@ -453,7 +482,8 @@ const ItineraryView = () => {
     }
   };
 
-  // Calculate coordinates array for polylines connecting stops
+  // Obtiene un arreglo secuencial de pares latitud-longitud de los talleres de la ruta activa.
+  // Es utilizado para renderizar la polilínea (camino) de interconexión en el mapa.
   const getPolylineCoords = (): [number, number][] => {
     return activeItinerary.map(op => [op.latitud, op.longitud]);
   };
@@ -469,12 +499,14 @@ const ItineraryView = () => {
 
   return (
     <>
+      {/* Configuración de SEO y metadatos específicos para esta vista */}
       <SEO
         title="Rutas e Itinerarios"
         description="Diseña tu propio tour cultural en el Municipio Díaz. Elige entre rutas temáticas curadas o calcula una ruta inteligente optimizada."
         canonical="/itinerarios"
       />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Encabezado dinámico con alternador de pestañas (TabSwitcher) */}
       <PageHeader
         badge="Planificación Geoespacial"
         title="Rutas e Itinerarios"
@@ -482,7 +514,7 @@ const ItineraryView = () => {
         actions={
           <TabSwitcher
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={(id) => setActiveTab(id as "curated" | "planner" | "active" | "history")}
             tabs={[
               { id: "curated", label: "Rutas Sugeridas", icon: Award },
               { id: "planner", label: "Planificador", icon: Sliders },

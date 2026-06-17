@@ -11,6 +11,7 @@ import {
   Cpu
 } from "lucide-react";
 
+
 const QRScannerView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -20,10 +21,13 @@ const QRScannerView = () => {
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState("");
   
+  // Referencia mutable para instanciar y controlar el lector Html5Qrcode
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const scannerId = "qr-reader-target";
 
-  // Clean up scanner on unmount
+  /**
+   * Detiene el flujo de captura de la cámara si se encuentra activo.
+   */
   const stopScanner = async () => {
     if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
       try {
@@ -36,26 +40,28 @@ const QRScannerView = () => {
   };
 
   useEffect(() => {
-    // Instantiate scanner class
+    // Instanciar la clase de lectura de códigos QR vinculándola al div objetivo
     html5QrCodeRef.current = new Html5Qrcode(scannerId);
 
-    // Auto-start scanner on mount
+    // Arrancar la cámara automáticamente al montar el componente
     startCamera();
 
     return () => {
-      // Clean up async
+      // Garantizar la liberación de la cámara al desmontar la vista
       stopScanner();
     };
   }, []);
 
+  /**
+   * Solicita acceso a la cámara trasera e inicia la decodificación continua de fotogramas.
+   */
   const startCamera = async () => {
     setValidationError("");
     if (!html5QrCodeRef.current) return;
 
     try {
-      // Request camera permissions and start scanning
       await html5QrCodeRef.current.start(
-        { facingMode: "environment" }, // Rear camera
+        { facingMode: "environment" }, // Prioriza el uso de la cámara trasera
         {
           fps: 15,
           qrbox: (width, height) => {
@@ -64,12 +70,12 @@ const QRScannerView = () => {
           }
         },
         (decodedText) => {
-          // Success
+          // Callback de lectura exitosa del código QR
           handleValidateQr(decodedText);
           stopScanner();
         },
         () => {
-          // Fail silently during scanning
+          // Callback de fallo: se ignora silenciosamente mientras busca patrones
         }
       );
       setCameraActive(true);
@@ -80,17 +86,21 @@ const QRScannerView = () => {
     }
   };
 
+  /**
+   * Despacha el UUID leído hacia la base de datos para verificar autenticidad.
+   * Si es un código QR válido de un operador verificado, redirige de vuelta a la ficha
+   * del operador inyectando el estado `qrVerified: true` para desbloquear reseñas.
+   */
   const handleValidateQr = async (code: string) => {
     setValidating(true);
     setValidationError("");
     
     try {
-      // Validate QR code against DB
       const res = await api.post("/reviews/validate-qr", { qr_uuid: code });
       
       if (res.data.valido) {
-        // Redirect back to operator with qrVerified state
         setValidating(false);
+        // Redirecciona al taller marcando la visita física como verificada
         navigate(`/operador/${id}`, { 
           state: { qrVerified: true },
           replace: true
@@ -106,11 +116,15 @@ const QRScannerView = () => {
     }
   };
 
+  /**
+   * Procesa la simulación manual para pruebas en entornos de desarrollo sin webcam.
+   */
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualCode.trim()) return;
     handleValidateQr(manualCode.trim());
   };
+
 
   return (
     <>

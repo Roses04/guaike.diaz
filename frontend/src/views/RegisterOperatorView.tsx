@@ -35,13 +35,14 @@ import {
   Fingerprint, Calendar
 } from "lucide-react";
 
+
 const RegisterOperatorView = () => {
   const { user, token } = useAuthStore();
   const { isDarkMode } = useThemeStore();
   const navigate = useNavigate();
 
-  // Redirect if not logged in or not an operator role
-
+  // ── REDIRECCIÓN DE SEGURIDAD ─────────────────────────────────────────────
+  // Redirige al inicio si el usuario no tiene rol de operador o no hay token de sesión.
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -70,7 +71,7 @@ const RegisterOperatorView = () => {
     );
   }
 
-  // Form states
+  // ── ESTADOS DE FORMULARIO DE FICHA TÉCNICA ─────────────────────────────────
   const [nombreTaller, setNombreTaller] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [parroquiaId, setParroquiaId] = useState("");
@@ -78,34 +79,35 @@ const RegisterOperatorView = () => {
   const [direccionDetallada, setDireccionDetallada] = useState("");
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState("");
 
-  // Fiscal & Personal info states
+  // ── ESTADOS DE CAMPOS FISCALES Y DE FISCALIZACIÓN ──────────────────────────
   const [cedulaTipo, setCedulaTipo] = useState("V");
   const [cedulaNumero, setCedulaNumero] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [municipioResidencia, setMunicipioResidencia] = useState("Díaz");
   
-  // Geolocation
+  // ── ESTADOS GEOGRÁFICOS ───────────────────────────────────────────────────
+  // Ubicación por defecto en el centro del Municipio Díaz
   const [location, setLocation] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
   const [gpsLoading, setGpsLoading] = useState(false);
 
-  // Accessibilities & Static Options
+  // ── ESTADOS DE OPCIONES ESTÁTICAS ──────────────────────────────────────────
   const [categories, setCategories] = useState([]);
   const [parroquias, setParroquias] = useState([]);
   const [accessibilityOptions, setAccessibilityOptions] = useState([]);
   const [selectedAccessibilities, setSelectedAccessibilities] = useState<number[]>([]);
 
-  // Images & Document Uploads
+  // ── ESTADOS DE CARGA DE ARCHIVOS E IMÁGENES ────────────────────────────────
   const [primaryImage, setPrimaryImage] = useState<string>("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [cedulaRifDoc, setCedulaRifDoc] = useState<string>("");
   
-  const [uploading, setUploading] = useState<string | null>(null); // Track upload targets
+  const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load Categories and Accessibility Tags
+  // ── EFECTO: CARGA DE OPCIONES ESTÁTICAS (CATEGORÍAS, PARROQUIAS, ACCESIBILIDADES) ─
   useEffect(() => {
     const fetchStatic = async () => {
       try {
@@ -120,7 +122,8 @@ const RegisterOperatorView = () => {
     fetchStatic();
   }, []);
 
-  // Load existing operator details for editing
+  // ── EFECTO: RELLENAR FORMULARIO CON DATOS EXISTENTES PARA EDICIÓN ────────
+  // Si el operador ya posee una Ficha Técnica, carga y mapea su información previa.
   useEffect(() => {
     const loadMyOperator = async () => {
       try {
@@ -157,7 +160,7 @@ const RegisterOperatorView = () => {
           if (op.fecha_nacimiento) setFechaNacimiento(op.fecha_nacimiento.split("T")[0]);
           if (op.municipio_residencia) setMunicipioResidencia(op.municipio_residencia);
 
-          // Mock bypass since document is not directly queried and already validated in backend
+          // Bypass simulado para el documento, ya que está validado previamente en la BD
           setCedulaRifDoc("documento_ya_verificado");
         }
       } catch (err) {
@@ -170,7 +173,13 @@ const RegisterOperatorView = () => {
     }
   }, [token, user]);
 
-  // Try to locate operator's current location using GPS
+
+
+  /**
+   * Obtiene la posición física actual del dispositivo del operador mediante Geolocation API.
+   * Restringe el marcador resultante estrictamente dentro de los límites del Municipio Díaz
+   * utilizando la función utilitaria `clampToMunicipioBounds`.
+   */
   const handleGPSLocation = () => {
     if (!navigator.geolocation) {
       alert("La geolocalización no está soportada por tu navegador.");
@@ -191,7 +200,13 @@ const RegisterOperatorView = () => {
     );
   };
 
-  // Cloudinary Direct Upload with elegant base64 DataURL fallback
+  /**
+   * Carga de archivos multimedia (imágenes del taller, cédula y RIF).
+   * Intenta subir directamente a la API REST de Cloudinary.
+   * Si la subida remota falla (por ejemplo, debido a fallas de red offline de PWA),
+   * implementa un mecanismo de fallback que codifica el archivo localmente a Base64
+   * en formato DataURL para poder encolar y procesar la petición.
+   */
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: "primary" | "gallery" | "document") => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -200,10 +215,10 @@ const RegisterOperatorView = () => {
     const file = files[0];
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "ml_default"); // standard default preset
+    formData.append("upload_preset", "ml_default");
 
     try {
-      // Direct Real Upload to Cloudinary using standard API
+      // Intento de subida remota a Cloudinary
       const cloudName = "guaikediaz";
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: "POST",
@@ -227,7 +242,7 @@ const RegisterOperatorView = () => {
     } catch (err) {
       console.warn("Direct Cloudinary upload failed. Falling back to local offline Base64 compression.", err);
       
-      // Fallback base64 representation
+      // Fallback a codificación Base64 local (soporte Offline de PWA)
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64Url = reader.result as string;
@@ -245,16 +260,30 @@ const RegisterOperatorView = () => {
     }
   };
 
+  /**
+   * Agrega o remueve IDs de accesibilidad seleccionados en el formulario.
+   */
   const handleAccessibilityToggle = (id: number) => {
     setSelectedAccessibilities((prev) => 
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
+  /**
+   * Elimina una imagen específica del carrusel de galería local.
+   */
   const handleRemoveGalleryImage = (index: number) => {
     setGalleryImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * Procesa el envío del formulario.
+   * Realiza validaciones críticas antes del despacho:
+   * 1. Verifica campos obligatorios básicos.
+   * 2. Realiza validación de mayoría de edad (mínimo 18 años requeridos para registro comercial).
+   * 3. Confirma la existencia de imágenes obligatorias (portada) y documentación fiscal.
+   * 4. Despacha por PUT (edición) o POST (creación) al servicio API.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -275,7 +304,7 @@ const RegisterOperatorView = () => {
       return;
     }
 
-    // Age validation (must be at least 18)
+    // Validación de edad (mínimo 18 años)
     const birthDateObj = new Date(fechaNacimiento);
     const today = new Date();
     let age = today.getFullYear() - birthDateObj.getFullYear();
@@ -327,7 +356,7 @@ const RegisterOperatorView = () => {
         const res = await api.post("/operators", payload);
         setSuccess(res.data.message || "¡Registro enviado con éxito!");
         
-        // Clear form
+        // Reiniciar campos tras creación exitosa
         setNombreTaller("");
         setDescripcion("");
         setParroquiaId("");
@@ -344,7 +373,7 @@ const RegisterOperatorView = () => {
         setMunicipioResidencia("Díaz");
       }
 
-      // Redirect operator after short delay
+      // Redirigir al inicio después de un retardo corto
       setTimeout(() => {
         navigate("/");
       }, 3500);

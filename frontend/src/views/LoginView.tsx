@@ -1,3 +1,17 @@
+/**
+ * VISTA DE AUTENTICACIÓN Y REGISTRO (LoginView)
+ * 
+ * Este componente gestiona el acceso seguro a la plataforma de GUAIKE.DÍAZ.
+ * Integra las siguientes funcionalidades críticas:
+ * 1. Selección visual del rol de usuario (Turista vs Operador) al registrarse.
+ * 2. Validación robusta de contraseñas fuertes (mayúsculas, minúsculas, números, caracteres especiales y longitud).
+ * 3. Recuperación de contraseñas de doble canal (Código de correo electrónico a Gmail o Preguntas de Seguridad).
+ * 4. Cambio obligatorio de contraseña temporal (para usuarios creados administrativamente con expiración de 10 días).
+ * 5. Sistema de revelado de contraseña sosteniendo el clic del ratón (MouseDown/MouseUp) para evitar fugas visuales de datos.
+ * 6. Normalización automática de números telefónicos internacionales (+58, +57, etc.).
+ * 7. Soporte offline PWA básico (permite ingreso con sesión cacheada si no hay internet).
+ */
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
@@ -9,6 +23,7 @@ import {
   ArrowRight, CheckCircle, Eye, EyeOff, Compass, Store
 } from "lucide-react";
 
+// Preguntas de seguridad predefinidas para la recuperación de cuentas
 const PREDEFINED_QUESTIONS = [
   "¿Cuál es el nombre de tu primera mascota?",
   "¿En qué ciudad nació tu madre?",
@@ -48,6 +63,11 @@ const LoginView = () => {
     { label: "España +34", value: "+34" },
   ];
 
+  /**
+   * Procesa el cambio obligatorio de contraseña temporal.
+   * Esto se ejecuta si la cuenta fue creada administrativamente y requiere actualización
+   * de clave en el primer inicio de sesión. Al completarse, inicia sesión con el usuario final.
+   */
   const handleForcePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -72,11 +92,12 @@ const LoginView = () => {
         return;
       }
 
-      // Llamada especial para cambiar la clave temporal. Se puede enviar con el token temporal en la cabecera.
+      // Consumir API de restablecimiento de contraseña
       await api.post("/auth/reset-password", { email: tempUser.email, newPassword: password });
 
       setSuccess("Contraseña actualizada exitosamente. Iniciando sesión...");
       
+      // Inicia sesión de forma directa tras la expiración/cambio exitoso
       setTimeout(() => {
         setIsForcePasswordChange(false);
         localStorage.setItem("auth_user", JSON.stringify(tempUser));
@@ -91,6 +112,10 @@ const LoginView = () => {
     }
   };
 
+  /**
+   * Normaliza los dígitos telefónicos para adherirse a estándares internacionales (E.164).
+   * Elimina caracteres no numéricos, quita prefijos '00' o '0' locales e inserta el código de país.
+   */
   const normalizePhoneNumber = (value: string, countryCode: string) => {
     let digits = value.replace(/\D/g, "");
     const normalizedCode = countryCode.replace("+", "");
@@ -114,6 +139,9 @@ const LoginView = () => {
     return `+${normalizedCode}${digits}`;
   };
 
+  /**
+   * Wrapper para formatear la entrada del número de teléfono en tiempo real.
+   */
   const formatPhoneInput = (value: string, countryCode: string) => {
     const normalizedValue = normalizePhoneNumber(value, countryCode);
     return normalizedValue;
@@ -150,6 +178,11 @@ const LoginView = () => {
     return re.test(mail);
   };
 
+
+  /**
+   * Valida la robustez y complejidad de una contraseña de acuerdo con políticas de seguridad.
+   * Exige longitud de 8 caracteres, al menos una mayúscula, una minúscula, un número y un caracter especial.
+   */
   const validatePasswordStrength = (pw: string) => {
     if (pw.length < 8) return "La contraseña debe tener al menos 8 caracteres.";
     if (!/[A-Z]/.test(pw)) return "La contraseña debe incluir al menos una letra mayúscula.";
@@ -159,6 +192,11 @@ const LoginView = () => {
     return "";
   };
 
+  /**
+   * Ejecuta el inicio de sesión del usuario.
+   * Soporta inicio de sesión offline leyendo el LocalStorage si el dispositivo no tiene internet.
+   * Si detecta forzado de cambio de clave, redirige al modal correspondiente.
+   */
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -166,6 +204,7 @@ const LoginView = () => {
     setLoading(true);
 
     if (isOffline) {
+      // Soporte Offline: Permite acceso a vistas si existe una sesión válida cacheada localmente
       const cachedUser = localStorage.getItem("auth_user");
       if (cachedUser && token) {
         const cached = JSON.parse(cachedUser);
@@ -195,6 +234,7 @@ const LoginView = () => {
 
       const response = await api.post("/auth/login", { email, password });
       
+      // Control de cambio forzado de contraseña temporal
       if (response.data.forcePasswordChange) {
         setTempToken(response.data.token);
         setTempUser(response.data.user);
@@ -214,6 +254,10 @@ const LoginView = () => {
     }
   };
 
+  /**
+   * Procesa el registro de una cuenta de usuario nueva.
+   * Realiza validaciones sintácticas, formatea las preguntas de seguridad y normaliza el teléfono.
+   */
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -227,7 +271,6 @@ const LoginView = () => {
         return;
       }
 
-      // 1. Validaciones de Datos Obligatorios
       if (!email || !password || !confirmPassword || !name || !q1 || !ans1 || !q2 || !ans2) {
         setError("Por favor completa todos los campos obligatorios del registro.");
         setLoading(false);
@@ -285,6 +328,7 @@ const LoginView = () => {
 
       setSuccess("Registro exitoso. Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.");
       
+      // Limpiar formulario tras registro
       setIsLogin(true);
       setPassword("");
       setConfirmPassword("");
@@ -302,7 +346,12 @@ const LoginView = () => {
     }
   };
 
-  // ── Flujo de Recuperación de Contraseña ───────────────────────────────────
+  /**
+   * Maneja el flujo secuencial de recuperación de contraseña.
+   * Paso 1: Valida correo y escoge método (código de email o preguntas de seguridad).
+   * Paso 2: Valida el código o verifica las respuestas ingresadas.
+   * Paso 3: Permite ingresar y actualizar la nueva contraseña en el sistema.
+   */
   const handleForgotPasswordNext = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -324,12 +373,10 @@ const LoginView = () => {
 
       if (recoveryStep === 1) {
         if (recoveryMethod === "questions") {
-          // Obtener preguntas de seguridad del usuario
           const res = await api.post("/auth/recover-questions", { email });
           setRecoveredQuestions(res.data.questions);
           setRecoveryStep(2);
         } else {
-          // Enviar código de recuperación por email
           await api.post("/auth/send-recovery-email", { email });
           setSuccess("Código de recuperación enviado a tu correo Gmail.");
           setRecoveryStep(2);
@@ -397,6 +444,9 @@ const LoginView = () => {
     }
   };
 
+  /**
+   * Formatea la cadena del código temporal ingresado a un patrón XXXX-XXXX en mayúsculas.
+   */
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     if (val.length > 8) val = val.substring(0, 8);
@@ -407,12 +457,18 @@ const LoginView = () => {
     }
   };
 
+  /**
+   * Sanitiza el campo de entrada del número telefónico.
+   */
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const formatted = rawValue.replace(/[^0-9+]/g, "");
     setPhone(formatted);
   };
 
+  /**
+   * Resetea el flujo de recuperación y vacía las variables de estado.
+   */
   const resetRecoveryFlow = () => {
     setIsForgotPassword(false);
     setRecoveryStep(1);
@@ -422,6 +478,7 @@ const LoginView = () => {
     setRecoveryAns2("");
     setRecoveryCode("");
   };
+
 
   return (
     <>

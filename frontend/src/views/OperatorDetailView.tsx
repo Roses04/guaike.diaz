@@ -42,6 +42,7 @@ interface Operator {
   resenas: Array<{ id: number; puntuacion: number; comentario: string; qr_verificado: boolean; fecha_creacion: string; usuario_correo: string; respuesta_operador?: string; fecha_respuesta?: string }>;
 }
 
+
 const OperatorDetailView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -53,27 +54,33 @@ const OperatorDetailView = () => {
   const [error, setError] = useState("");
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // Review states
+  // Estados de reseña
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
 
-  // Operator reply states
+  // Estados de respuesta del operador
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
 
-  // Check if QR verification is active (passed in state from scanner)
+  // Comprueba si la visita física fue validada previamente mediante escaneo QR (enviado en el estado del router)
   const isQrVerified = routerLocation.state?.qrVerified === true;
 
+  /**
+   * Carga los detalles del operador desde la base de datos.
+   * Cuenta con soporte PWA Offline: guarda la respuesta en el LocalStorage.
+   * Si la petición falla por falta de internet, lee y renderiza los datos cacheados.
+   */
   const loadOperatorDetail = async () => {
     if (!id) return;
     setLoading(true);
     try {
       const res = await api.get(`/operators/${id}`);
       setOperator(res.data);
+      // Guardar en caché local para acceso sin conexión
       localStorage.setItem(`cache_operator_${id}`, JSON.stringify(res.data));
       setIsOffline(false);
     } catch (err) {
@@ -93,6 +100,7 @@ const OperatorDetailView = () => {
   useEffect(() => {
     loadOperatorDetail();
 
+    // Listeners para detectar cambios de conectividad y sincronizar
     const handleOnline = () => {
       setIsOffline(false);
       loadOperatorDetail();
@@ -107,16 +115,20 @@ const OperatorDetailView = () => {
     };
   }, [id]);
 
-  // Offline review synchronization helper using the central queue
+  /**
+   * Encola la reseña de forma offline en la cola central de LocalStorage.
+   * Implementa una actualización optimista de la interfaz de usuario (Optimistic UI Update)
+   * inyectando la reseña directamente en memoria para que el turista tenga feedback instantáneo.
+   */
   const saveReviewOffline = (newReview: any) => {
-    // Queue it centrally using the new method
+    // Registra la llamada en la cola offline central
     api.queueOffline("/reviews", newReview);
 
-    // Simulate UI addition for instant tourist feedback
+    // Simular agregación en la UI en memoria
     if (operator) {
       const updatedReviews = [
         {
-          id: Date.now(), // temporary id
+          id: Date.now(), // ID temporal
           puntuacion: newReview.puntuacion,
           comentario: newReview.comentario,
           qr_verificado: newReview.qr_verificado,
@@ -135,6 +147,11 @@ const OperatorDetailView = () => {
     }
   };
 
+  /**
+   * Procesa la publicación de una reseña.
+   * Si el dispositivo está sin conexión, delega en `saveReviewOffline`.
+   * En caso contrario, la envía inmediatamente al servidor.
+   */
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setReviewError("");
@@ -149,7 +166,7 @@ const OperatorDetailView = () => {
       operador_id: parseInt(id || "0"),
       puntuacion: rating,
       comentario: comment,
-      qr_verificado: isQrVerified
+      qr_verificado: isQrVerified // Asigna si la visita fue validada físicamente por QR
     };
 
     if (isOffline) {
@@ -164,7 +181,6 @@ const OperatorDetailView = () => {
       const res = await api.post("/reviews", reviewPayload);
       setReviewSuccess(res.data.message || "¡Reseña publicada!");
       setComment("");
-      // Reload detail to reflect new review
       loadOperatorDetail();
     } catch (err: any) {
       setReviewError(err.response?.data?.message || "Error al publicar la reseña.");
@@ -173,6 +189,9 @@ const OperatorDetailView = () => {
     }
   };
 
+  /**
+   * Permite al operador (dueño del taller) guardar o editar una respuesta oficial a una reseña.
+   */
   const handleReplySubmit = async (reviewId: number) => {
     if (!replyText.trim()) return;
     setSubmittingReply(true);
@@ -180,7 +199,6 @@ const OperatorDetailView = () => {
       await api.post(`/reviews/${reviewId}/reply`, { respuesta: replyText.trim() });
       setReplyingToId(null);
       setReplyText("");
-      // Reload details to show the new reply
       loadOperatorDetail();
     } catch (err: any) {
       alert(err.response?.data?.message || "Error al enviar la respuesta.");
@@ -197,6 +215,7 @@ const OperatorDetailView = () => {
       </div>
     );
   }
+
 
   if (error || !operator) {
     return (

@@ -1,23 +1,40 @@
+/**
+ * FUNCIÓN SERVERLESS DE VERCEL: PROXY DE CORREOS DE AUTENTICACIÓN
+ * 
+ * Este archivo actúa como un intermediario seguro para el envío de correos de 
+ * verificación y restablecimiento de contraseña. Dado que Supabase Auth no posee
+ * un servidor SMTP integrado nativo de alto rendimiento de forma gratuita, esta función
+ * utiliza el SDK administrativo de Supabase (`supabaseAdmin`) para generar enlaces de acción
+ * seguros (signups/recoveries) y los envía al usuario final mediante un transporte SMTP (Gmail/Nodemailer).
+ */
+
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
 
-// ── Supabase Admin client (uses service role key – NEVER expose to frontend) ──
+// ── CLIENTE ADMINISTRATIVO DE SUPABASE ─────────────────────────────────────────
+// Se inicializa con la llave de rol de servicio (SERVICE_ROLE_KEY).
+// ¡ATENCIÓN! Esta clave posee bypass completo de políticas RLS. 
+// Solo debe utilizarse en entornos seguros del lado del servidor (como Vercel Serverless).
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// ── Nodemailer transporter via Gmail SMTP ──────────────────────────────────────
+// ── TRANSPORTE DE NODEMAILER (SMTP) ────────────────────────────────────────────
+// Configura el canal de salida de correos utilizando SMTP o el servicio directo de Gmail.
 const getTransporter = () => {
   const user = process.env.SMTP_USER || process.env.GMAIL_USER;
   const pass = process.env.SMTP_PASS || process.env.GMAIL_PASS;
 
-  if (!user || !pass) throw new Error("Variables SMTP_USER/GMAIL_USER y SMTP_PASS/GMAIL_PASS no definidas en el servidor.");
+  if (!user || !pass) {
+    throw new Error("Variables SMTP_USER/GMAIL_USER y SMTP_PASS/GMAIL_PASS no definidas en el servidor.");
+  }
 
   const host = process.env.SMTP_HOST;
   if (host) {
+    // Transporte SMTP genérico
     return nodemailer.createTransport({
       host,
       port: Number(process.env.SMTP_PORT || 587),
@@ -25,10 +42,11 @@ const getTransporter = () => {
       auth: { user, pass },
     });
   }
+  // Transporte por defecto usando el servicio de Gmail integrado en Nodemailer
   return nodemailer.createTransport({ service: "gmail", auth: { user, pass } });
 };
 
-// ── Email HTML templates ───────────────────────────────────────────────────────
+// ── PLANTILLA HTML: CONFIRMACIÓN DE REGISTRO DE CUENTA ──────────────────────────
 const confirmationEmailHtml = (actionLink: string) => `
 <!DOCTYPE html>
 <html lang="es">
@@ -38,7 +56,7 @@ const confirmationEmailHtml = (actionLink: string) => `
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f14;padding:40px 0;">
     <tr><td align="center">
       <table width="580" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#0f1a2e,#0d1b2a);border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
-        <!-- Header -->
+        <!-- Línea superior decorativa con colores institucionales -->
         <tr>
           <td style="background:linear-gradient(90deg,#003b6e,#0093d9,#b8860b);height:4px;"></td>
         </tr>
@@ -49,7 +67,7 @@ const confirmationEmailHtml = (actionLink: string) => `
             <p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,0.4);">Municipio Díaz · Nueva Esparta, Venezuela</p>
           </td>
         </tr>
-        <!-- Body -->
+        <!-- Contenido principal -->
         <tr>
           <td style="padding:0 48px 40px;">
             <div style="background:rgba(255,255,255,0.04);border-radius:16px;padding:32px;border:1px solid rgba(255,255,255,0.06);">
@@ -87,6 +105,7 @@ const confirmationEmailHtml = (actionLink: string) => `
 </body>
 </html>`;
 
+// ── PLANTILLA HTML: RECUPERACIÓN DE CONTRASEÑA ──────────────────────────────────
 const recoveryEmailHtml = (actionLink: string) => `
 <!DOCTYPE html>
 <html lang="es">
@@ -139,19 +158,21 @@ const recoveryEmailHtml = (actionLink: string) => `
 </body>
 </html>`;
 
-// ── Main handler ───────────────────────────────────────────────────────────────
+// ── CONTROLADOR PRINCIPAL DEL ENDPOINT SERVERLESS ──────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Configuración de cabeceras CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
+  // Responder de inmediato a la petición pre-vuelo (Preflight OPTIONS)
   if (req.method === "OPTIONS") { res.status(200).end(); return; }
   if (req.method !== "POST") { res.status(405).json({ error: "Método no permitido." }); return; }
 
   const { type, email, password, metadata, redirectTo, secretKey } = req.body || {};
 
-  // Validate secret
+  // Validación de seguridad de la API mediante llave secreta compartida
   const systemSecret = process.env.API_SECRET_KEY || "guaike-system-default-secret-key-2026";
   if (secretKey !== systemSecret) {
     res.status(401).json({ error: "No autorizado." });
@@ -167,9 +188,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const transporter = getTransporter();
 
+    // CASO A: Registro de Cuenta Nueva (Sign Up)
     if (type === "signup") {
       if (!password) { res.status(400).json({ error: "La contraseña es obligatoria para el registro." }); return; }
 
+      // Generar enlace seguro para confirmación de correo
       const { data, error } = await supabaseAdmin.auth.admin.generateLink({
         type: "signup",
         email,
@@ -178,7 +201,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (error) {
-        // If user already exists, generate a magic link to resend confirmation
+        // Manejo especial si el correo ya existe en Supabase Auth.
+        // Reenvía un enlace mágico de confirmación para evitar revelar si ya está registrado o fallar abruptamente.
         if (error.message?.includes("already") || error.message?.includes("registered")) {
           const { data: ml, error: mlErr } = await supabaseAdmin.auth.admin.generateLink({
             type: "magiclink",
@@ -189,6 +213,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             res.status(400).json({ error: "Este correo ya está registrado. Intenta iniciar sesión." });
             return;
           }
+          // Enviar correo de confirmación de enlace mágico
           await transporter.sendMail({
             from: `"${fromName}" <${fromAddress}>`,
             to: email,
@@ -206,6 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const actionLink = data?.properties?.action_link;
       if (!actionLink) { res.status(500).json({ error: "No se pudo generar el enlace de confirmación." }); return; }
 
+      // Enviar correo de confirmación de registro
       await transporter.sendMail({
         from: `"${fromName}" <${fromAddress}>`,
         to: email,
@@ -218,6 +244,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // CASO B: Solicitud de Recuperación de Contraseña (Recovery / Olvidó Clave)
     if (type === "recovery") {
       const { data, error } = await supabaseAdmin.auth.admin.generateLink({
         type: "recovery",
@@ -230,6 +257,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const actionLink = data?.properties?.action_link;
       if (!actionLink) { res.status(500).json({ error: "No se pudo generar el enlace de recuperación." }); return; }
 
+      // Enviar correo de recuperación
       await transporter.sendMail({
         from: `"${fromName}" <${fromAddress}>`,
         to: email,
@@ -242,11 +270,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
+    // CASO C: Reajuste Directo de Contraseña (Reset)
     if (type === "reset") {
       const { password } = req.body || {};
       if (!password) { res.status(400).json({ error: "La contraseña es obligatoria para el restablecimiento." }); return; }
 
-      // 1. Obtener el auth_id del usuario desde la tabla usuarios
+      // 1. Obtener el auth_id del usuario desde la tabla usuarios de la BD pública
       const { data: profile, error: profileError } = await supabaseAdmin
         .from("usuarios")
         .select("auth_id")
@@ -258,7 +287,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      // 2. Actualizar la contraseña del usuario en Supabase Auth
+      // 2. Forzar la actualización de la contraseña del usuario en Supabase Auth Admin
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(profile.auth_id, {
         password: password,
       });
