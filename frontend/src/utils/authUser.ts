@@ -6,6 +6,10 @@ export interface AuthUser {
   full_name?: string;
   telefono?: string;
   fecha_creacion?: string;
+  cedula_tipo?: string;
+  cedula_numero?: string;
+  fecha_nacimiento?: string;
+  municipio_residencia?: string;
 }
 
 /** Normaliza respuestas de login, profile o caché al formato del store. */
@@ -35,6 +39,10 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
   const full_name = (row.full_name ?? row.name) as string | undefined;
   const telefono = (row.telefono ?? row.phone) as string | undefined;
   const fecha_creacion = (row.fecha_creacion ?? row.created_at) as string | undefined;
+  const cedula_tipo = row.cedula_tipo as string | undefined;
+  const cedula_numero = row.cedula_numero as string | undefined;
+  const fecha_nacimiento = row.fecha_nacimiento as string | undefined;
+  const municipio_residencia = row.municipio_residencia as string | undefined;
 
   return {
     id: Number(id),
@@ -44,5 +52,9 @@ export function normalizeAuthUser(data: unknown): AuthUser | null {
     full_name,
     telefono,
     fecha_creacion,
+    cedula_tipo,
+    cedula_numero,
+    fecha_nacimiento,
+    municipio_residencia,
   };
 }

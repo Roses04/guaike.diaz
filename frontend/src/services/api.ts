@@ -110,7 +110,7 @@ const getUserRecordByEmail = async (email: string) => {
 
   const { data, error } = await supabase
     .from("usuarios")
-    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, fecha_creacion, roles(nombre)")
+    .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, fecha_creacion, nombre_completo, telefono, cedula_tipo, cedula_numero, fecha_nacimiento, municipio_residencia, roles(nombre)")
     .eq("correo", normalizedEmail)
     .maybeSingle();
 
@@ -135,8 +135,12 @@ const getUserRecordByEmail = async (email: string) => {
     requiere_cambio_clave: data.requiere_cambio_clave,
     clave_temporal_expira: data.clave_temporal_expira,
     fecha_creacion: data.fecha_creacion,
-    full_name: "",
-    telefono: ""
+    full_name: data.nombre_completo || "",
+    telefono: data.telefono || "",
+    cedula_tipo: data.cedula_tipo || "",
+    cedula_numero: data.cedula_numero || "",
+    fecha_nacimiento: data.fecha_nacimiento || "",
+    municipio_residencia: data.municipio_residencia || ""
   };
 };
 
@@ -191,13 +195,13 @@ const fetchUsuarioProfile = async () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     const retriedProfile = await getUserRecordByEmail(userEmail as string);
     if (retriedProfile) {
-      retriedProfile.full_name = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
-      retriedProfile.telefono = sessionUser?.user_metadata?.phone || "";
+      retriedProfile.full_name = retriedProfile.full_name || sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
+      retriedProfile.telefono = retriedProfile.telefono || sessionUser?.user_metadata?.phone || "";
     }
     return retriedProfile;
   }
-  profile.full_name = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
-  profile.telefono = sessionUser?.user_metadata?.phone || "";
+  profile.full_name = profile.full_name || sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
+  profile.telefono = profile.telefono || sessionUser?.user_metadata?.phone || "";
   return profile;
 };
 
@@ -382,6 +386,18 @@ const createOperator = async (payload: any) => {
   if (opError) createApiError(opError.message);
   const operatorId = operatorData?.id;
   if (!operatorId) createApiError("No se pudo crear el operador");
+
+  // Update user's fiscal fields
+  const { error: userUpdateError } = await supabase
+    .from("usuarios")
+    .update({
+      cedula_tipo: payload.cedula_tipo,
+      cedula_numero: payload.cedula_numero,
+      fecha_nacimiento: payload.fecha_nacimiento ? payload.fecha_nacimiento : null,
+      municipio_residencia: payload.municipio_residencia
+    })
+    .eq("id", (usuario as any).id);
+  if (userUpdateError) createApiError(userUpdateError.message);
 
   const images = [] as any[];
   if (payload.imagen_principal) {
@@ -581,7 +597,13 @@ const getMyOperator = async () => {
   if (!operator) return null;
 
   const fullDetail = await getOperatorDetail(operator.id);
-  return fullDetail;
+  return {
+    ...fullDetail,
+    cedula_tipo: (usuario as any).cedula_tipo || "",
+    cedula_numero: (usuario as any).cedula_numero || "",
+    fecha_nacimiento: (usuario as any).fecha_nacimiento || "",
+    municipio_residencia: (usuario as any).municipio_residencia || ""
+  };
 };
 
 const updateOperator = async (payload: any) => {
@@ -615,6 +637,18 @@ const updateOperator = async (payload: any) => {
     .eq("id", operatorId);
 
   if (opError) createApiError(opError.message);
+
+  // Update user's fiscal fields
+  const { error: userUpdateError } = await supabase
+    .from("usuarios")
+    .update({
+      cedula_tipo: payload.cedula_tipo,
+      cedula_numero: payload.cedula_numero,
+      fecha_nacimiento: payload.fecha_nacimiento ? payload.fecha_nacimiento : null,
+      municipio_residencia: payload.municipio_residencia
+    })
+    .eq("id", (usuario as any).id);
+  if (userUpdateError) createApiError(userUpdateError.message);
 
   const { error: deleteAccessError } = await supabase
     .from("operador_accesibilidad")

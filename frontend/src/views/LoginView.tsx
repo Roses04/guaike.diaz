@@ -6,7 +6,7 @@ import SEO from "../components/SEO";
 import { 
   LogIn, Mail, Lock, UserPlus, Info, WifiOff, Phone, 
   FileText, ShieldCheck, HelpCircle, KeyRound, ChevronLeft, 
-  ArrowRight, CheckCircle, Eye, EyeOff
+  ArrowRight, CheckCircle, Eye, EyeOff, Compass, Store
 } from "lucide-react";
 
 const PREDEFINED_QUESTIONS = [
@@ -18,6 +18,7 @@ const PREDEFINED_QUESTIONS = [
 
 const LoginView = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [registrationStep, setRegistrationStep] = useState<"role_selection" | "form">("role_selection");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isForcePasswordChange, setIsForcePasswordChange] = useState(false);
   const [tempToken, setTempToken] = useState("");
@@ -220,6 +221,12 @@ const LoginView = () => {
     setLoading(true);
 
     try {
+      if (role !== "turista" && role !== "operador") {
+        setError("Rol de usuario inválido.");
+        setLoading(false);
+        return;
+      }
+
       // 1. Validaciones de Datos Obligatorios
       if (!email || !password || !confirmPassword || !name || !q1 || !ans1 || !q2 || !ans2) {
         setError("Por favor completa todos los campos obligatorios del registro.");
@@ -635,286 +642,394 @@ const LoginView = () => {
         ) : (
           /* --- 2. VISTAS DE LOGIN Y REGISTRO --- */
           <div>
-            <div className="flex justify-center mb-4 md:mb-6">
-              <div className="bg-brand-blue/10 dark:bg-brand-light/10 p-4 rounded-full text-brand-blue dark:text-brand-light">
-                {isLogin ? <LogIn size={28} /> : <UserPlus size={28} />}
-              </div>
-            </div>
-            
-            <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-1 text-center text-slate-800 dark:text-white">
-              {isLogin ? "Bienvenido" : "Crea tu Cuenta"}
-            </h2>
-            <p className="text-center text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-5 md:mb-6 leading-tight">
-              {isLogin ? "Accede al Sistema Geoespacial de GUAIKE.DÍAZ" : "Regístrate en la plataforma del Municipio Díaz"}
-            </p>
-
-            {isOffline && (
-              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3 rounded-2xl mb-5 text-xs flex items-center gap-2">
-                <WifiOff size={14} className="flex-shrink-0" />
-                <span>Sin conexión. Si iniciaste sesión antes, puedes ingresar localmente.</span>
-              </div>
-            )}
-            
-            {error && (
-              <div className="bg-red-500/10 dark:bg-red-950/20 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl mb-6 text-sm flex items-start gap-2">
-                <Info size={16} className="mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl mb-6 text-sm flex items-start gap-2">
-                <Info size={16} className="mt-0.5 flex-shrink-0" />
-                <span>{success}</span>
-              </div>
-            )}
-
-            <form onSubmit={isLogin ? handleLoginSubmit : handleRegisterSubmit} className="space-y-4">
+            {!isLogin && registrationStep === "role_selection" ? (
+              /* --- PANTALLA DE SELECCIÓN DE ROL --- */
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Correo Electrónico</label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                    <Mail size={18} />
-                  </span>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
-                    placeholder="nombre@correo.com"
-                  />
-                </div>
-              </div>
+                <button 
+                  onClick={() => { setIsLogin(true); setError(""); }}
+                  className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white text-xs font-bold mb-5 transition cursor-pointer"
+                >
+                  <ChevronLeft size={16} /> Volver a Iniciar Sesión
+                </button>
 
-              <div>
-                <div className="flex justify-between items-center mb-1.5 pl-1">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contraseña</label>
-                  {isLogin && (
-                    <button
-                      type="button"
-                      onClick={() => setIsForgotPassword(true)}
-                      className="text-xs text-brand-blue dark:text-brand-light hover:underline font-bold cursor-pointer"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  )}
+                <div className="flex justify-center mb-4 md:mb-6">
+                  <div className="bg-brand-blue/15 dark:bg-brand-light/10 p-4 rounded-full text-brand-blue dark:text-brand-light">
+                    <UserPlus size={28} />
+                  </div>
                 </div>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                    <Lock size={18} />
-                  </span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-10 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
-                    placeholder="••••••••"
-                  />
+
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-1.5 text-slate-800 dark:text-white">
+                    Crea tu Cuenta
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-tight">
+                    ¿Qué tipo de usuario eres? Selecciona una opción para continuar.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 dark:bg-red-950/20 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl mb-6 text-sm flex items-start gap-2">
+                    <Info size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 mb-6">
+                  {/* Card Turista */}
                   <button
                     type="button"
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
-                    onMouseLeave={() => setShowPassword(false)}
-                    onTouchStart={() => setShowPassword(true)}
-                    onTouchEnd={() => setShowPassword(false)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                    onClick={() => {
+                      setRole("turista");
+                      setRegistrationStep("form");
+                    }}
+                    className="flex items-start gap-4 p-5 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/30 dark:bg-slate-800/20 hover:border-brand-blue hover:bg-brand-blue/5 dark:hover:bg-brand-blue/5 transition-all text-left cursor-pointer group hover:shadow-md"
                   >
-                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    <div className="bg-brand-blue/15 text-brand-blue dark:bg-brand-blue/30 dark:text-brand-light p-3.5 rounded-xl group-hover:scale-110 transition-transform">
+                      <Compass size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-slate-850 dark:text-white group-hover:text-brand-blue transition-colors">
+                        Turista / Visitante
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Quiero explorar el mapa patrimonial, visitar los talleres artesanales y calificar mis experiencias.
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Card Operador */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole("operador");
+                      setRegistrationStep("form");
+                    }}
+                    className="flex items-start gap-4 p-5 rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/30 dark:bg-slate-800/20 hover:border-brand-gold hover:bg-brand-gold/5 dark:hover:bg-brand-gold/5 transition-all text-left cursor-pointer group hover:shadow-md"
+                  >
+                    <div className="bg-brand-gold/15 text-brand-gold dark:bg-brand-gold/30 dark:text-brand-light p-3.5 rounded-xl group-hover:scale-110 transition-transform">
+                      <Store size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-slate-850 dark:text-white group-hover:text-brand-gold transition-colors">
+                        Operador / Artesano / Guía
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Quiero registrar la ficha técnica de mi taller, ubicarlo en el mapa y promocionar mis obras al público.
+                      </p>
+                    </div>
                   </button>
                 </div>
-              </div>
 
-              {!isLogin && (
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Confirmar Contraseña</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                      <Lock size={18} />
-                    </span>
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="block w-full pl-10 pr-10 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
-                      placeholder="Repite tu contraseña"
-                    />
-                    <button
-                      type="button"
-                      onMouseDown={() => setShowConfirmPassword(true)}
-                      onMouseUp={() => setShowConfirmPassword(false)}
-                      onMouseLeave={() => setShowConfirmPassword(false)}
-                      onTouchStart={() => setShowConfirmPassword(true)}
-                      onTouchEnd={() => setShowConfirmPassword(false)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/10 text-center">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    ¿Ya tienes cuenta?{" "}
+                    <button 
+                      onClick={() => { setIsLogin(true); setError(""); }}
+                      className="text-brand-blue dark:text-brand-light font-bold cursor-pointer hover:underline"
                     >
-                      {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                      Inicia sesión aquí
                     </button>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* --- VISTA DE LOGIN O FORMULARIO DE REGISTRO --- */
+              <div>
+                {!isLogin && (
+                  <button 
+                    onClick={() => { setRegistrationStep("role_selection"); setError(""); }}
+                    className="flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white text-xs font-bold mb-5 transition cursor-pointer"
+                  >
+                    <ChevronLeft size={16} /> Cambiar tipo de usuario
+                  </button>
+                )}
+
+                <div className="flex justify-center mb-4 md:mb-6">
+                  <div className="bg-brand-blue/10 dark:bg-brand-light/10 p-4 rounded-full text-brand-blue dark:text-brand-light">
+                    {isLogin ? <LogIn size={28} /> : <UserPlus size={28} />}
                   </div>
                 </div>
-              )}
+                
+                <h2 className="text-2xl md:text-3xl font-display font-extrabold mb-1 text-center text-slate-800 dark:text-white">
+                  {isLogin ? "Bienvenido" : role === "operador" ? "Registro de Operador" : "Registro de Turista"}
+                </h2>
+                <p className="text-center text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-5 md:mb-6 leading-tight">
+                  {isLogin 
+                    ? "Accede al Sistema Geoespacial de GUAIKE.DÍAZ" 
+                    : role === "operador"
+                      ? "Crea tu cuenta para gestionar la ficha técnica de tu taller artesanal"
+                      : "Crea tu cuenta para calificar talleres y planificar itinerarios"}
+                </p>
 
-              {/* Campos extra de registro */}
-              {!isLogin && (
-                <>
+                {isOffline && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-3 rounded-2xl mb-5 text-xs flex items-center gap-2">
+                    <WifiOff size={14} className="flex-shrink-0" />
+                    <span>Sin conexión. Si iniciaste sesión antes, puedes ingresar localmente.</span>
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="bg-red-500/10 dark:bg-red-950/20 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl mb-6 text-sm flex items-start gap-2">
+                    <Info size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl mb-6 text-sm flex items-start gap-2">
+                    <Info size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{success}</span>
+                  </div>
+                )}
+
+                <form onSubmit={isLogin ? handleLoginSubmit : handleRegisterSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Tipo de Usuario</label>
-                    <select
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      className="block w-full px-3.5 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
-                    >
-                      <option value="turista">Turista (Visitar y calificar)</option>
-                      <option value="operador">Operador (Artesano / Guía)</option>
-                    </select>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Correo Electrónico</label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                        <Mail size={18} />
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                        placeholder="nombre@correo.com"
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5 pl-1">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contraseña</label>
+                      {isLogin && (
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-xs text-brand-blue dark:text-brand-light hover:underline font-bold cursor-pointer"
+                        >
+                          ¿Olvidaste tu contraseña?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                        <Lock size={18} />
+                      </span>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="block w-full pl-10 pr-10 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onMouseDown={() => setShowPassword(true)}
+                        onMouseUp={() => setShowPassword(false)}
+                        onMouseLeave={() => setShowPassword(false)}
+                        onTouchStart={() => setShowPassword(true)}
+                        onTouchEnd={() => setShowPassword(false)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                      >
+                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {!isLogin && (
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Nombre Completo</label>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Confirmar Contraseña</label>
                       <div className="relative">
                         <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                          <UserPlus size={18} />
+                          <Lock size={18} />
                         </span>
                         <input
-                          type="text"
+                          type={showConfirmPassword ? "text" : "password"}
                           required
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
-                          placeholder="Ej. María Pérez"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="block w-full pl-10 pr-10 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                          placeholder="Repite tu contraseña"
                         />
+                        <button
+                          type="button"
+                          onMouseDown={() => setShowConfirmPassword(true)}
+                          onMouseUp={() => setShowConfirmPassword(false)}
+                          onMouseLeave={() => setShowConfirmPassword(false)}
+                          onTouchStart={() => setShowConfirmPassword(true)}
+                          onTouchEnd={() => setShowConfirmPassword(false)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                        >
+                          {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
                       </div>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Teléfono de contacto (Opcional)</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        <select
-                          value={phoneCode}
-                          onChange={(e) => setPhoneCode(e.target.value)}
-                          className="col-span-1 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm px-3 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
-                        >
-                          {PHONE_CODES.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="relative col-span-2">
-                          <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                            <Phone size={18} />
-                          </span>
+                  {/* Campos extra de registro */}
+                  {!isLogin && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Nombre Completo</label>
+                          <div className="relative">
+                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                              <UserPlus size={18} />
+                            </span>
+                            <input
+                              type="text"
+                              required
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                              placeholder="Ej. María Pérez"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">Teléfono de contacto (Opcional)</label>
+                          <div className="grid grid-cols-3 gap-3">
+                            <select
+                              value={phoneCode}
+                              onChange={(e) => setPhoneCode(e.target.value)}
+                              className="col-span-1 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm px-3 py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+                            >
+                              {PHONE_CODES.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="relative col-span-2">
+                              <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                                <Phone size={18} />
+                              </span>
+                              <input
+                                type="tel"
+                                value={phone}
+                                onChange={handlePhoneChange}
+                                placeholder="Ej. 4121234567"
+                                className="block w-full pl-11 pr-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">El número se guardará con el formato internacional seleccionado.</p>
+                        </div>
+                      </div>
+
+                      {/* SECCIÓN PREGUNTAS DE SEGURIDAD (Ciberseguridad Tope de Gama) */}
+                      <div className="pt-2 border-t border-slate-200 dark:border-white/5 space-y-3">
+                        <span className="text-xs font-bold text-brand-blue dark:text-brand-light flex items-center gap-1.5 pl-1">
+                          <ShieldCheck size={16} /> Preguntas de Seguridad (Para Recuperación)
+                        </span>
+
+                        {/* Pregunta 1 */}
+                        <div className="space-y-1">
+                          <select
+                            value={q1}
+                            onChange={(e) => setQ1(e.target.value)}
+                            required
+                            className="block w-full px-3.5 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none text-slate-800 dark:text-slate-100"
+                          >
+                            <option value="">-- Selecciona Pregunta 1 --</option>
+                            {PREDEFINED_QUESTIONS.map(q => (
+                              <option key={q} value={q} disabled={q === q2}>{q}</option>
+                            ))}
+                          </select>
                           <input
-                            type="tel"
-                            value={phone}
-                            onChange={handlePhoneChange}
-                            placeholder="Ej. 4121234567"
-                            className="block w-full pl-11 pr-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm py-3 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 dark:focus:ring-brand-light/30 text-slate-800 dark:text-slate-100"
+                            type="text"
+                            required
+                            value={ans1}
+                            onChange={(e) => setAns1(e.target.value)}
+                            placeholder="Respuesta a la pregunta 1..."
+                            className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-850 dark:text-slate-100"
+                          />
+                        </div>
+
+                        {/* Pregunta 2 */}
+                        <div className="space-y-1">
+                          <select
+                            value={q2}
+                            onChange={(e) => setQ2(e.target.value)}
+                            required
+                            className="block w-full px-3.5 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none text-slate-800 dark:text-slate-100"
+                          >
+                            <option value="">-- Selecciona Pregunta 2 --</option>
+                            {PREDEFINED_QUESTIONS.map(q => (
+                              <option key={q} value={q} disabled={q === q1}>{q}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            required
+                            value={ans2}
+                            onChange={(e) => setAns2(e.target.value)}
+                            placeholder="Respuesta a la pregunta 2..."
+                            className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-850 dark:text-slate-100"
                           />
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">El número se guardará con el formato internacional seleccionado.</p>
-                    </div>
-                  </div>
 
-                  {/* SECCIÓN PREGUNTAS DE SEGURIDAD (Ciberseguridad Tope de Gama) */}
-                  <div className="pt-2 border-t border-slate-200 dark:border-white/5 space-y-3">
-                    <span className="text-xs font-bold text-brand-blue dark:text-brand-light flex items-center gap-1.5 pl-1">
-                      <ShieldCheck size={16} /> Preguntas de Seguridad (Para Recuperación)
-                    </span>
+                      {role === "operador" ? (
+                        <div className="rounded-2xl bg-brand-gold/5 dark:bg-brand-gold/10 border border-brand-gold/20 dark:border-brand-gold/20 p-4 text-xs text-slate-700 dark:text-slate-200 mt-2">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <Info size={14} className="text-brand-gold" />
+                            <span className="font-semibold text-brand-gold">Nota de Registro Operador</span>
+                          </div>
+                          <p className="leading-relaxed">
+                            Como operador, al crear tu cuenta, deberás iniciar sesión y completar la Ficha Técnica de tu taller (ubicación GPS, fotos, insignias e información fiscal) para que la alcaldía verifique y active tu perfil.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl bg-brand-blue/5 dark:bg-brand-light/10 border border-brand-blue/20 dark:border-brand-light/20 p-4 text-xs text-slate-700 dark:text-slate-200 mt-2">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <FileText size={14} className="text-brand-blue dark:text-brand-light" />
+                            <span className="font-semibold">Cuenta de Turista</span>
+                          </div>
+                          <p>Como turista podrás buscar talleres artesanales, calificarlos y realizar recorridos geo-optimizados.</p>
+                        </div>
+                      )}
+                    </>
+                  )}
 
-                    {/* Pregunta 1 */}
-                    <div className="space-y-1">
-                      <select
-                        value={q1}
-                        onChange={(e) => setQ1(e.target.value)}
-                        required
-                        className="block w-full px-3.5 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none text-slate-800 dark:text-slate-100"
-                      >
-                        <option value="">-- Selecciona Pregunta 1 --</option>
-                        {PREDEFINED_QUESTIONS.map(q => (
-                          <option key={q} value={q} disabled={q === q2}>{q}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        required
-                        value={ans1}
-                        onChange={(e) => setAns1(e.target.value)}
-                        placeholder="Respuesta a la pregunta 1..."
-                        className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-850 dark:text-slate-100"
-                      />
-                    </div>
-
-                    {/* Pregunta 2 */}
-                    <div className="space-y-1">
-                      <select
-                        value={q2}
-                        onChange={(e) => setQ2(e.target.value)}
-                        required
-                        className="block w-full px-3.5 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none text-slate-800 dark:text-slate-100"
-                      >
-                        <option value="">-- Selecciona Pregunta 2 --</option>
-                        {PREDEFINED_QUESTIONS.map(q => (
-                          <option key={q} value={q} disabled={q === q1}>{q}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        required
-                        value={ans2}
-                        onChange={(e) => setAns2(e.target.value)}
-                        placeholder="Respuesta a la pregunta 2..."
-                        className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-850 dark:text-slate-100"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-brand-blue/5 dark:bg-brand-light/10 border border-brand-blue/20 dark:border-brand-light/20 p-4 text-xs text-slate-700 dark:text-slate-200 mt-2">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <FileText size={14} className="text-brand-blue dark:text-brand-light" />
-                      <span className="font-semibold">Datos del rol</span>
-                    </div>
-                    <p>{role === "operador" ? "Como operador registrarás tu taller artesanal para aparecer en el directorio geoespacial." : "Como turista podrás calificar los talleres y realizar recorridos geo-optimizados."}</p>
-                  </div>
-                </>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-brand-blue dark:bg-brand-light text-white py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-brand-blue/20 transition disabled:opacity-50 mt-2 cursor-pointer text-sm"
-              >
-                {loading ? "Procesando..." : isLogin ? "Entrar al Sistema" : "Registrarse"}
-              </button>
-            </form>
-            
-            <div className="mt-5 pt-5 md:mt-8 md:pt-6 border-t border-gray-200 dark:border-white/10 text-center">
-              {isLogin ? (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  ¿No tienes cuenta?{" "}
-                  <button 
-                    onClick={() => { setIsLogin(false); setError(""); }}
-                    className="text-brand-blue dark:text-brand-light font-bold cursor-pointer hover:underline"
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-brand-blue dark:bg-brand-light text-white py-3.5 rounded-2xl font-bold hover:shadow-lg hover:shadow-brand-blue/20 transition disabled:opacity-50 mt-2 cursor-pointer text-sm"
                   >
-                    Crea una aquí
+                    {loading ? "Procesando..." : isLogin ? "Entrar al Sistema" : "Registrarse"}
                   </button>
-                </p>
-              ) : (
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  ¿Ya tienes cuenta?{" "}
-                  <button 
-                    onClick={() => { setIsLogin(true); setError(""); }}
-                    className="text-brand-blue dark:text-brand-light font-bold cursor-pointer hover:underline"
-                  >
-                    Inicia sesión aquí
-                  </button>
-                </p>
-              )}
-            </div>
+                </form>
+                
+                <div className="mt-5 pt-5 md:mt-8 md:pt-6 border-t border-gray-200 dark:border-white/10 text-center">
+                  {isLogin ? (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      ¿No tienes cuenta?{" "}
+                      <button 
+                        onClick={() => { setIsLogin(false); setRegistrationStep("role_selection"); setError(""); }}
+                        className="text-brand-blue dark:text-brand-light font-bold cursor-pointer hover:underline"
+                      >
+                        Crea una aquí
+                      </button>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      ¿Ya tienes cuenta?{" "}
+                      <button 
+                        onClick={() => { setIsLogin(true); setError(""); }}
+                        className="text-brand-blue dark:text-brand-light font-bold cursor-pointer hover:underline"
+                      >
+                        Inicia sesión aquí
+                      </button>
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

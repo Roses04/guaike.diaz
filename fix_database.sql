@@ -2,17 +2,30 @@
 -- SCRIPT DE CORRECCIÓN PARA SUPABASE (EJECUTAR EN SQL EDITOR)
 -- ===========================================================================
 
--- 1. CORREGIR EL TRIGGER DE NUEVOS USUARIOS PARA LEER EL ROL CORRECTO DESDE METADATOS
--- Esto garantiza que en el futuro cualquier registro de Operador o Turista se guarde con su rol correspondiente.
+-- 1. PRESERVACIÓN DE COLUMNAS DE REGISTRO E INFORMACIÓN FISCAL
+-- Mantenemos intactas las columnas como cedula_tipo, cedula_numero, etc., ya que son necesarias 
+-- para recopilar la información fiscal de los operadores (firmas personales, RIF o emprendimientos) 
+-- y otros datos demográficos planificados.
+
+-- 2. CORREGIR EL TRIGGER DE NUEVOS USUARIOS PARA SINCRONIZAR ROL, NOMBRE Y TELÉFONO
+-- Esto garantiza que al registrarse un usuario, su nombre completo y teléfono de contacto
+-- se guarden directamente en la tabla usuarios pública, además de su rol correcto.
+
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 DECLARE
   role_name text;
   role_id_var integer;
+  full_name_var text;
+  telefono_var text;
 BEGIN
   -- Extraer rol de raw_user_meta_data (por defecto 'turista')
   role_name := COALESCE(new.raw_user_meta_data ->> 'role', 'turista');
+  
+  -- Extraer nombre y teléfono desde la metadata de Supabase Auth
+  full_name_var := COALESCE(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', '');
+  telefono_var := COALESCE(new.raw_user_meta_data ->> 'phone', '');
   
   -- Obtener el ID del rol correspondiente en la tabla roles
   SELECT id INTO role_id_var FROM public.roles WHERE nombre = role_name;
@@ -23,11 +36,19 @@ BEGIN
   END IF;
 
   -- Insertar en la tabla usuarios pública o actualizar si ya existe (evitando duplicaciones)
-  INSERT INTO public.usuarios (correo, contrasena, rol_id, auth_id, verificado, fecha_creacion, fecha_actualizacion)
-  VALUES (new.email, '', role_id_var, new.id, true, now(), now())
+  INSERT INTO public.usuarios (
+    correo, contrasena, rol_id, auth_id, verificado, 
+    fecha_creacion, fecha_actualizacion, nombre_completo, telefono
+  )
+  VALUES (
+    new.email, '', role_id_var, new.id, true, 
+    now(), now(), full_name_var, telefono_var
+  )
   ON CONFLICT (correo) DO UPDATE 
   SET auth_id = new.id, 
       rol_id = EXCLUDED.rol_id,
+      nombre_completo = EXCLUDED.nombre_completo,
+      telefono = EXCLUDED.telefono,
       fecha_actualizacion = now();
       
   RETURN new;
@@ -39,6 +60,15 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 3. SINCRONIZAR A LOS USUARIOS EXISTENTES
+-- Copia el nombre y teléfono desde auth.users.raw_user_meta_data a public.usuarios
+UPDATE public.usuarios u
+SET 
+  nombre_completo = COALESCE(au.raw_user_meta_data ->> 'full_name', au.raw_user_meta_data ->> 'name', ''),
+  telefono = COALESCE(au.raw_user_meta_data ->> 'phone', '')
+FROM auth.users au
+WHERE u.auth_id = au.id;
 
 
 -- 2. CORREGIR EL USUARIO jesus05vmartinez@gmail.com A ROL OPERADOR Y CREAR SU REGISTRO

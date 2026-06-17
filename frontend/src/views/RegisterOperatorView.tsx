@@ -31,7 +31,8 @@ import {
 } from "../components/map/MunicipioMapLayers";
 import { MUNICIPIO_MAX_BOUNDS, clampToMunicipioBounds } from "../data/municipioDiazGeo";
 import { 
-  Store, MapPin, Tag, Upload, Camera, Trash2, Compass, Check, Info, AlertTriangle, FileText
+  Store, MapPin, Tag, Upload, Camera, Trash2, Compass, Check, Info, AlertTriangle, FileText,
+  Fingerprint, Calendar
 } from "lucide-react";
 
 const RegisterOperatorView = () => {
@@ -76,6 +77,12 @@ const RegisterOperatorView = () => {
   const [categoriaId, setCategoriaId] = useState("");
   const [direccionDetallada, setDireccionDetallada] = useState("");
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState("");
+
+  // Fiscal & Personal info states
+  const [cedulaTipo, setCedulaTipo] = useState("V");
+  const [cedulaNumero, setCedulaNumero] = useState("");
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [municipioResidencia, setMunicipioResidencia] = useState("Díaz");
   
   // Geolocation
   const [location, setLocation] = useState<[number, number]>(MUNICIPIO_DIAZ_CENTER);
@@ -144,6 +151,11 @@ const RegisterOperatorView = () => {
           if (Array.isArray(op.accesibilidades)) {
             setSelectedAccessibilities(op.accesibilidades.map((a: any) => a.id));
           }
+
+          if (op.cedula_tipo) setCedulaTipo(op.cedula_tipo);
+          if (op.cedula_numero) setCedulaNumero(op.cedula_numero.toString());
+          if (op.fecha_nacimiento) setFechaNacimiento(op.fecha_nacimiento.split("T")[0]);
+          if (op.municipio_residencia) setMunicipioResidencia(op.municipio_residencia);
 
           // Mock bypass since document is not directly queried and already validated in backend
           setCedulaRifDoc("documento_ya_verificado");
@@ -253,6 +265,30 @@ const RegisterOperatorView = () => {
       return;
     }
 
+    if (!cedulaNumero) {
+      setError("Debes ingresar tu número de cédula o RIF.");
+      return;
+    }
+
+    if (!fechaNacimiento) {
+      setError("Debes ingresar tu fecha de nacimiento.");
+      return;
+    }
+
+    // Age validation (must be at least 18)
+    const birthDateObj = new Date(fechaNacimiento);
+    const today = new Date();
+    let age = today.getFullYear() - birthDateObj.getFullYear();
+    const monthDiff = today.getMonth() - birthDateObj.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      setError("Debes ser mayor de edad (18 años o más) para registrarte como operador.");
+      return;
+    }
+
     if (!primaryImage) {
       setError("Debes subir una foto principal de tu taller.");
       return;
@@ -277,6 +313,10 @@ const RegisterOperatorView = () => {
       imagen_principal: primaryImage,
       galeria: galleryImages,
       accesibilidad_ids: selectedAccessibilities,
+      cedula_tipo: cedulaTipo,
+      cedula_numero: cedulaNumero,
+      fecha_nacimiento: fechaNacimiento,
+      municipio_residencia: municipioResidencia,
     };
 
     try {
@@ -298,6 +338,10 @@ const RegisterOperatorView = () => {
         setGalleryImages([]);
         setCedulaRifDoc("");
         setSelectedAccessibilities([]);
+        setCedulaTipo("V");
+        setCedulaNumero("");
+        setFechaNacimiento("");
+        setMunicipioResidencia("Díaz");
       }
 
       // Redirect operator after short delay
@@ -434,6 +478,89 @@ const RegisterOperatorView = () => {
               placeholder="Cuéntanos un poco sobre tu historia, técnicas tradicionales y los productos típicos que ofreces al público..."
               className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
             />
+          </div>
+        </section>
+
+        {/* Información Fiscal y Personal del Operador */}
+        <section className="glass-panel p-6 sm:p-8 rounded-3xl space-y-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-brand-blue/30"></div>
+          <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-4">
+            <Fingerprint size={22} className="text-brand-blue dark:text-brand-light" />
+            Información Fiscal y Personal del Operador
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">
+                Tipo de Documento *
+              </label>
+              <select
+                required
+                value={cedulaTipo}
+                onChange={(e) => setCedulaTipo(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+              >
+                <option value="V">V - Venezolano</option>
+                <option value="E">E - Extranjero</option>
+                <option value="J">J - Jurídico (RIF)</option>
+                <option value="G">G - Gubernamental (RIF)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">
+                Número de Cédula o RIF *
+              </label>
+              <input
+                type="text"
+                required
+                value={cedulaNumero}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  setCedulaNumero(val);
+                }}
+                placeholder="Ej. 12345678"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1 flex items-center gap-1">
+                <Calendar size={14} className="text-slate-400" />
+                Fecha de Nacimiento *
+              </label>
+              <input
+                type="date"
+                required
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 pl-1">
+                Municipio de Residencia *
+              </label>
+              <select
+                required
+                value={municipioResidencia}
+                onChange={(e) => setMunicipioResidencia(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 dark:bg-slate-800/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100 cursor-pointer"
+              >
+                <option value="Díaz">Díaz</option>
+                <option value="Mariño">Mariño</option>
+                <option value="Maneiro">Maneiro</option>
+                <option value="Arismendi">Arismendi</option>
+                <option value="Antolín del Campo">Antolín del Campo</option>
+                <option value="García">García</option>
+                <option value="Gómez">Gómez</option>
+                <option value="Macanao">Macanao</option>
+                <option value="Marcano">Marcano</option>
+                <option value="Tubores">Tubores</option>
+                <option value="Villalba">Villalba</option>
+              </select>
+            </div>
           </div>
         </section>
 
