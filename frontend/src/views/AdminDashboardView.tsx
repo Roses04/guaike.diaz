@@ -33,7 +33,7 @@ import {
 import { MUNICIPIO_MAX_BOUNDS } from "../data/municipioDiazGeo";
 import {
   Users, Store, Calendar, MessageSquare, Award, ShieldCheck, CheckCircle,
-  XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit, Star
+  XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit, Star, Database, Download, RefreshCw, Upload
 } from "lucide-react"; // Iconos
 
 const AdminDashboardView = () => {
@@ -71,7 +71,7 @@ const AdminDashboardView = () => {
     );
   }
 
-  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats" | "users" | "reviews">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "events" | "stats" | "users" | "reviews" | "database">("requests");
   
   // Tab 1: Operator Requests States
   const [pendingOperators, setPendingOperators] = useState([]);
@@ -123,6 +123,105 @@ const AdminDashboardView = () => {
 
   // Global Action Notification State
   const [alertMsg, setAlertMsg] = useState("");
+
+  // Tab: Database Backup & Restore States
+  const [backups, setBackups] = useState<any[]>([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [backupActionLoading, setBackupActionLoading] = useState(false);
+
+  const loadBackups = async () => {
+    setLoadingBackups(true);
+    try {
+      const res = await api.get("/admin/database/backups");
+      setBackups(res.data);
+    } catch (err) {
+      console.error("Error loading backups:", err);
+    } finally {
+      setLoadingBackups(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setBackupActionLoading(true);
+    try {
+      await api.post("/admin/database/backup");
+      setAlertMsg("Copia de seguridad creada correctamente en el servidor.");
+      loadBackups();
+      setTimeout(() => setAlertMsg(""), 3500);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "No se pudo crear la copia de seguridad.");
+    } finally {
+      setBackupActionLoading(false);
+    }
+  };
+
+  const handleDownloadBackup = async (filename: string) => {
+    try {
+      const response = await api.get(`/admin/database/backups/download/${filename}`, {
+        responseType: "blob"
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error("Error downloading file:", err);
+      alert("No se pudo descargar el archivo de copia de seguridad.");
+    }
+  };
+
+  const handleRestoreBackup = async (filename: string) => {
+    if (!window.confirm(`¡ATENCIÓN! ¿Seguro que deseas restaurar la base de datos a partir del archivo '${filename}'? Esta acción reemplazará todos los datos actuales del sistema.`)) {
+      return;
+    }
+    setBackupActionLoading(true);
+    try {
+      const res = await api.post("/admin/database/restore", { filename });
+      setAlertMsg(res.data?.message || "Base de datos restaurada correctamente.");
+      setTimeout(() => setAlertMsg(""), 4500);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Error al restaurar la base de datos.");
+    } finally {
+      setBackupActionLoading(false);
+    }
+  };
+
+  const handleUploadBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm("¡ATENCIÓN! ¿Seguro que deseas restaurar la base de datos a partir del archivo JSON seleccionado? Esta acción reemplazará todos los datos actuales del sistema.")) {
+      e.target.value = ""; // Clear file input
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        setBackupActionLoading(true);
+        const res = await api.post("/admin/database/restore", { data: json });
+        setAlertMsg(res.data?.message || "Base de datos restaurada desde archivo externo correctamente.");
+        setTimeout(() => setAlertMsg(""), 4500);
+      } catch (err: any) {
+        console.error("Error restoring from uploaded file:", err);
+        alert("Archivo JSON inválido o error en la restauración.");
+      } finally {
+        setBackupActionLoading(false);
+        e.target.value = ""; // Clear file input
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  };
 
   // Load Pending Operator Requests
   const loadPending = async () => {
@@ -201,6 +300,8 @@ const AdminDashboardView = () => {
       loadStats();
     } else if (activeTab === "reviews") {
       loadAdminReviews();
+    } else if (activeTab === "database") {
+      loadBackups();
     } else if (activeTab === "users") {
       // Load static data for operator registration if not loaded
       if (staticCategories.length === 0) {
@@ -380,6 +481,7 @@ const AdminDashboardView = () => {
               { id: "events", label: "Ferias", icon: Calendar },
               { id: "reviews", label: "Reseñas", icon: MessageSquare },
               { id: "stats", label: "Estadísticas", icon: BarChart3 },
+              { id: "database", label: "Base de Datos", icon: Database },
             ]}
           />
         }
@@ -1107,6 +1209,126 @@ const AdminDashboardView = () => {
               <MessageSquare size={48} className="mx-auto mb-2 opacity-50 text-slate-300" />
               <p className="font-semibold text-sm">No se encontraron reseñas.</p>
               <p className="text-xs text-slate-400">Intenta cambiar los filtros o realizar otra búsqueda.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 6: GESTIÓN DE BASE DE DATOS */}
+      {activeTab === "database" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-white/5 pb-4">
+            <div>
+              <h2 className="text-xl font-display font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Database size={24} className="text-brand-blue" />
+                Copias de Seguridad (Backup & Restore)
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">Respalda, restaura y descarga los datos del Municipio Díaz de forma segura.</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                onClick={handleCreateBackup}
+                disabled={backupActionLoading}
+                className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+              >
+                <Plus size={14} />
+                Crear Backup Manual
+              </button>
+              
+              <label className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50">
+                <Upload size={14} />
+                Cargar Backup (.json)
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleUploadBackup}
+                  disabled={backupActionLoading}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Backup Schedule Alert Banner */}
+          <div className="bg-brand-gold/10 border border-brand-gold/30 p-4.5 rounded-2xl flex items-start gap-3">
+            <AlertCircle size={20} className="text-brand-gold-text dark:text-brand-gold shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-brand-gold-text dark:text-brand-gold uppercase tracking-wider">Copia de Seguridad Programada</p>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                El sistema realiza de forma automática una copia de seguridad en disco **cada domingo a las 00:00**. 
+                Los archivos se almacenan de forma local y segura en la carpeta del servidor.
+              </p>
+            </div>
+          </div>
+
+          {/* Backups List */}
+          {backupActionLoading && (
+            <div className="bg-slate-100/70 dark:bg-slate-800/40 p-6 rounded-2xl text-center text-xs text-slate-500 animate-pulse font-semibold">
+              Procesando operación en base de datos, por favor espera...
+            </div>
+          )}
+
+          {loadingBackups ? (
+            <div className="text-center py-12 text-slate-400">
+              <div className="w-10 h-10 border-4 border-brand-blue border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <span>Cargando copias de seguridad...</span>
+            </div>
+          ) : backups.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200/80 dark:border-white/5 text-[10px] uppercase tracking-wider text-slate-400">
+                    <th className="pb-3.5 pl-2">Archivo</th>
+                    <th className="pb-3.5">Tamaño</th>
+                    <th className="pb-3.5">Fecha de Creación</th>
+                    <th className="pb-3.5 text-right pr-2">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/80 dark:divide-white/5 text-xs text-slate-700 dark:text-slate-300">
+                  {backups.map((bk: any) => (
+                    <tr key={bk.filename} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/10 transition">
+                      <td className="py-3.5 pl-2 font-bold font-mono text-slate-800 dark:text-slate-200">{bk.filename}</td>
+                      <td className="py-3.5 text-slate-500">{formatSize(bk.size)}</td>
+                      <td className="py-3.5 text-slate-500">
+                        {new Date(bk.date).toLocaleString("es-ES", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
+                      </td>
+                      <td className="py-3.5 text-right pr-2">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => handleDownloadBackup(bk.filename)}
+                            className="bg-brand-blue/10 text-brand-blue hover:bg-brand-blue/20 dark:bg-brand-light/10 dark:text-brand-light dark:hover:bg-brand-light/20 p-2 rounded-xl transition cursor-pointer"
+                            title="Descargar archivo"
+                          >
+                            <Download size={14} />
+                          </button>
+                          
+                          <button
+                            onClick={() => handleRestoreBackup(bk.filename)}
+                            disabled={backupActionLoading}
+                            className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 hover:bg-emerald-100 p-2 rounded-xl transition cursor-pointer disabled:opacity-50"
+                            title="Restaurar base de datos a este punto"
+                          >
+                            <RefreshCw size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-16 text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-white/5 rounded-2xl">
+              <Database size={48} className="mx-auto mb-2 opacity-30 text-slate-300" />
+              <p className="font-semibold text-sm">No se encontraron copias de seguridad locales.</p>
+              <p className="text-xs text-slate-400">Presiona "Crear Backup Manual" para guardar tu primera copia de seguridad.</p>
             </div>
           )}
         </div>

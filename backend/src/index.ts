@@ -18,6 +18,8 @@ import operatorRoutes from "./routes/operatorRoutes.js"; // Rutas para gestionar
 import reviewRoutes from "./routes/reviewRoutes.js"; // Rutas para reseñas y escaneo QR
 import eventRoutes from "./routes/eventRoutes.js"; // Rutas para eventos y ferias
 import statsRoutes from "./routes/statsRoutes.js"; // Rutas de estadísticas para el dashboard admin
+import adminRoutes from "./routes/adminRoutes.js"; // Rutas de administración y base de datos
+import { BackupScheduler } from "./services/BackupScheduler.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -38,8 +40,11 @@ app.use("/api/operators", operatorRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Iniciar el servidor escuchando en el puerto definido
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // Inicializar programador de copias de seguridad semanales
+  BackupScheduler.init();
 });
