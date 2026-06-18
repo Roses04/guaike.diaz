@@ -15,8 +15,8 @@ export const puntosInteres: PuntoInteres[] = [
     nombre: "Iglesia Parroquial San Juan Bautista",
     categoria: "religion",
     // Verified: Wikipedia/Mapcarta — frente a Plaza Antonio Díaz
-    latitud: 11.0142,
-    longitud: -63.9451,
+    latitud: 11.0118,
+    longitud: -63.9427,
     descripcion: "Templo histórico del siglo XVI de gran valor arquitectónico y espiritual. Es famosa por albergar a San Juan Bautista, patrono del municipio, y poseer un campanario de gran altura visible desde el valle.",
     direccion: "Frente a la Plaza Antonio Díaz, San Juan Bautista"
   },
@@ -26,9 +26,9 @@ export const puntosInteres: PuntoInteres[] = [
     id: "poi-pozas-fuentidueno",
     nombre: "Pozas de Fuentidueño",
     categoria: "turismo",
-    // Valle de San Juan, sector norte del municipio
-    latitud: 11.0305,
-    longitud: -63.9632,
+    // Sector hídrico de Fuentidueño en las faldas de El Copey
+    latitud: 11.0205,
+    longitud: -63.9220,
     descripcion: "Hermoso balneario natural alimentado por manantiales de montaña. Rodeado de frondosos árboles y plantaciones de dátiles, es un sitio ideal para refrescarse y disfrutar de la naturaleza autóctona de Margarita.",
     direccion: "Sector Fuentidueño, Valle de San Juan"
   },
@@ -36,9 +36,9 @@ export const puntosInteres: PuntoInteres[] = [
     id: "poi-playa-yaque",
     nombre: "Playa El Yaque",
     categoria: "turismo",
-    // Verified: borde sur del municipio, lado oeste del aeropuerto
-    latitud: 10.9050,
-    longitud: -63.9770,
+    // Verified: zona turística y de playa al sur, al este del aeropuerto
+    latitud: 10.8972,
+    longitud: -63.9605,
     descripcion: "Reconocida mundialmente como uno de los mejores destinos para la práctica de windsurf y kitesurf debido a sus vientos constantes y aguas poco profundas. Colinda directamente con el Municipio Díaz.",
     direccion: "Borde costero sur, adyacente al aeropuerto Santiago Mariño"
   },
@@ -56,9 +56,9 @@ export const puntosInteres: PuntoInteres[] = [
     id: "poi-cesteria-espinal",
     nombre: "Mercado de Cestería El Espinal",
     categoria: "turismo",
-    // Verified: El Espinal sobre la autopista, cerca del aeropuerto
-    latitud: 10.9998,
-    longitud: -63.9205,
+    // Verified: El Espinal sobre la autopista J.B. Arismendi
+    latitud: 10.9675,
+    longitud: -63.9815,
     descripcion: "Mercado artesanal al aire libre donde se concentran los tejedores locales de El Espinal. Podrás comprar carteras, sombreros de cogollo, alfombras y cestas tejidas con fibras de palma datilera.",
     direccion: "Troncal 5 (Autopista Juan Bautista Arismendi), sector El Espinal"
   },
@@ -133,8 +133,8 @@ export const puntosInteres: PuntoInteres[] = [
     nombre: "Parador del Dátil y Piñonate",
     categoria: "comida",
     // Cerca de El Espinal sobre la Autopista Juan Bautista Arismendi
-    latitud: 11.0012,
-    longitud: -63.9215,
+    latitud: 10.9690,
+    longitud: -63.9830,
     descripcion: "Punto de encuentro gastronómico tradicional a pie de carretera. Famoso por la venta de piñonate original (dulce de lechosa y naranja) y conservas de dátiles elaboradas por familias artesanas locales.",
     direccion: "Autopista Juan Bautista Arismendi, vía San Juan – El Espinal"
   },
@@ -153,8 +153,8 @@ export const puntosInteres: PuntoInteres[] = [
     nombre: "Arepera Tradicional El Espinal",
     categoria: "comida",
     // Cruce de El Espinal sobre autopista
-    latitud: 10.9980,
-    longitud: -63.9175,
+    latitud: 10.9665,
+    longitud: -63.9800,
     descripcion: "Parada gastronómica obligatoria y muy concurrida por locales. Ofrece arepas gigantes rellenas de guisados típicos (cazón, carne mechada, queso de mano) y platos ejecutivos a precios accesibles.",
     direccion: "Cruce de El Espinal, Autopista Juan Bautista Arismendi"
   },
@@ -162,9 +162,9 @@ export const puntosInteres: PuntoInteres[] = [
     id: "poi-rincon-datil",
     nombre: "Dulcería \"El Rincón del Dátil\"",
     categoria: "comida",
-    // San Juan, cerca de la plaza (≈ 11.0142,-63.9451 con desplazamiento)
-    latitud: 11.0138,
-    longitud: -63.9445,
+    // San Juan, cerca de la plaza (frente a la Plaza Antonio Díaz)
+    latitud: 11.0120,
+    longitud: -63.9430,
     descripcion: "Cafetería y dulcería especializada en repostería tradicional. Sirven tortas de dátil, helados artesanales de frutas locales y almuerzos ejecutivos caseros muy cotizados.",
     direccion: "Calle Carabobo, frente a la Plaza Antonio Díaz, San Juan Bautista"
   },
@@ -183,28 +183,18 @@ export const puntosInteres: PuntoInteres[] = [
     nombre: "Empanadas de Doña Carmen",
     categoria: "comida",
     // San Juan, frente a plaza (ligeramente desplazado de la iglesia)
-    latitud: 11.0135,
-    longitud: -63.9448,
+    latitud: 11.0115,
+    longitud: -63.9428,
     descripcion: "El puesto de empanadas más concurrido de San Juan. Famoso por sus empanadas de cazón (típicas de la isla), carne mechada y queso de mano, hechas al momento y acompañadas de salsas de la casa.",
     direccion: "Frente a la Plaza Antonio Díaz, San Juan Bautista"
-  },
-  {
-    id: "poi-cochinito-carapacho",
-    nombre: "Cochino Frito \"El Rey del Chicharrón\"",
-    categoria: "comida",
-    // Carapacho, avenida principal ≈ 11.0021,-63.9592 con desplazamiento
-    latitud: 11.0005,
-    longitud: -63.9575,
-    descripcion: "Parada gastronómica popular en la vía principal de Carapacho. Ofrece cochino frito crujiente al estilo tradicional margariteño, chicharrón con arepas de maíz pilado y cachapas con queso de mano.",
-    direccion: "Avenida Principal de Carapacho"
   },
   {
     id: "poi-rest-sabor-campestre",
     nombre: "Restaurante \"Sabor Campestre\"",
     categoria: "comida",
     // Sector las Barrancas, entre San Juan y la autopista
-    latitud: 11.0095,
-    longitud: -63.9490,
+    latitud: 10.9910,
+    longitud: -63.9750,
     descripcion: "Muy conocido por sus accesibles y abundantes almuerzos ejecutivos caseros (sancocho de gallina, asado negro, pescado frito) en un ambiente campestre rodeado de vegetación.",
     direccion: "Sector Las Barrancas, vía San Juan Bautista"
   },
@@ -213,8 +203,8 @@ export const puntosInteres: PuntoInteres[] = [
     nombre: "Empanadas \"Doña Patria\"",
     categoria: "comida",
     // El Espinal, parada de autobuses
-    latitud: 10.9985,
-    longitud: -63.9190,
+    latitud: 10.9670,
+    longitud: -63.9810,
     descripcion: "Puesto emblemático de comida típica rápida en El Espinal. Sus empanadas de mariscos (pepitonas, camarones y cazón) son sumamente populares tanto para locales como para viajeros.",
     direccion: "Cerca de la parada de autobuses, El Espinal"
   }

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Users, Map as MapIcon, Compass } from "lucide-react";
+import { Home, Users, Map as MapIcon, Compass, BookOpen } from "lucide-react";
 
 type TabItem = {
   to: string;
@@ -14,6 +14,7 @@ const MobileTabBar = () => {
 
   const tabs: TabItem[] = [
     { to: "/", icon: Home, label: "Inicio", isActive: (p) => p === "/" },
+    { to: "/descubre", icon: BookOpen, label: "Descubre", isActive: (p) => p === "/descubre" },
     {
       to: "/directorio",
       icon: Users,

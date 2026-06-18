@@ -26,6 +26,9 @@ import AdminDashboardView from "./views/AdminDashboardView";
 import ItineraryView from "./views/ItineraryView";
 import ProfileView from "./views/ProfileView";
 import EmailConfirmationView from "./views/EmailConfirmationView";
+import DescubreView from "./views/DescubreView";
+
+
 
 // Estado Global y Utilidades
 import { useThemeStore } from "./store/useThemeStore";
@@ -116,6 +119,7 @@ function App() {
               <Route path="/operador/:id/escanear-qr" element={<QRScannerView />} />
               <Route path="/admin" element={<AdminDashboardView />} />
               <Route path="/itinerarios" element={<ItineraryView />} />
+              <Route path="/descubre" element={<DescubreView />} />
             </Routes>
 
           </main>

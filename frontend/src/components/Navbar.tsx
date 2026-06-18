@@ -23,12 +23,14 @@ import {
   Users,
   MoreVertical,
   Search,
+  BookOpen,
 } from "lucide-react"; // Iconos vectoriales
 import ConfirmModal from "./ui/ConfirmModal";
 
 // Diccionario para cambiar el título de la barra en móviles según la URL
 const ROUTE_TITLES: Record<string, string> = {
   "/": "Inicio",
+  "/descubre": "Descubre",
   "/directorio": "Directorio",
   "/mapa": "Mapa",
   "/itinerarios": "Rutas",
@@ -99,6 +101,12 @@ const Navbar = () => {
   const desktopNavLinks = (
     <>
       <NavLink to="/" icon={Home} label="Inicio" isActive={location.pathname === "/"} />
+      <NavLink
+        to="/descubre"
+        icon={BookOpen}
+        label="Descubre"
+        isActive={location.pathname === "/descubre"}
+      />
       <NavLink
         to="/directorio"
         icon={Users}
@@ -246,6 +254,9 @@ const Navbar = () => {
                 <ul className="py-1">
                   <li>
                     <Link to="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Inicio</Link>
+                  </li>
+                  <li>
+                    <Link to="/descubre" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Descubre</Link>
                   </li>
                   <li>
                     <Link to="/directorio" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Directorio</Link>
