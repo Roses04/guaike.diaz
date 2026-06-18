@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 const SITE_NAME = 'GUAIKE.DÍAZ'
 const DEFAULT_DESCRIPTION =
   'Descubre el corazón artesanal de la Isla de Margarita. Directorio de talleres, ferias culturales y rutas turísticas en el Municipio Díaz, Nueva Esparta, Venezuela.'
-const DEFAULT_IMAGE = 'https://guaike.diaz.vercel.app/images/san_juan_valle.jpg'
+const DEFAULT_IMAGE = 'https://guaike.diaz.vercel.app/images/san_juan_valle.webp'
 const BASE_URL = 'https://guaike.diaz.vercel.app'
 
 interface SEOProps {

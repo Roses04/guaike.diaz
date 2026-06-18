@@ -150,7 +150,7 @@ const Navbar = () => {
 
             <Link to="/" className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
               <img
-                src="/images/logo.png"
+                src="/images/logo.webp"
                 alt="Guaike Logo"
                 className="h-8 md:h-9 w-auto dark:brightness-110 shrink-0"
               />

@@ -131,7 +131,7 @@ const ItineraryView = () => {
       iconClass: "bg-amber-100 dark:bg-amber-950/40 text-brand-gold",
       stopsCount: 3,
       duration: "~2 horas",
-      image: "/images/tejedora.jpg",
+      image: "/images/tejedora.webp",
       accentColor: "from-amber-600/70"
     },
     {
@@ -143,7 +143,7 @@ const ItineraryView = () => {
       iconClass: "bg-emerald-100 dark:bg-emerald-950/40 text-brand-accent",
       stopsCount: 2,
       duration: "~1.5 horas",
-      image: "/images/datiles.jpg",
+      image: "/images/datiles.webp",
       accentColor: "from-emerald-700/70"
     },
     {
@@ -155,7 +155,7 @@ const ItineraryView = () => {
       iconClass: "bg-blue-100 dark:bg-blue-950/40 text-brand-light",
       stopsCount: 2,
       duration: "~1.5 horas",
-      image: "/images/hamaca.jpg",
+      image: "/images/hamaca.webp",
       accentColor: "from-blue-700/70"
     }
   ];

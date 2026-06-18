@@ -112,7 +112,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Valle de Fuentidueño",
       category: "Naturaleza y Senderismo",
       description: "Ubicado al pie del macizo montañoso de El Copey, es un paraíso ecológico rico en manantiales de agua dulce y extensos palmerales datileras. Fundado en 1543 por la migración tras el tsunami de Cubagua, es el epicentro de la tejeduría y la elaboración artesanal del Piñonate de Margarita.",
-      image: "/images/fuentidueno.jpg",
+      image: "/images/fuentidueno.webp",
       lat: 11.0150,
       lng: -63.9253,
       tags: ["Dátiles", "Manantiales", "Montaña", "Senderismo"]
@@ -122,7 +122,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Playa El Yaque",
       category: "Deporte y Aventura",
       description: "Famosa en todo el mundo como un santuario del windsurf y kitesurf debido a sus constantes e intensos vientos alisios que soplan de forma perpendicular a la costa. Sus aguas templadas, poco profundas y planas la hacen un sitio seguro y un destino turístico con infraestructura de primer nivel.",
-      image: "/images/el_yaque.jpg",
+      image: "/images/el_yaque.webp",
       lat: 10.8972,
       lng: -63.9605,
       tags: ["Playa", "Windsurf", "Velas", "Deporte"]
@@ -132,7 +132,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Ensenada y Playa de La Guardia",
       category: "Pesca y Paisaje",
       description: "Bahía pesquera e histórica rada de comercio que en tiempos coloniales recibía barcos cargados de maíz del Orinoco, papelón de El Golfo y tabaco de Píritu. Hoy destaca por sus espectaculares atardeceres sobre la Península de Macanao, el cultivo sustentable de mejillón y su Feria del Mejillón.",
-      image: "/images/la_guardia.jpg",
+      image: "/images/la_guardia.webp",
       lat: 10.9960,
       lng: -64.0260,
       tags: ["Atardecer", "Puerto Pesquero", "Mejillón", "Playa"]
@@ -142,7 +142,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Pozas de San Juan Bautista",
       category: "Ecoturismo",
       description: "Balnearios y cascadas de montaña esculpidos en piedra natural rodeados de densa vegetación tropical. Sus pozas más conocidas, como 'El Hacha' y 'El Encabuyado', son paradas obligatorias de ecoturismo alimentadas por vertientes puras del cerro El Copey.",
-      image: "/images/pozas_san_juan.jpg",
+      image: "/images/pozas_san_juan.webp",
       lat: 11.0205,
       lng: -63.9220,
       tags: ["Cascadas", "Pozas", "Selva", "Ecoturismo"]
@@ -152,7 +152,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Santuario Histórico San Juan Bautista",
       category: "Patrimonio Histórico",
       description: "Templo colonial originario del siglo XVI, reconstruido tras ser saqueado e incinerado por los realistas en 1816. Cuenta con un campanario majestuoso de más de 20 metros de altura que domina visualmente el valle, albergando la imagen de San Juan Bautista traída por familias andaluzas.",
-      image: "/images/plaza_san_juan.jpg",
+      image: "/images/plaza_san_juan.webp",
       lat: 11.0118,
       lng: -63.9427,
       tags: ["Arquitectura", "Colonial", "Religión", "Campanario"]
@@ -162,7 +162,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Alfarería de Las Barrancas",
       category: "Artesanía y Tradición",
       description: "Poblado dedicado a la alfarería con técnicas precolombinas moldeadas a mano. Familias locales extraen y modelan arcilla roja para hornear en rústicos hornos a leña tinajas, cazuelas de barro y budares, preservando la artesanía de barro más pura del estado.",
-      image: "/images/tejedora.jpg",
+      image: "/images/tejedora.webp",
       lat: 10.9902,
       lng: -63.9773,
       tags: ["Barro", "Cerámica", "Arcilla", "Ancestral"]
@@ -172,7 +172,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Monumento Natural Laguna de Las Marites",
       category: "Naturaleza",
       description: "Decretado Monumento Natural en 1974, esta albufera costera en los límites orientales del municipio cuenta con frondosos canales navegables cubiertos de manglares (rojo, negro, blanco y botoncillo) y es un refugio esencial para una amplia biodiversidad de avifauna acuática.",
-      image: "/images/la_guardia_caminata.jpg",
+      image: "/images/la_guardia_caminata.webp",
       lat: 10.9250,
       lng: -63.8850,
       tags: ["Manglar", "Canales", "Aves", "Laguna"]
@@ -182,7 +182,7 @@ export const municipioDiazData: MunicipioData = {
       name: "Infraestructura Deportiva y Coleo",
       category: "Recreación",
       description: "Díaz posee una vibrante cultura deportiva. En Las Guevaras se encuentra la única Manga de Coleo del Estado Nueva Esparta. Además, cuenta con siete estadios iluminados, incluyendo el Estadio Primitivo Velásquez en El Espinal y la Pista de Atletismo Simón Bolívar en Las Barrancas.",
-      image: "/images/san_juan_valle.jpg",
+      image: "/images/san_juan_valle.webp",
       lat: 10.9562,
       lng: -64.0043,
       tags: ["Toros Coleados", "Estadios", "Deportes", "Atletismo"]
@@ -194,28 +194,28 @@ export const municipioDiazData: MunicipioData = {
       id: "cult-cogollo",
       title: "Tejido de Cogollo y Crinejas de Dátil",
       description: "Proceso riguroso de género. Los hombres extraen el cogollo en las alturas de los datileros (Phoenix dactylifera, emblema municipal desde el 2000). Las hojas se secan al sol para blanquearse y se cortan en hebras ('gajos'). Las mujeres y niños tejen la 'crineja' bajo el brazo, que luego se cose para crear sombreros mediante la técnica de 'enchapar'. Tradicionalmente se realizaba el cortejo juvenil al 'despicar la crineja' (cortar las puntas sobrantes).",
-      image: "/images/sombrero_cogollo.jpg",
+      image: "/images/sombrero_cogollo.webp",
       origin: "San Juan Bautista / Fuentidueño"
     },
     {
       id: "cult-alpargata",
       title: "Alpargatería de El Espinal",
       description: "El calzado tradicional tiene su cuna en El Espinal. La capellada (corte) y el talón se tejen con hilo pabilo empleando telares mecánicos de diseño local. Su sello distintivo es el uso de caucho reciclado de neumáticos automotrices para confeccionar una suela de altísima durabilidad, cosiendo las tirillas a mano.",
-      image: "/images/hamaca.jpg",
+      image: "/images/hamaca.webp",
       origin: "El Espinal"
     },
     {
       id: "cult-orfebreria",
       title: "Orfebrería Perlera Tradicional",
       description: "Desde el período colonial, maestros plateros y orfebres sanjuaneros moldean oro y plata para transformarlos en complejas joyas finas, engastadas exclusivamente con perlas legítimas de los ostrales margariteños. Maestros de avanzada edad como Jesús Velásquez continúan custodiando este antiguo oficio en sus talleres del casco central.",
-      image: "/images/tejedora.jpg",
+      image: "/images/tejedora.webp",
       origin: "San Juan Bautista"
     },
     {
       id: "cult-musica",
       title: "Agrupaciones y Folklore Musical",
       description: "La memoria musical de Díaz está viva en tres agrupaciones emblemáticas: 'Los Antaños de San Juan' (antes Chapalengo), pilar musical de las fiestas tradicionales; 'Los Conuqueros' en El Espinal, famosos por sus parrandas inéditas de año nuevo el primero de enero; y la agrupación 'Ensenada' en La Guardia, expertos en galerones y diversiones pascuales de pescadores.",
-      image: "/images/plaza_san_juan.jpg",
+      image: "/images/plaza_san_juan.webp",
       origin: "Zabala / El Espinal / San Juan"
     }
   ],
@@ -225,28 +225,28 @@ export const municipioDiazData: MunicipioData = {
       id: "gast-pinonate",
       name: "El Piñonate de Fuentidueño",
       description: "Baluarte dulcero protegido como Patrimonio Cultural desde 2021. Es una adaptación de recetas andaluzas de Linares de la Sierra. Combina lechosa (papaya) verde rallada con semillas (corcha), papelón concentrado y jugo y ralladura de naranja ácida. Se bate a leña por tres horas en pailas de cobre ('fondadas') y se extiende en tablas de madera húmedas antes de envolverse herméticamente en 'cachipo' (hoja seca de plátano) para conservar su humedad.",
-      image: "/images/pinonate.jpg",
+      image: "/images/pinonate.webp",
       type: "Dulce"
     },
     {
       id: "gast-datiles",
       name: "Conservas y Dulces de Dátil",
       description: "Elaborados con dátiles cosechados en el valle. Incluyen dátiles rellenos, conservas de dátil molido cocido con azúcar, y un exótico licor artesanal espirituoso fermentado a base de dátil, único de la región.",
-      image: "/images/datiles.jpg",
+      image: "/images/datiles.webp",
       type: "Dulce"
     },
     {
       id: "gast-pan-leche",
       name: "Pan de Leche Horneo a Leña",
       description: "Pan tradicional de masa suave y esponjosa horneado a fuego de leña. Sus ingredientes clave son harina, leche condensada, azúcar y anís dulce, resultando en una corteza dorada deliciosa muy consumida en las meriendas vespertinas.",
-      image: "/images/pan_de_leche.jpg",
+      image: "/images/pan_de_leche.webp",
       type: "Dulce"
     },
     {
       id: "gast-marina",
       name: "Cocina Marina y Mejillón de La Guardia",
       description: "Preparaciones basadas en el pescado fresco y mariscos capturados en las costas. Destacan las famosas empanadas de cazón con masa dulce frita, el sancocho de pescado y la cocina a base de mejillón cultivado de manera sustentable en La Guardia.",
-      image: "/images/comida_marina.jpg",
+      image: "/images/comida_marina.webp",
       type: "Salado"
     }
   ],

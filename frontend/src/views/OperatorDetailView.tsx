@@ -246,7 +246,7 @@ const OperatorDetailView = () => {
         title={operator?.nombre_taller || "Taller Artesanal"}
         description={operator?.descripcion || "Artesano tradicional verificado del Municipio Díaz, preservando la cultura típica venezolana."}
         canonical={`/operador/${id}`}
-        image={operator?.imagenes?.find(img => img.es_principal)?.url_imagen || "https://guaike.diaz.vercel.app/images/san_juan_valle.jpg"}
+        image={operator?.imagenes?.find(img => img.es_principal)?.url_imagen || "https://guaike.diaz.vercel.app/images/san_juan_valle.webp"}
       />
       <div className="container mx-auto px-4 py-8 max-w-5xl">
       

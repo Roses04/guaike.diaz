@@ -30,7 +30,7 @@
   --color-brown: #A0522D;  /* marrón claro */
   /* Keep existing brand mappings */
   /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.96)), url('/images/plaza_san_juan.jpg');
+  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.96)), url('/images/plaza_san_juan.webp');
   --bg-color-fallback: #f1f5f9;
   /* fondo blanco suave */
   --color-brand-gold-text: #7a5c00;
@@ -93,7 +93,7 @@ html {
   --footer-border: rgba(255, 255, 255, 0.12);
   --footer-text: #cbd5e1;
   --footer-text-muted: #94a3b8;
-  --bg-image-darkened: linear-gradient(rgba(10, 15, 20, 0.93), rgba(10, 15, 20, 0.93)), url('/images/plaza_san_juan.jpg');
+  --bg-image-darkened: linear-gradient(rgba(10, 15, 20, 0.93), rgba(10, 15, 20, 0.93)), url('/images/plaza_san_juan.webp');
 }
 
 @theme {
@@ -699,13 +699,13 @@ body {
 /* End custom overrides */
 
 .login-mobile-bg {
-  background-image: linear-gradient(rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.9)), url('/images/pozas_san_juan.jpg');
+  background-image: linear-gradient(rgba(248, 250, 252, 0.75), rgba(241, 245, 249, 0.9)), url('/images/pozas_san_juan.webp');
   background-size: cover;
   background-position: center;
 }
 
 .dark .login-mobile-bg {
-  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/pozas_san_juan.jpg');
+  background-image: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.8)), url('/images/pozas_san_juan.webp');
 }
 
 /* login-mobile-bg applies at all screen sizes */

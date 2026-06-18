@@ -18,40 +18,40 @@ import RevealOnScroll from "../components/ui/RevealOnScroll";
 import SEO from "../components/SEO";
 
 
-const HERO_BG_IMAGE = "/images/san_juan_valle.jpg";
+const HERO_BG_IMAGE = "/images/san_juan_valle.webp";
 
 const CULTURAL_HIGHLIGHTS: ContentModalItem[] = [
   {
     title: "San Juan Bautista",
-    image: "/images/plaza_san_juan.jpg",
+    image: "/images/plaza_san_juan.webp",
     description:
       "Parroquia histórica del Municipio Díaz, cuna de tradiciones, ferias artesanales y paisajes que definen la identidad margariteña.",
     category: "Patrimonio",
   },
   {
     title: "Tejido de Cogollo",
-    image: "/images/sombrero_cogollo.jpg",
+    image: "/images/sombrero_cogollo.webp",
     description:
       "El tejido de sombreros con cogollo de dátil es símbolo de la laboriosidad y de la identidad ancestral de San Juan.",
     category: "Artesanía",
   },
   {
     title: "Valle de Fuentidueño",
-    image: "/images/fuentidueno.jpg",
+    image: "/images/fuentidueno.webp",
     description:
       "Edén de palmeras datileras, manantiales naturales y paz inigualable, cuna de tejedores y agricultores tradicionales.",
     category: "Naturaleza",
   },
   {
     title: "Dulce de Piñonate",
-    image: "/images/pinonate.jpg",
+    image: "/images/pinonate.webp",
     description:
       "Manjar tradicional elaborado artesanalmente a base de papaya, naranja silvestre y amor, envuelto en hojas secas de plátano.",
     category: "Gastronomía",
   },
   {
     title: "Pozas de San Juan",
-    image: "/images/pozas_san_juan.jpg",
+    image: "/images/pozas_san_juan.webp",
     description:
       "Piscinas naturales talladas en piedra en las faldas de la montaña, un refrescante paraíso rodeado de vegetación tropical.",
     category: "Ecoturismo",
@@ -111,7 +111,7 @@ const HomeView = () => {
   }, []);
 
   const tesorosItems = CULTURAL_HIGHLIGHTS.filter((h) =>
-    ["/images/sombrero_cogollo.jpg", "/images/pinonate.jpg", "/images/pozas_san_juan.jpg", "/images/fuentidueno.jpg"].includes(h.image)
+    ["/images/sombrero_cogollo.webp", "/images/pinonate.webp", "/images/pozas_san_juan.webp", "/images/fuentidueno.webp"].includes(h.image)
   );
 
   return (
@@ -236,7 +236,7 @@ const HomeView = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map((ev: { id: number; titulo: string; descripcion: string; url_imagen?: string; fecha_inicio: string; fecha_fin: string; latitud: number; longitud: number; coordsValidas?: boolean }, index: number) => {
-              const eventImage = ev.url_imagen || "/images/plaza_san_juan.jpg";
+              const eventImage = ev.url_imagen || "/images/plaza_san_juan.webp";
               const startDate = new Date(ev.fecha_inicio).toLocaleDateString("es-ES", {
                 day: "numeric",
                 month: "short",
