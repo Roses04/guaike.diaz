@@ -149,11 +149,9 @@ const Navbar = () => {
             </Link>
 
             <Link to="/" className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
-              <img
-                src="/images/logo.webp"
-                alt="Guaike Logo"
-                className="h-8 md:h-9 w-auto dark:brightness-110 shrink-0"
-              />
+              <div className="bg-brand-blue/10 dark:bg-brand-light/10 text-brand-blue dark:text-brand-light p-2 rounded-xl border border-brand-blue/25">
+                <MapIcon size={20} strokeWidth={2.5} />
+              </div>
               <div className="hidden md:block min-w-0">
                 <div className="text-base md:text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none">
                   <span className="text-slate-800 dark:text-slate-100">GUAIKE</span>
@@ -268,6 +266,9 @@ const Navbar = () => {
                     <>
                       <li>
                         <Link to={profileRoute} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700">Perfil</Link>
+                      </li>
+                      <li>
+                        <Link to="/legal" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-stone-100 dark:hover:bg-slate-700 font-semibold text-brand-blue dark:text-brand-light">Documentación Legal</Link>
                       </li>
                       <li>
                         <button onClick={() => { setMenuOpen(false); setShowLogoutConfirm(true); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-stone-100 dark:hover:bg-slate-700">Cerrar sesión</button>

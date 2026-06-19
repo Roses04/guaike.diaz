@@ -16,6 +16,7 @@ import {
   Edit,
   MessageSquare,
   Award,
+  KeyRound,
 } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 
@@ -68,6 +69,57 @@ const ProfileView = () => {
       alert("Error al actualizar la reseña.");
     } finally {
       setSubmittingEdit(false);
+    }
+  };
+
+  // Profile update states
+  const [isEditing, setIsEditing] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || profile.name || "");
+      setEmailInput(profile.email || profile.correo || "");
+    }
+  }, [profile]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdateLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+    try {
+      const response = await api.put("/auth/profile", {
+        full_name: fullName,
+        email: emailInput,
+      });
+      setProfile(response.data.user);
+      setAuth(response.data.user, token!);
+      setSuccessMsg(response.data.message);
+      setIsEditing(false);
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || "Error al actualizar el perfil.");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleRequestResetPassword = async () => {
+    setUpdateLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+    try {
+      const userEmail = profile?.email || user?.email;
+      await api.post("/auth/send-recovery-link", { email: userEmail });
+      setSuccessMsg("Se ha enviado un enlace de recuperación seguro a tu correo electrónico. Abre el enlace en una nueva pestaña para cambiar tu contraseña.");
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || "Error al enviar el correo de recuperación.");
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -230,20 +282,114 @@ const ProfileView = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Correo</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white break-words">{email}</p>
+        {successMsg && (
+          <div className="mb-6 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-200 p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle size={20} className="text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <p className="font-bold">Éxito</p>
+                <p className="text-sm">{successMsg}</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Miembro desde</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">{createdAt !== "-" ? createdAt : "No disponible"}</p>
+        )}
+
+        {errorMsg && (
+          <div className="mb-6 rounded-3xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-200 p-4">
+            <div className="flex items-start gap-3">
+              <Info size={20} className="text-red-600 dark:text-red-400" />
+              <div>
+                <p className="font-bold">Atención</p>
+                <p className="text-sm">{errorMsg}</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Acceso</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">{userRole === "admin" ? "Administrador" : userRole === "operador" ? "Operador" : "Turista"}</p>
-          </div>
-        </div>
+        )}
+
+        {isEditing ? (
+          <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-2xl mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 pl-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                  placeholder="Tu nombre completo"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 pl-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  required
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                  placeholder="nombre@correo.com"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <button
+                type="submit"
+                disabled={updateLoading}
+                className="bg-brand-blue dark:bg-brand-light text-white font-bold px-6 py-3 rounded-2xl text-xs hover:shadow-lg transition cursor-pointer disabled:opacity-50"
+              >
+                {updateLoading ? "Guardando..." : "Guardar Cambios"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(false);
+                  setFullName(profile?.full_name || profile?.name || "");
+                  setEmailInput(profile?.email || profile?.correo || "");
+                  setErrorMsg("");
+                }}
+                className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold px-6 py-3 rounded-2xl text-xs hover:bg-slate-300 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Correo</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-white break-words">{email}</p>
+              </div>
+              <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Miembro desde</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{createdAt !== "-" ? createdAt : "No disponible"}</p>
+              </div>
+              <div className="rounded-3xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-white/10 p-6">
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold mb-4">Acceso</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{userRole === "admin" ? "Administrador" : userRole === "operador" ? "Operador" : "Turista"}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4 mb-10">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="bg-brand-blue dark:bg-brand-light text-white font-bold px-6 py-3 rounded-2xl text-xs hover:shadow-lg transition cursor-pointer flex items-center gap-2"
+              >
+                <Edit size={14} /> Editar Perfil
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestResetPassword}
+                disabled={updateLoading}
+                className="bg-brand-gold dark:bg-brand-gold/80 text-white font-bold px-6 py-3 rounded-2xl text-xs hover:shadow-lg transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                <KeyRound size={14} /> Restablecer contraseña por Correo
+              </button>
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {userRole === "admin" && (

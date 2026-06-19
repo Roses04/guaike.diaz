@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
@@ -35,6 +35,18 @@ import {
   Users, Store, Calendar, MessageSquare, Award, ShieldCheck, CheckCircle,
   XCircle, FileText, MapPin, Plus, Trash2, TrendingUp, BarChart3, ListTodo, AlertCircle, Edit, Star, Database, Download, RefreshCw, Upload
 } from "lucide-react"; // Iconos
+
+// Invalidador de tamaño para corregir problemas de renderizado de Leaflet cuando el mapa se muestra en pestañas dinámicas o layouts flex.
+const MapSizeInvalidator = () => {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+};
 
 const AdminDashboardView = () => {
   const { user, token } = useAuthStore(); // Obtener sesión actual
@@ -739,11 +751,12 @@ const AdminDashboardView = () => {
                         maxBoundsViscosity={1.0}
                         minZoom={12}
                       >
-                        <TileLayer {...getMapTileConfig(isDarkMode)} />
+                        <TileLayer key={isDarkMode ? "dark" : "light"} {...getMapTileConfig(isDarkMode)} />
                         <MunicipioMaskLayer isDarkMode={isDarkMode} />
                         <MunicipioBorderLayer isDarkMode={isDarkMode} />
                         <MunicipioBoundsController />
                         <MunicipioLocationPicker position={adminLocation} setPosition={setAdminLocation} />
+                        <MapSizeInvalidator />
                       </MapContainer>
                     </div>
                   </div>
@@ -858,11 +871,12 @@ const AdminDashboardView = () => {
                     minZoom={11}
                     className="h-full w-full"
                   >
-                    <TileLayer {...getMapTileConfig(isDarkMode)} />
+                    <TileLayer key={isDarkMode ? "dark" : "light"} {...getMapTileConfig(isDarkMode)} />
                     <MunicipioBoundsController fitOnMount={false} />
                     <MunicipioMaskLayer isDarkMode={isDarkMode} />
                     <MunicipioBorderLayer isDarkMode={isDarkMode} />
                     <MunicipioLocationPicker position={eventLocation} setPosition={setEventLocation} />
+                    <MapSizeInvalidator />
                   </MapContainer>
                 </div>
               </div>
@@ -1256,7 +1270,7 @@ const AdminDashboardView = () => {
             <div className="text-xs space-y-1">
               <p className="font-bold text-brand-gold-text dark:text-brand-gold uppercase tracking-wider">Copia de Seguridad Programada</p>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                El sistema realiza de forma automática una copia de seguridad en disco **cada domingo a las 00:00**. 
+                El sistema realiza de forma automática una copia de seguridad en disco <strong className="font-bold text-brand-gold-text dark:text-brand-gold">cada domingo a las 00:00</strong>. 
                 Los archivos se almacenan de forma local y segura en la carpeta del servidor.
               </p>
             </div>

@@ -84,13 +84,18 @@ const OperatorDetailView = () => {
       localStorage.setItem(`cache_operator_${id}`, JSON.stringify(res.data));
       setIsOffline(false);
     } catch (err) {
-      console.error("Error al cargar detalles:", err);
+      console.error("Error al cargar detalles del taller:", err);
       setIsOffline(true);
-      const cached = localStorage.getItem(`cache_operator_${id}`);
-      if (cached) {
-        setOperator(JSON.parse(cached));
-      } else {
-        setError("No pudimos cargar la información del taller en este momento.");
+      try {
+        const cached = localStorage.getItem(`cache_operator_${id}`);
+        if (cached) {
+          setOperator(JSON.parse(cached));
+        } else {
+          setError("No pudimos cargar la información del taller en este momento. Verifica tu conexión a internet.");
+        }
+      } catch (parseErr) {
+        console.error("Error al parsear el caché del operador:", parseErr);
+        setError("La información local de este taller está dañada. Por favor, conéctate a internet para recargar los datos.");
       }
     } finally {
       setLoading(false);
@@ -219,26 +224,58 @@ const OperatorDetailView = () => {
 
   if (error || !operator) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center max-w-md">
-        <AlertTriangle size={48} className="mx-auto text-red-500 mb-4 animate-bounce" />
-        <h2 className="text-xl font-bold mb-2">Error de Carga</h2>
-        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{error || "Taller no encontrado."}</p>
-        <Link to="/" className="bg-brand-blue text-white px-5 py-2.5 rounded-xl font-bold hover:shadow-lg inline-flex items-center gap-1.5 cursor-pointer">
-          <ArrowLeft size={16} /> Volver al Inicio
-        </Link>
+      <div className="container mx-auto px-4 py-16 text-center max-w-md flex-grow flex flex-col justify-center min-h-[50vh]">
+        <div className="glass-panel p-8 rounded-3xl border border-red-500/20 dark:border-red-500/10 shadow-2xl relative overflow-hidden space-y-6">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-red-500"></div>
+          
+          <div className="w-16 h-16 bg-red-500/10 dark:bg-red-500/25 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-md">
+            <AlertTriangle size={32} />
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-display font-black text-slate-805 dark:text-white mb-2">
+              Taller No Disponible
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
+              {error || "El taller que deseas consultar no se encuentra disponible o no existe."}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button 
+              onClick={() => { setError(""); setLoading(true); loadOperatorDetail(); }}
+              className="flex-grow bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 py-3 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              Reintentar Carga
+            </button>
+            <Link 
+              to="/directorio" 
+              className="flex-grow bg-brand-blue dark:bg-brand-light text-white dark:text-slate-900 py-3 rounded-xl text-xs font-bold hover:shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft size={14} /> Volver al Directorio
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Get active images
-  const primaryImgUrl = operator.imagenes.find(img => img.es_principal)?.url_imagen || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800";
-  const gallery = operator.imagenes.filter(img => !img.es_principal);
+  // Get active images and make it completely crash-safe
+  const primaryImgUrl = operator.imagenes?.find(img => img.es_principal)?.url_imagen || "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800";
+  const gallery = operator.imagenes?.filter(img => !img.es_principal) || [];
 
   // WhatsApp Link
   const whatsAppNumber = operator.telefono_whatsapp ? operator.telefono_whatsapp.replace(/\+/g, "").replace(/\s/g, "") : "";
-  const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=Hola%20${encodeURIComponent(operator.nombre_taller)},%20vi%20tu%20taller%20en%20la%20plataforma%20GUAIKE.DÍAZ%20y%20me%20gustaría%20saber%20más%20de%20tus%20obras.`;
+  const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=Hola%20${encodeURIComponent(operator.nombre_taller || "Artesano")},%20vi%20tu%20taller%20en%20la%20plataforma%20GUAIKE.DÍAZ%20y%20me%20gustaría%20saber%20más%20de%20tus%20obras.`;
 
   const isOwner = user && String(user.id) === String(operator.usuario_id) && user.role === "operador";
+
+  // Safe properties fallback to prevent crashes if database fields are missing or corrupt
+  const calificacionPromedio = typeof operator.calificacion_promedio === "number" ? operator.calificacion_promedio : 0;
+  const totalResenas = typeof operator.total_resenas === "number" ? operator.total_resenas : 0;
+  const accesibilidades = operator.accesibilidades || [];
+  const productos = operator.productos || [];
+  const resenas = operator.resenas || [];
 
   return (
     <>
@@ -312,16 +349,16 @@ const OperatorDetailView = () => {
                   <Star 
                     key={star} 
                     size={16} 
-                    fill={star <= Math.round(operator.calificacion_promedio) ? "currentColor" : "none"} 
+                    fill={star <= Math.round(calificacionPromedio) ? "currentColor" : "none"} 
                     className="text-brand-gold"
                   />
                 ))}
               </div>
               <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                {operator.calificacion_promedio.toFixed(1)}
+                {calificacionPromedio.toFixed(1)}
               </span>
               <span className="text-xs text-slate-400">
-                ({operator.total_resenas} {operator.total_resenas === 1 ? "reseña" : "reseñas"})
+                ({totalResenas} {totalResenas === 1 ? "reseña" : "reseñas"})
               </span>
             </div>
 
@@ -341,11 +378,11 @@ const OperatorDetailView = () => {
           </div>
 
           {/* Accesibilidades */}
-          {operator.accesibilidades.length > 0 && (
+          {accesibilidades.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Facilidades del Taller</h3>
               <div className="flex flex-wrap gap-2">
-                {operator.accesibilidades.map((acc) => (
+                {accesibilidades.map((acc) => (
                   <span 
                     key={acc.id}
                     className="text-xs font-semibold bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20 flex items-center gap-1"
@@ -389,9 +426,9 @@ const OperatorDetailView = () => {
           Catálogo del Taller
         </h2>
 
-        {operator.productos.length > 0 ? (
+        {productos.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {operator.productos.map((prod) => (
+            {productos.map((prod) => (
               <div key={prod.id} className="bg-gray-50/50 dark:bg-slate-800/25 border border-gray-200/50 dark:border-white/5 rounded-2xl overflow-hidden shadow hover:shadow-md transition">
                 <div className="h-44 bg-gray-200 dark:bg-slate-800 relative">
                   <img src={prod.url_imagen || "https://images.unsplash.com/photo-1595475207225-428b62bda831?q=80&w=400"} alt={prod.nombre} className="w-full h-full object-cover" />
@@ -520,12 +557,12 @@ const OperatorDetailView = () => {
         {/* Reviews Feed Column */}
         <div className="lg:col-span-7 space-y-5">
           <h3 className="font-display font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2 pl-2">
-            Reseñas e Historial de Visitas ({operator.resenas.length})
+            Reseñas e Historial de Visitas ({resenas.length})
           </h3>
 
-          {operator.resenas.length > 0 ? (
+          {resenas.length > 0 ? (
             <div className="space-y-4">
-              {operator.resenas.map((rev) => (
+              {resenas.map((rev) => (
                 <div 
                   key={rev.id} 
                   className={`p-5 rounded-3xl shadow-sm border relative overflow-hidden ${

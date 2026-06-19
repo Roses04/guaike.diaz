@@ -987,6 +987,123 @@ const callEndpoint = async (method: string, url: string, payload?: any): Promise
   }
 
   // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ACTUALIZAR PERFIL DE USUARIO ────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  if (lowerMethod === "put" && route === "/auth/profile") {
+    const { full_name, email } = payload || {};
+    
+    const sessionUser = await getSessionUser();
+    const currentEmail = sessionUser?.email;
+    if (!currentEmail) {
+      createApiError("No autorizado", 401);
+      return;
+    }
+
+    const usuario = await getUserRecordByEmail(currentEmail);
+    if (!usuario) {
+      createApiError("Usuario no encontrado", 404);
+      return;
+    }
+
+    const updates: any = {};
+
+    // 1. Actualizar Nombre Completo si es proporcionado
+    if (full_name !== undefined) {
+      updates.nombre_completo = full_name.trim();
+    }
+
+    // 2. Si hay cambio de correo, actualizar en Supabase Auth y en la tabla pública
+    let emailChanged = false;
+    if (email && email.trim().toLowerCase() !== currentEmail.toLowerCase()) {
+      const normalizedEmail = normalizeEmail(email);
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        createApiError("Formato de correo electrónico inválido.", 400);
+      }
+
+      // Verificar si el nuevo correo ya está registrado por otro usuario
+      const existing = await getUserRecordByEmail(normalizedEmail);
+      if (existing && existing.id !== usuario.id) {
+        createApiError("El correo electrónico ya está en uso por otro usuario.", 400);
+      }
+
+      // Actualizar en Supabase Auth
+      const { error: authError } = await supabase.auth.updateUser({ email: normalizedEmail });
+      if (authError) {
+        createApiError(`Error al actualizar el correo en la autenticación: ${authError.message}`, 400);
+      }
+
+      updates.correo = normalizedEmail;
+      emailChanged = true;
+    }
+
+    // Guardar actualizaciones en la tabla de usuarios
+    if (Object.keys(updates).length > 0) {
+      const { error: updateError } = await supabase
+        .from("usuarios")
+        .update(updates)
+        .eq("id", usuario.id);
+
+      if (updateError) {
+        createApiError(`Error al actualizar la base de datos: ${updateError.message}`, 500);
+      }
+    }
+
+    // Obtener el perfil actualizado
+    const updatedProfile = await getUserRecordByEmail(emailChanged ? email.trim().toLowerCase() : currentEmail);
+    if (updatedProfile) {
+      updatedProfile.full_name = updatedProfile.full_name || sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.name || "";
+      updatedProfile.telefono = updatedProfile.telefono || sessionUser?.user_metadata?.phone || "";
+    }
+
+    return buildResponse({
+      message: "Perfil actualizado correctamente." + (emailChanged ? " Se ha enviado un correo de confirmación a tu nueva dirección." : ""),
+      user: updatedProfile
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ── ENDPOINT: ENVIAR ENLACE DE RECUPERACIÓN POR CORREO ───────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  if (lowerMethod === "post" && route === "/auth/send-recovery-link") {
+    const { email } = payload || {};
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) createApiError("Email inválido", 400);
+
+    const user = await getUserRecordByEmail(normalizedEmail);
+    if (!user) {
+      createApiError("El correo electrónico no se encuentra registrado en el sistema.", 404);
+    }
+
+    const redirectTo = getEmailRedirectUrl();
+    const secretKey = "guaike-system-default-secret-key-2026";
+
+    try {
+      const res = await fetch("/api/auth-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "recovery",
+          email: normalizedEmail,
+          redirectTo,
+          secretKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        createApiError(errData.error || "Error al enviar el enlace de recuperación.");
+      }
+    } catch (e: any) {
+      createApiError(e.message || "Error al intentar enviar el enlace de recuperación.");
+    }
+
+    return buildResponse({ success: true, message: "Enlace de recuperación enviado a tu correo." });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // ── ENDPOINT: INICIO DE SESIÓN ───────────────────────────────────────────
   // ─────────────────────────────────────────────────────────────────────────
   if (lowerMethod === "post" && route === "/auth/login") {

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import api from "../services/api";
 import SEO from "../components/SEO";
+import { PageHeader } from "../components/ui/PageHeader";
 import { 
   Camera, 
   QrCode, 
@@ -146,15 +147,12 @@ const QRScannerView = () => {
         <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-white/20 dark:border-white/5 space-y-6">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-brand-light to-brand-gold"></div>
 
-          <header className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 rounded-2xl chip-gold flex items-center justify-center">
-              <QrCode size={26} />
-            </div>
-            <h1 className="text-2xl font-display font-extrabold text-slate-800 dark:text-white">Escáner de Visita</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Apunta la cámara del móvil hacia el código QR físico expuesto en el taller del artesano.
-            </p>
-          </header>
+          <PageHeader
+            align="center"
+            title="Escáner de Visita"
+            description="Apunta la cámara del móvil hacia el código QR físico expuesto en el taller del artesano."
+            icon={QrCode}
+          />
 
           {/* Validation Status Overlay */}
           {validating && (

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { 
-  BookOpen, 
-  MapPin, 
-  Compass, 
-  History, 
-  Sparkles, 
-  Utensils, 
+import {
+  BookOpen,
+  MapPin,
+  Compass,
+  History,
+  Sparkles,
+  Utensils,
   ArrowRight,
   Info,
   Award
@@ -28,11 +28,10 @@ const DescubreView = () => {
         description="Conoce la historia, fundación, atractivos turísticos, tradiciones culturales y gastronomía típica de San Juan Bautista y el Municipio Díaz en la Isla de Margarita."
         canonical="/descubre"
       />
-      
+
       <div className="w-full px-4 py-8 md:px-6">
         {/* Page Header with Tab Switcher */}
         <PageHeader
-          badge="Guía Turística y Cultural"
           title="Descubre el Municipio Díaz"
           description="Sumérgete en la rica herencia histórica, los majestuosos valles naturales y los saberes ancestrales que definen la identidad de nuestro municipio."
           icon={BookOpen}
@@ -52,7 +51,7 @@ const DescubreView = () => {
 
         {/* Section Content */}
         <div className="mt-6">
-          
+
           {/* TAB 1: HISTORY & FOUNDATION */}
           {activeTab === "historia" && (
             <div className="space-y-12">
@@ -71,7 +70,7 @@ const DescubreView = () => {
                       <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
                         {municipioDiazData.introduction}
                       </p>
-                      
+
                       {/* Technical details list */}
                       <div className="space-y-4 border-t border-slate-100 dark:border-white/5 pt-4">
                         <div className="flex justify-between text-xs py-1">
@@ -96,7 +95,7 @@ const DescubreView = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-8 pt-4 border-t border-slate-100 dark:border-white/5">
                       <Link
                         to="/directorio"
@@ -126,7 +125,7 @@ const DescubreView = () => {
                         <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-4 border-brand-blue dark:border-brand-light shadow-md flex items-center justify-center z-10">
                           <span className="w-1.5 h-1.5 rounded-full bg-brand-blue dark:bg-brand-light"></span>
                         </div>
-                        
+
                         {/* Timeline Content Card */}
                         <div className="glass-panel p-5 rounded-2xl hover:border-brand-blue/20 dark:hover:border-brand-light/25 hover:shadow-lg transition-all duration-300">
                           <span className="inline-block text-[10px] font-black text-brand-blue dark:text-brand-light bg-brand-blue/10 dark:bg-brand-light/10 px-3 py-1 rounded-full mb-2 uppercase tracking-wider">
@@ -198,7 +197,7 @@ const DescubreView = () => {
                 {municipioDiazData.attractions.map((attr, index) => (
                   <RevealOnScroll key={attr.id} stagger={((index % 3) + 1) as 1 | 2 | 3}>
                     <div className="glass-panel rounded-3xl overflow-hidden shadow-lg border border-slate-100 dark:border-white/5 flex flex-col hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300 h-full group">
-                      
+
                       {/* Attraction Image */}
                       <div className="relative h-48 w-full overflow-hidden">
                         <img
@@ -223,7 +222,7 @@ const DescubreView = () => {
                           <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed mb-4">
                             {attr.description}
                           </p>
-                          
+
                           {/* Tags list */}
                           <div className="flex flex-wrap gap-1.5 mb-4">
                             {attr.tags.map((tag, i) => (
@@ -236,9 +235,9 @@ const DescubreView = () => {
 
                         {/* Interactive Link to Map */}
                         <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                          <Link 
-                            to="/mapa" 
-                            state={{ center: [attr.lat, attr.lng] }} 
+                          <Link
+                            to="/mapa"
+                            state={{ center: [attr.lat, attr.lng] }}
                             className="municipal-cta w-full text-center justify-center text-xs py-3 rounded-2xl cursor-pointer"
                           >
                             <MapPin size={13} /> Ver en el Mapa
@@ -272,9 +271,9 @@ const DescubreView = () => {
                       <div className="glass-panel p-5 rounded-3xl flex flex-col sm:flex-row gap-5 border border-slate-100 dark:border-white/5 hover:shadow-xl transition duration-300 h-full group">
                         {/* Left side: Image */}
                         <div className="w-full sm:w-1/3 h-40 sm:h-auto overflow-hidden rounded-2xl shrink-0 relative">
-                          <img 
-                            src={cult.image} 
-                            alt={cult.title} 
+                          <img
+                            src={cult.image}
+                            alt={cult.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                           />
                           <div className="absolute bottom-2 left-2">
@@ -298,7 +297,7 @@ const DescubreView = () => {
                               {cult.description}
                             </p>
                           </div>
-                          
+
                           <div className="pt-3 mt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
                               <Info size={11} /> Preservado en {cult.origin}
@@ -364,26 +363,25 @@ const DescubreView = () => {
                 {municipioDiazData.gastronomy.map((gast, index) => (
                   <RevealOnScroll key={gast.id} stagger={((index % 4) + 1) as 1 | 2 | 3 | 4}>
                     <div className="glass-panel rounded-3xl p-5 border border-slate-100 dark:border-white/5 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition duration-300 h-full group">
-                      
+
                       <div>
                         {/* Food Image Circle */}
                         <div className="w-24 h-24 mx-auto rounded-full overflow-hidden mb-4 border-2 border-brand-gold/20 dark:border-brand-gold/30 shadow-md">
-                          <img 
-                            src={gast.image} 
-                            alt={gast.name} 
+                          <img
+                            src={gast.image}
+                            alt={gast.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
                           />
                         </div>
 
                         {/* Badges */}
                         <div className="text-center mb-3">
-                          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            gast.type === 'Dulce' 
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300' 
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${gast.type === 'Dulce'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300'
                               : gast.type === 'Salado'
                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300'
                                 : 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300'
-                          }`}>
+                            }`}>
                             {gast.type} Tradicional
                           </span>
                         </div>
@@ -397,8 +395,8 @@ const DescubreView = () => {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 text-center">
-                        <Link 
-                          to="/directorio" 
+                        <Link
+                          to="/directorio"
                           className="text-[10px] font-extrabold text-brand-blue hover:text-brand-gold transition duration-150 inline-flex items-center gap-1"
                         >
                           Buscar creadores <ArrowRight size={10} />

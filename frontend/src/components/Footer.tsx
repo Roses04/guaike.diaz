@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
     <footer className="hidden md:block mt-6 w-full bg-slate-900/95 text-slate-300 border border-slate-800/80 backdrop-blur-md z-10 overflow-hidden relative rounded-3xl shadow-xl">
@@ -15,6 +17,18 @@ const Footer = () => {
             Sistema de Información Geoespacial para la Gestión Turístico-Artesanal del Municipio Díaz, Nueva Esparta.
           </p>
         </div>
+
+        {/* Enlaces Legales */}
+        <div className="flex justify-center items-center gap-4 text-[10px] font-bold text-slate-400 select-none">
+          <Link to="/legal?tab=terms" className="hover:text-brand-gold transition-colors">Términos de Uso</Link>
+          <span className="text-slate-700">•</span>
+          <Link to="/legal?tab=privacy" className="hover:text-brand-gold transition-colors">Privacidad</Link>
+          <span className="text-slate-700">•</span>
+          <Link to="/legal?tab=disclaimer" className="hover:text-brand-gold transition-colors">Avisos Legales</Link>
+          <span className="text-slate-700">•</span>
+          <Link to="/legal?tab=sapi" className="hover:text-brand-gold transition-colors">Propiedad Intelectual</Link>
+        </div>
+
         <div className="border-t border-slate-800/80 pt-4 max-w-lg mx-auto">
           <p className="text-[10px] tracking-wide text-slate-500">
             © 2026 Dionkel Rosas. Todos los derechos reservados.

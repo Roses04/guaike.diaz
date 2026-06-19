@@ -27,6 +27,7 @@ import ItineraryView from "./views/ItineraryView";
 import ProfileView from "./views/ProfileView";
 import EmailConfirmationView from "./views/EmailConfirmationView";
 import DescubreView from "./views/DescubreView";
+import LegalView from "./views/LegalView";
 
 
 
@@ -120,6 +121,7 @@ function App() {
               <Route path="/admin" element={<AdminDashboardView />} />
               <Route path="/itinerarios" element={<ItineraryView />} />
               <Route path="/descubre" element={<DescubreView />} />
+              <Route path="/legal" element={<LegalView />} />
             </Routes>
 
           </main>

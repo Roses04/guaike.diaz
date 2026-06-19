@@ -725,3 +725,173 @@ body {
     /* Firefox */
   }
 }
+
+/* =========================================================================
+   ── HOJA DE ESTILOS PARA IMPRESIÓN Y EXPORTACIÓN DE PDF DE GUAIKE.DÍAZ ──
+   ========================================================================= */
+@media print {
+  @page {
+    size: letter;
+    margin: 20mm 15mm 20mm 15mm;
+  }
+  
+  /* Reset global de color-scheme y colores de fondo para impresión */
+  html, body {
+    color-scheme: light !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.6 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Forzar transparencia de fondo y color oscuro de texto en toda la jerarquía DOM */
+  #root, .min-h-screen, main, div, section, article, p, ul, li, h1, h2, h3, h4, table, tbody, tr, td, span, label, a {
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Anulación absoluta de cualquier estilo heredado del modo oscuro (.dark) al imprimir */
+  .dark, 
+  .dark body, 
+  .dark #root, 
+  .dark .min-h-screen, 
+  .dark main, 
+  .dark div, 
+  .dark section, 
+  .dark article, 
+  .dark p, 
+  .dark ul, 
+  .dark li, 
+  .dark h1, 
+  .dark h2, 
+  .dark h3, 
+  .dark h4, 
+  .dark table, 
+  .dark tbody, 
+  .dark tr, 
+  .dark td, 
+  .dark span, 
+  .dark label,
+  .dark a {
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Forzar específicamente que el body con clase dark se pinte blanco */
+  .dark body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+  }
+
+  /* Ocultar todos los controles interactivos de la aplicación web */
+  header, footer, nav, button, .print\:hidden, .aurora-bg, #InstallPWA, .NetworkBanner, .InstallPWA {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Mostrar los bloques de membrete y pie de página legal */
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:flex {
+    display: flex !important;
+  }
+
+  /* Formato formal y legible para el texto legal impreso */
+  h1, h2, h3, h4, .dark h1, .dark h2, .dark h3, .dark h4, strong, b, .dark strong, .dark b {
+    color: #0f172a !important;
+    font-family: 'Outfit', sans-serif !important;
+    page-break-after: avoid;
+    font-weight: 800;
+  }
+
+  h2, .dark h2 {
+    font-size: 16pt !important;
+    margin-top: 18pt !important;
+    margin-bottom: 8pt !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding-bottom: 4pt !important;
+  }
+
+  h3, .dark h3 {
+    font-size: 11pt !important;
+    margin-top: 14pt !important;
+    margin-bottom: 6pt !important;
+  }
+
+  p, li, td, .dark p, .dark li, .dark td {
+    font-size: 9.5pt !important;
+    text-align: justify;
+    orphans: 3;
+    widows: 3;
+  }
+
+  ul, ol, .dark ul, .dark ol {
+    margin-bottom: 10pt !important;
+  }
+
+  /* Asegurar que las tablas de datos técnicos salgan bien alineadas en el PDF */
+  table, .dark table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 10pt !important;
+    margin-bottom: 10pt !important;
+  }
+
+  td, .dark td {
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 6pt 4pt !important;
+  }
+
+  /* Forzar fondos negros de elementos que simulan sellos o marcas en el PDF impreso */
+  .print-black-box, .dark .print-black-box {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-black-box *, .dark .print-black-box * {
+    color: #ffffff !important;
+  }
+
+  /* Ajustar colores institucionales oscurecidos para una impresión legible y de alta calidad */
+  .text-brand-blue, .dark .text-brand-blue {
+    color: #0077b6 !important; /* Azul más oscuro legible */
+  }
+  
+  .text-brand-light, .dark .text-brand-light {
+    color: #0096c7 !important;
+  }
+
+  .text-brand-gold, .dark .text-brand-gold {
+    color: #b45309 !important; /* Ámbar/Oro oscuro */
+  }
+
+  .border-brand-blue, .dark .border-brand-blue {
+    border-color: #0077b6 !important;
+  }
+  
+  .border-brand-light, .dark .border-brand-light {
+    border-color: #0096c7 !important;
+  }
+}

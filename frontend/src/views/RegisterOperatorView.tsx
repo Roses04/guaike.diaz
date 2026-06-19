@@ -13,13 +13,14 @@
  */
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { useNavigate, Link } from "react-router-dom";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
 import SEO from "../components/SEO";
+import { PageHeader } from "../components/ui/PageHeader";
 import {
   MunicipioBoundsController,
   MunicipioMaskLayer,
@@ -35,6 +36,17 @@ import {
   Fingerprint, Calendar
 } from "lucide-react";
 
+// Invalidador de tamaño para corregir problemas de renderizado de Leaflet cuando el mapa se muestra en pestañas dinámicas o layouts flex.
+const MapSizeInvalidator = () => {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+};
 
 const RegisterOperatorView = () => {
   const { user, token } = useAuthStore();
@@ -106,6 +118,7 @@ const RegisterOperatorView = () => {
   const [success, setSuccess] = useState("");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [acceptOperatorTerms, setAcceptOperatorTerms] = useState(false);
 
   // ── EFECTO: CARGA DE OPCIONES ESTÁTICAS (CATEGORÍAS, PARROQUIAS, ACCESIBILIDADES) ─
   useEffect(() => {
@@ -328,6 +341,11 @@ const RegisterOperatorView = () => {
       return;
     }
 
+    if (!acceptOperatorTerms) {
+      setError("Debes certificar bajo juramento la veracidad de los datos fiscales y aceptar los términos legales para continuar.");
+      return;
+    }
+
     setLoadingSubmit(true);
 
     const payload = {
@@ -371,6 +389,7 @@ const RegisterOperatorView = () => {
         setCedulaNumero("");
         setFechaNacimiento("");
         setMunicipioResidencia("Díaz");
+        setAcceptOperatorTerms(false);
       }
 
       // Redirigir al inicio después de un retardo corto
@@ -393,17 +412,12 @@ const RegisterOperatorView = () => {
         canonical="/registro-operador"
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <header className="mb-8 text-center max-w-2xl mx-auto">
-        <span className="text-xs uppercase tracking-widest font-extrabold text-brand-blue dark:text-brand-light bg-brand-blue/10 dark:bg-brand-light/10 px-3.5 py-1.5 rounded-full mb-3 inline-block">
-          {isEditing ? "Gestión de Taller" : "Registro de Operador"}
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-display font-extrabold tracking-tight mb-2 text-slate-800 dark:text-white">
-          {isEditing ? "Gestionar tu Taller" : "Inscribe tu Taller"}
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base">
-          {isEditing ? "Actualiza la información, geolocalización y galería de tu taller artesanal." : "Únete a la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación y exponga tus obras al turismo regional."}
-        </p>
-      </header>
+        <PageHeader
+          badge={isEditing ? "Gestión de Taller" : "Registro de Operador"}
+          title={isEditing ? "Gestionar tu Taller" : "Inscribe tu Taller"}
+          description={isEditing ? "Actualiza la información, geolocalización y galería de tu taller artesanal." : "Únete a la red patrimonial GUAIKE.DÍAZ. Completa el formulario para que la alcaldía verifique tu ubicación y exponga tus obras al turismo regional."}
+          icon={Store}
+        />
 
       {error && (
         <div className="mb-6 bg-red-500/10 dark:bg-red-950/20 border border-red-500/30 text-red-600 dark:text-red-400 p-4 rounded-2xl text-sm flex items-start gap-2.5 animate-pulse">
@@ -625,10 +639,11 @@ const RegisterOperatorView = () => {
               minZoom={11}
               className="h-full w-full"
             >
-              <TileLayer {...getMapTileConfig(isDarkMode)} />
+              <TileLayer key={isDarkMode ? "dark" : "light"} {...getMapTileConfig(isDarkMode)} />
               <MunicipioBoundsController fitOnMount={false} />
               <MunicipioMaskLayer isDarkMode={isDarkMode} />
               <MunicipioBorderLayer isDarkMode={isDarkMode} />
+              <MapSizeInvalidator />
               <MunicipioLocationPicker
                 position={location}
                 setPosition={setLocation}
@@ -829,6 +844,37 @@ const RegisterOperatorView = () => {
                 </button>
               );
             })}
+          </div>
+        </section>
+
+        {/* Juramento y Veracidad Fiscal */}
+        <section className="glass-panel p-6 sm:p-8 rounded-3xl space-y-4 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-red-500/30"></div>
+          <h2 className="text-lg font-display font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-white/5 pb-3.5">
+            <AlertTriangle size={20} className="text-red-500" />
+            Declaración de Veracidad Fiscal y Legal
+          </h2>
+
+          <div className="flex items-start gap-3 text-slate-650 dark:text-slate-350 select-none">
+            <input
+              type="checkbox"
+              id="acceptOperatorTerms"
+              required
+              checked={acceptOperatorTerms}
+              onChange={(e) => setAcceptOperatorTerms(e.target.checked)}
+              className="mt-1 h-4.5 w-4.5 rounded-md border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-brand-blue focus:ring-brand-blue cursor-pointer"
+            />
+            <label htmlFor="acceptOperatorTerms" className="text-xs leading-relaxed cursor-pointer">
+              Certifico bajo fe de juramento que la información provista, incluyendo mi documento de identidad/RIF, datos de contacto, actividad cultural y georreferenciación física son veraces y corresponden a la realidad de mi taller artesanal. Autorizo a la Dirección de Turismo y Cultura de la Alcaldía del Municipio Díaz de Nueva Esparta a realizar las verificaciones, inspecciones físicas y validaciones necesarias según el Código de Comercio y la legislación de la República Bolivariana de Venezuela, aceptando las consecuencias legales de cualquier falsedad, y me adhiero plenamente a los{" "}
+              <Link to="/legal?tab=terms" target="_blank" className="text-brand-blue dark:text-brand-light font-bold hover:underline">
+                Términos y Condiciones de Uso
+              </Link>{" "}
+              y la{" "}
+              <Link to="/legal?tab=privacy" target="_blank" className="text-brand-blue dark:text-brand-light font-bold hover:underline">
+                Política de Privacidad
+              </Link>{" "}
+              de la plataforma.
+            </label>
           </div>
         </section>
 

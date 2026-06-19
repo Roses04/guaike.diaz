@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNetworkStore } from "../store/useNetwork";
-import { Wifi, WifiOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Wifi, WifiOff, X } from "lucide-react";
 
 export const NetworkBanner: React.FC = () => {
   const isOnline = useNetworkStore((state) => state.isOnline);
   const [shouldShow, setShouldShow] = useState(false);
   const [statusType, setStatusType] = useState<"online" | "offline">("online");
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Al iniciar, si el usuario está offline, mostrar el banner de inmediato.
+    // Al iniciar, si el usuario está offline, mostrar de inmediato.
     if (!isOnline) {
       setShouldShow(true);
       setStatusType("offline");
@@ -20,10 +22,11 @@ export const NetworkBanner: React.FC = () => {
       setStatusType("offline");
       setShouldShow(true);
     } else {
-      // Si pasa de offline a online, mostrar el banner de éxito temporalmente
+      // Si pasa de offline a online, mostrar indicador de éxito temporalmente
       if (statusType === "offline") {
         setStatusType("online");
         setShouldShow(true);
+        setIsPopoverOpen(false); // Cerrar popover si estaba abierto
         const timer = setTimeout(() => {
           setShouldShow(false);
         }, 3000);
@@ -32,35 +35,66 @@ export const NetworkBanner: React.FC = () => {
     }
   }, [isOnline]);
 
+  // Cerrar popover si se hace clic fuera de él
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setIsPopoverOpen(false);
+      }
+    };
+    if (isPopoverOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isPopoverOpen]);
+
   if (!shouldShow) return null;
 
   return (
-    <div className="fixed mobile-banner-top md:top-4 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md animate-in fade-in slide-in-from-top duration-300">
-      {statusType === "offline" ? (
-        <div className="bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-500/30 backdrop-blur-xl rounded-2xl p-4 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(245,158,11,0.15)] text-amber-900 dark:text-amber-200">
-          <div className="bg-amber-200/80 dark:bg-amber-500/20 p-2 rounded-xl text-amber-700 dark:text-amber-400">
-            <WifiOff className="w-5 h-5 animate-pulse" />
+    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-[9999] flex flex-col items-end gap-2 font-sans select-none">
+      {/* Popover con mensaje detallado */}
+      {statusType === "offline" && isPopoverOpen && (
+        <div
+          ref={popoverRef}
+          className="bg-slate-900/95 dark:bg-slate-950/95 border border-slate-700/50 dark:border-slate-800/80 backdrop-blur-xl rounded-2xl p-4 shadow-[0_10px_40px_rgba(0,0,0,0.3)] text-slate-100 w-72 mb-2 mr-1 transform transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+        >
+          <div className="flex items-start justify-between mb-1">
+            <h4 className="font-bold text-sm text-amber-400 flex items-center gap-1.5">
+              <WifiOff className="w-4 h-4" /> Modo sin conexión
+            </h4>
+            <button
+              onClick={() => setIsPopoverOpen(false)}
+              className="text-slate-400 hover:text-slate-200 p-0.5 rounded-lg hover:bg-slate-800/50 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-sm">Modo sin conexión</h4>
-            <p className="text-xs text-amber-700/90 dark:text-amber-300/80">
-              Operando con base de datos local. Los cambios se sincronizarán al volver.
-            </p>
-          </div>
-          <AlertCircle className="w-4 h-4 text-amber-600/80 dark:text-amber-400/60 flex-shrink-0" />
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Estás operando de forma offline. Todos tus cambios e itinerarios se guardan localmente y se sincronizarán al volver la señal.
+          </p>
         </div>
+      )}
+
+      {/* Botón Flotante / Indicador */}
+      {statusType === "offline" ? (
+        <button
+          onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+          aria-label="Ver estado de red (Sin conexión)"
+          className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 cursor-pointer focus:outline-none shadow-lg active:scale-95
+            ${isPopoverOpen 
+              ? "bg-amber-500 text-slate-950 scale-105 border border-amber-400 ring-4 ring-amber-500/20" 
+              : "bg-amber-500/20 dark:bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/30 shadow-[0_8px_32px_rgba(245,158,11,0.25)] hover:scale-105"
+            }`}
+        >
+          <WifiOff className={`w-5 h-5 ${isPopoverOpen ? "" : "animate-pulse"}`} />
+        </button>
       ) : (
-        <div className="bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-500/30 backdrop-blur-xl rounded-2xl p-4 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(16,185,129,0.15)] text-emerald-900 dark:text-emerald-200 animate-out fade-out slide-out-to-top duration-500 delay-2500">
-          <div className="bg-emerald-200/80 dark:bg-emerald-500/20 p-2 rounded-xl text-emerald-700 dark:text-emerald-400">
-            <Wifi className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-sm">Conexión restablecida</h4>
-            <p className="text-xs text-emerald-700/90 dark:text-emerald-300/80">
-              Sincronizando datos con el servidor de forma segura...
-            </p>
-          </div>
-          <CheckCircle className="w-4 h-4 text-emerald-600/80 dark:text-emerald-400/60 flex-shrink-0" />
+        <div 
+          className="w-12 h-12 rounded-full flex items-center justify-center bg-emerald-500/20 dark:bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 backdrop-blur-md shadow-[0_8px_32px_rgba(16,185,129,0.25)] animate-in fade-in zoom-in duration-300 animate-out fade-out duration-1000 delay-2000"
+        >
+          <Wifi className="w-5 h-5 animate-bounce" />
         </div>
       )}
     </div>

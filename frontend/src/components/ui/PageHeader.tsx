@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 type PageHeaderProps = {
-  badge: string;
+  badge?: string;
   title: string;
   description?: string;
   icon?: LucideIcon;
@@ -33,9 +33,11 @@ export function PageHeader({
       }`}
     >
       <div className={isCenter ? "" : "flex-1 min-w-0"}>
-        <span className="text-xs uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full mb-3 inline-block">
-          {badge}
-        </span>
+        {badge && (
+          <span className="text-xs uppercase tracking-widest chip-gold px-3.5 py-1.5 rounded-full mb-3 inline-block">
+            {badge}
+          </span>
+        )}
         <h1
           className={`text-3xl sm:text-4xl md:text-5xl font-display font-extrabold tracking-tight flex items-center gap-2 ${
             isCenter

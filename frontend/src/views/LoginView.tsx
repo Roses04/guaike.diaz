@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import SEO from "../components/SEO";
@@ -27,8 +27,14 @@ import {
 const PREDEFINED_QUESTIONS = [
   "¿Cuál es el nombre de tu primera mascota?",
   "¿En qué ciudad nació tu madre?",
-  "¿Cuál era el nombre de tu primera escuela?",
-  "¿Cuál es tu comida favorita?"
+  "¿Cuál era el nombre de tu primera escuela primaria?",
+  "¿Cuál es tu comida favorita?",
+  "¿En qué calle vivías cuando tenías 10 años?",
+  "¿Cuál es el segundo nombre de tu abuelo materno?",
+  "¿A qué ciudad fuiste en tu primer viaje de vacaciones?",
+  "¿Cuál era el nombre de tu maestro favorito en primaria?",
+  "¿Cuál es el nombre de la primera empresa o negocio donde trabajaste?",
+  "¿Cuál es el título de tu libro o película favorita de la infancia?"
 ];
 
 const LoginView = () => {
@@ -54,6 +60,7 @@ const LoginView = () => {
   const [q2, setQ2] = useState("");
   const [ans2, setAns2] = useState("");
   const [phoneCode, setPhoneCode] = useState("+58");
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const PHONE_CODES = [
     { label: "Venezuela +58", value: "+58" },
@@ -147,13 +154,11 @@ const LoginView = () => {
     return normalizedValue;
   };
 
-  // Forgot Password Recovery State
-  const [recoveryStep, setRecoveryStep] = useState(1); // 1: Email & Method, 2: Questions/Code input, 3: New Password
-  const [recoveryMethod, setRecoveryMethod] = useState("email_code"); // "email_code" | "questions"
+  const [recoveryStep, setRecoveryStep] = useState(1); // 1: Email & Method, 2: Questions input, 3: New Password, 4: Success Message Link
+  const [recoveryMethod, setRecoveryMethod] = useState("email_link"); // "email_link" | "questions"
   const [recoveredQuestions, setRecoveredQuestions] = useState<any[]>([]);
   const [recoveryAns1, setRecoveryAns1] = useState("");
   const [recoveryAns2, setRecoveryAns2] = useState("");
-  const [recoveryCode, setRecoveryCode] = useState("");
   
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -265,6 +270,12 @@ const LoginView = () => {
     setLoading(true);
 
     try {
+      if (!acceptTerms) {
+        setError("Debes aceptar los Términos y Condiciones de Uso y la Política de Privacidad para continuar.");
+        setLoading(false);
+        return;
+      }
+
       if (role !== "turista" && role !== "operador") {
         setError("Rol de usuario inválido.");
         setLoading(false);
@@ -339,6 +350,7 @@ const LoginView = () => {
       setQ2("");
       setAns2("");
       setPhoneCode("+58");
+      setAcceptTerms(false);
     } catch (err: any) {
       setError(err.response?.data?.message || "Error al registrar la cuenta.");
     } finally {
@@ -377,9 +389,9 @@ const LoginView = () => {
           setRecoveredQuestions(res.data.questions);
           setRecoveryStep(2);
         } else {
-          await api.post("/auth/send-recovery-email", { email });
-          setSuccess("Código de recuperación enviado a tu correo Gmail.");
-          setRecoveryStep(2);
+          await api.post("/auth/send-recovery-link", { email });
+          setSuccess("Enlace de recuperación enviado. Por favor, revisa tu buzón y sigue las instrucciones para restablecer tu contraseña.");
+          setRecoveryStep(4);
         }
       } else if (recoveryStep === 2) {
         if (recoveryMethod === "questions") {
@@ -394,15 +406,6 @@ const LoginView = () => {
           ];
           await api.post("/auth/verify-questions", { email, answers });
           setSuccess("Respuestas verificadas correctamente.");
-          setRecoveryStep(3);
-        } else {
-          if (!recoveryCode) {
-            setError("Por favor introduce el código enviado.");
-            setLoading(false);
-            return;
-          }
-          await api.post("/auth/verify-recovery-code", { email, code: recoveryCode });
-          setSuccess("Código verificado correctamente.");
           setRecoveryStep(3);
         }
       } else if (recoveryStep === 3) {
@@ -434,7 +437,6 @@ const LoginView = () => {
           setConfirmPassword("");
           setRecoveryAns1("");
           setRecoveryAns2("");
-          setRecoveryCode("");
         }, 2000);
       }
     } catch (err: any) {
@@ -444,18 +446,7 @@ const LoginView = () => {
     }
   };
 
-  /**
-   * Formatea la cadena del código temporal ingresado a un patrón XXXX-XXXX en mayúsculas.
-   */
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    if (val.length > 8) val = val.substring(0, 8);
-    if (val.length > 4) {
-      setRecoveryCode(`${val.substring(0, 4)}-${val.substring(4)}`);
-    } else {
-      setRecoveryCode(val);
-    }
-  };
+
 
   /**
    * Sanitiza el campo de entrada del número telefónico.
@@ -476,7 +467,6 @@ const LoginView = () => {
     setSuccess("");
     setRecoveryAns1("");
     setRecoveryAns2("");
-    setRecoveryCode("");
   };
 
 
@@ -513,8 +503,9 @@ const LoginView = () => {
             </h2>
             <p className="text-center text-slate-500 dark:text-slate-400 text-xs mb-6">
               {recoveryStep === 1 && "Ingresa tus datos y escoge un método de recuperación."}
-              {recoveryStep === 2 && (recoveryMethod === "questions" ? "Responde las preguntas registradas en tu cuenta." : "Ingresa el código enviado a tu bandeja de entrada.")}
+              {recoveryStep === 2 && "Responde las preguntas registradas en tu cuenta."}
               {recoveryStep === 3 && "Escribe una nueva contraseña fuerte para tu cuenta."}
+              {recoveryStep === 4 && "Hemos enviado un enlace de recuperación seguro."}
             </p>
 
             {error && (
@@ -531,170 +522,166 @@ const LoginView = () => {
               </div>
             )}
 
-            <form onSubmit={handleForgotPasswordNext} className="space-y-4">
-              {/* PASO 1: Ingreso de correo y método */}
-              {recoveryStep === 1 && (
-                <>
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Correo Electrónico</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                        <Mail size={18} />
-                      </span>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-                        placeholder="nombre@correo.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 pl-1">Método de Recuperación</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setRecoveryMethod("email_code")}
-                        className={`py-3 rounded-2xl text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1.5 ${
-                          recoveryMethod === "email_code"
-                            ? "bg-brand-blue/10 border-brand-blue/40 text-brand-blue dark:text-brand-light"
-                            : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-500"
-                        }`}
-                      >
-                        <Mail size={16} /> Código a Email
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRecoveryMethod("questions")}
-                        className={`py-3 rounded-2xl text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1.5 ${
-                          recoveryMethod === "questions"
-                            ? "bg-brand-blue/10 border-brand-blue/40 text-brand-blue dark:text-brand-light"
-                            : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-500"
-                        }`}
-                      >
-                        <HelpCircle size={16} /> Preguntas Seguras
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* PASO 2: Ingreso de Respuestas o Código */}
-              {recoveryStep === 2 && (
-                <>
-                  {recoveryMethod === "questions" ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 mb-1 leading-snug">Pregunta 1: {recoveredQuestions[0]?.question}</label>
-                        <input
-                          type="text"
-                          required
-                          value={recoveryAns1}
-                          onChange={(e) => setRecoveryAns1(e.target.value)}
-                          className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-                          placeholder="Tu respuesta..."
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 mb-1 leading-snug">Pregunta 2: {recoveredQuestions[1]?.question}</label>
-                        <input
-                          type="text"
-                          required
-                          value={recoveryAns2}
-                          onChange={(e) => setRecoveryAns2(e.target.value)}
-                          className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-                          placeholder="Tu respuesta..."
-                        />
-                      </div>
-                    </div>
-                  ) : (
+            {recoveryStep === 4 ? (
+              <div className="text-center py-4 space-y-4">
+                <button
+                  type="button"
+                  onClick={resetRecoveryFlow}
+                  className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-2xl font-bold hover:shadow-lg transition cursor-pointer text-sm"
+                >
+                  Volver al Inicio
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPasswordNext} className="space-y-4">
+                {/* PASO 1: Ingreso de correo y método */}
+                {recoveryStep === 1 && (
+                  <>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Ingresa el código (XXXX-XXXX)</label>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Correo Electrónico</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                          <Mail size={18} />
+                        </span>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="block w-full pl-10 pr-3 py-3 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                          placeholder="nombre@correo.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 pl-1">Método de Recuperación</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setRecoveryMethod("email_link")}
+                          className={`py-3 rounded-2xl text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                            recoveryMethod === "email_link"
+                              ? "bg-brand-blue/10 border-brand-blue/40 text-brand-blue dark:text-brand-light"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-500"
+                          }`}
+                        >
+                          <Mail size={16} /> Enlace a Email
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRecoveryMethod("questions")}
+                          className={`py-3 rounded-2xl text-xs font-bold border transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                            recoveryMethod === "questions"
+                              ? "bg-brand-blue/10 border-brand-blue/40 text-brand-blue dark:text-brand-light"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-500"
+                          }`}
+                        >
+                          <HelpCircle size={16} /> Preguntas Seguras
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* PASO 2: Ingreso de Respuestas */}
+                {recoveryStep === 2 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-400 mb-1 leading-snug">Pregunta 1: {recoveredQuestions[0]?.question}</label>
                       <input
                         type="text"
                         required
-                        value={recoveryCode}
-                        onChange={handleCodeChange}
-                        placeholder="CODE-TEMP"
-                        className="block w-full text-center tracking-widest text-xl font-mono py-2.5 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 focus:outline-none text-slate-800 dark:text-slate-100"
+                        value={recoveryAns1}
+                        onChange={(e) => setRecoveryAns1(e.target.value)}
+                        className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                        placeholder="Tu respuesta..."
                       />
                     </div>
-                  )}
-                </>
-              )}
-
-              {/* PASO 3: Nueva contraseña */}
-              {recoveryStep === 3 && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Nueva Contraseña</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                        <Lock size={18} />
-                      </span>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-400 mb-1 leading-snug">Pregunta 2: {recoveredQuestions[1]?.question}</label>
                       <input
-                        type={showPassword ? "text" : "password"}
+                        type="text"
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="block w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-                        placeholder="Mínimo 8 caracteres"
+                        value={recoveryAns2}
+                        onChange={(e) => setRecoveryAns2(e.target.value)}
+                        className="block w-full px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                        placeholder="Tu respuesta..."
                       />
-                      <button
-                        type="button"
-                        onMouseDown={() => setShowPassword(true)}
-                        onMouseUp={() => setShowPassword(false)}
-                        onMouseLeave={() => setShowPassword(false)}
-                        onTouchStart={() => setShowPassword(true)}
-                        onTouchEnd={() => setShowPassword(false)}
-                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
-                      >
-                        {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                      </button>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Confirmar Nueva Contraseña</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
-                        <Lock size={18} />
-                      </span>
-                      <input
-                        type={showConfirmPassword ? "text" : "password"}
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="block w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
-                        placeholder="Repite la contraseña"
-                      />
-                      <button
-                        type="button"
-                        onMouseDown={() => setShowConfirmPassword(true)}
-                        onMouseUp={() => setShowConfirmPassword(false)}
-                        onMouseLeave={() => setShowConfirmPassword(false)}
-                        onTouchStart={() => setShowConfirmPassword(true)}
-                        onTouchEnd={() => setShowConfirmPassword(false)}
-                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
-                      >
-                        {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                      </button>
+                )}
+
+                {/* PASO 3: Nueva contraseña */}
+                {recoveryStep === 3 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Nueva Contraseña</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                          <Lock size={18} />
+                        </span>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="block w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                          placeholder="Mínimo 8 caracteres"
+                        />
+                        <button
+                          type="button"
+                          onMouseDown={() => setShowPassword(true)}
+                          onMouseUp={() => setShowPassword(false)}
+                          onMouseLeave={() => setShowPassword(false)}
+                          onTouchStart={() => setShowPassword(true)}
+                          onTouchEnd={() => setShowPassword(false)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                        >
+                          {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 pl-1">Confirmar Nueva Contraseña</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                          <Lock size={18} />
+                        </span>
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="block w-full pl-10 pr-10 py-2.5 rounded-2xl bg-gray-100/50 dark:bg-slate-800/50 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/30 text-slate-800 dark:text-slate-100"
+                          placeholder="Repite la contraseña"
+                        />
+                        <button
+                          type="button"
+                          onMouseDown={() => setShowConfirmPassword(true)}
+                          onMouseUp={() => setShowConfirmPassword(false)}
+                          onMouseLeave={() => setShowConfirmPassword(false)}
+                          onTouchStart={() => setShowConfirmPassword(true)}
+                          onTouchEnd={() => setShowConfirmPassword(false)}
+                          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350 cursor-pointer select-none"
+                        >
+                          {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-2xl font-bold hover:shadow-lg transition disabled:opacity-50 mt-4 cursor-pointer text-sm flex items-center justify-center gap-1.5"
-              >
-                {loading ? "Procesando..." : recoveryStep === 3 ? "Restablecer Contraseña" : "Siguiente"}
-                {!loading && recoveryStep < 3 && <ArrowRight size={14} />}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-brand-blue dark:bg-brand-light text-white py-3 rounded-2xl font-bold hover:shadow-lg transition disabled:opacity-50 mt-4 cursor-pointer text-sm flex items-center justify-center gap-1.5"
+                >
+                  {loading ? "Procesando..." : recoveryStep === 3 ? "Restablecer Contraseña" : "Siguiente"}
+                  {!loading && recoveryStep < 3 && <ArrowRight size={14} />}
+                </button>
+              </form>
+            )}
           </div>
         ) : (
           /* --- 2. VISTAS DE LOGIN Y REGISTRO --- */
@@ -1051,6 +1038,30 @@ const LoginView = () => {
                         </div>
                       )}
                     </>
+                  )}
+
+                  {!isLogin && (
+                    <div className="flex items-start gap-2.5 my-3 pl-1 text-slate-650 dark:text-slate-350 select-none">
+                      <input
+                        type="checkbox"
+                        id="acceptTerms"
+                        required
+                        checked={acceptTerms}
+                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded-sm border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-brand-blue focus:ring-brand-blue cursor-pointer"
+                      />
+                      <label htmlFor="acceptTerms" className="text-xs leading-snug cursor-pointer">
+                        Acepto los{" "}
+                        <Link to="/legal?tab=terms" target="_blank" className="text-brand-blue dark:text-brand-light font-bold hover:underline">
+                          Términos y Condiciones de Uso
+                        </Link>{" "}
+                        y la{" "}
+                        <Link to="/legal?tab=privacy" target="_blank" className="text-brand-blue dark:text-brand-light font-bold hover:underline">
+                          Política de Privacidad
+                        </Link>{" "}
+                        de GUAIKE.DÍAZ (bajo la legislación venezolana).
+                      </label>
+                    </div>
                   )}
 
                   <button

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import CardArtesano from "../components/CardArtesano";
 import api from "../services/api";
-import { Search, Tag, MapPin, RefreshCw, WifiOff } from "lucide-react";
+import { Search, Tag, MapPin, RefreshCw, WifiOff, Users } from "lucide-react";
 import SEO from "../components/SEO";
+import { PageHeader } from "../components/ui/PageHeader";
 
 const DirectoryView = () => {
   const [operators, setOperators] = useState([]);
@@ -73,15 +74,12 @@ const DirectoryView = () => {
         description="Explora el directorio de talleres artesanales y creadores del Municipio Díaz. Filtra por especialidad, parroquia o nombre del artesano."
         canonical="/directorio"
       />
-      <div className="w-full px-4 py-8">
-      <div className="text-center max-w-xl mx-auto mb-6">
-        <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-slate-800 dark:text-white tracking-tight mb-2">
-          Directorio de Talleres y Creadores
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Usa los filtros para buscar por especialidad artesanal, parroquia o nombre del artesano.
-        </p>
-      </div>
+      <div className="w-full px-4 py-8 md:px-6">
+        <PageHeader
+          title="Directorio de Talleres y Creadores"
+          description="Usa los filtros para buscar por especialidad artesanal, parroquia o nombre del artesano."
+          icon={Users}
+        />
 
       <div className="glass-panel rounded-3xl p-6 mb-8 shadow-xl">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">

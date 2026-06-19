@@ -26,7 +26,7 @@ export default ({ mode }: { mode: string }) => {
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons.svg', 'assets/*.png'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'assets/*.png'],
       manifest: {
         name: 'GUAIKE.DÍAZ',
         short_name: 'GUAIKE',
@@ -37,14 +37,18 @@ export default ({ mode }: { mode: string }) => {
         start_url: '/',
         icons: [
           {
-            src: 'favicon.svg',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
           },
           {
             src: 'favicon.svg',
-            sizes: '512x512',
+            sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable'
           }
@@ -118,6 +122,10 @@ export default ({ mode }: { mode: string }) => {
             },
           },
         ],
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
       },
     }),
   ],
