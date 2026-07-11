@@ -829,13 +829,13 @@ const updateOperator = async (payload: any) => {
  */
 const getAdminStats = async () => {
   const [verifiedRes, pendingRes, reviewsRes, usersRes, catStatsRes, parrStatsRes, timelineRes] = await Promise.all([
-    supabase.from("operadores").select("id", { count: "exact" }).eq("es_verificado", true),
-    supabase.from("operadores").select("id", { count: "exact" }).eq("es_verificado", false),
-    supabase.from("resenas").select("puntuacion,qr_verificado"),
-    supabase.from("usuarios").select("id", { count: "exact" }),
-    supabase.from("registros_busqueda").select("categoria_id, categorias(nombre)").neq("categoria_id", null),
-    supabase.from("registros_busqueda").select("parroquia_id, parroquias(nombre)").neq("parroquia_id", null),
-    supabase.from("registros_busqueda").select("fecha_busqueda").gte("fecha_busqueda", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+    supabase.from("dim_artesano").select("sk_artesano", { count: "exact" }).eq("esta_verificado", true).gt("id_operador_sistema", 0),
+    supabase.from("dim_artesano").select("sk_artesano", { count: "exact" }).eq("esta_verificado", false).gt("id_operador_sistema", 0),
+    supabase.from("hechos_actividad_turistica").select("puntuacion_resena,tipo_actividad").in("tipo_actividad", ["visita_qr_verificada", "opinion_enviada"]),
+    supabase.from("dim_turista").select("sk_turista", { count: "exact" }).gt("id_usuario_sistema", 0),
+    supabase.from("hechos_actividad_turistica").select("cantidad, dim_artesano(categoria_nombre)").eq("tipo_actividad", "busqueda_directorio").gt("sk_artesano", 0),
+    supabase.from("hechos_actividad_turistica").select("cantidad, dim_ubicacion(parroquia_nombre)").eq("tipo_actividad", "busqueda_directorio").gt("sk_ubicacion", 0),
+    supabase.from("hechos_actividad_turistica").select("cantidad, sk_tiempo").eq("tipo_actividad", "busqueda_directorio"),
   ]);
 
   if (verifiedRes.error) createApiError(verifiedRes.error.message);
@@ -847,23 +847,25 @@ const getAdminStats = async () => {
   if (timelineRes.error) createApiError(timelineRes.error.message);
 
   const totalReviews = reviewsRes.data?.length || 0;
-  const qrTotal = (reviewsRes.data || []).filter((item: any) => item.qr_verificado).length;
+  const qrTotal = (reviewsRes.data || []).filter((item: any) => item.tipo_actividad === "visita_qr_verificada").length;
 
   // Reduce para calcular búsquedas por categoría
   const categoryStats = (catStatsRes.data || []).reduce((acc: any, item: any) => {
-    const nombre = item.categorias?.nombre || "Desconocido";
+    const nombre = item.dim_artesano?.categoria_nombre || "Desconocido";
+    const cantidad = item.cantidad || 1;
     const existing = acc.find((row: any) => row.categoria_nombre === nombre);
-    if (existing) existing.cantidad += 1;
-    else acc.push({ categoria_nombre: nombre, cantidad: 1 });
+    if (existing) existing.cantidad += cantidad;
+    else acc.push({ categoria_nombre: nombre, cantidad });
     return acc;
   }, []);
 
   // Reduce para calcular búsquedas por parroquia
   const parroquiaStats = (parrStatsRes.data || []).reduce((acc: any, item: any) => {
-    const nombre = item.parroquias?.nombre || "Desconocido";
+    const nombre = item.dim_ubicacion?.parroquia_nombre || "Desconocido";
+    const cantidad = item.cantidad || 1;
     const existing = acc.find((row: any) => row.parroquia_nombre === nombre);
-    if (existing) existing.cantidad += 1;
-    else acc.push({ parroquia_nombre: nombre, cantidad: 1 });
+    if (existing) existing.cantidad += cantidad;
+    else acc.push({ parroquia_nombre: nombre, cantidad });
     return acc;
   }, []);
 
@@ -876,11 +878,17 @@ const getAdminStats = async () => {
 
   last7Days.forEach((day) => timelineData.push({ fecha: day, cantidad: 0 }));
 
-  // Agrupa búsquedas diarias de la última semana
+  // Agrupa búsquedas diarias de la última semana (comparando sk_tiempo en formato AAAAMMDD)
   (timelineRes.data || []).forEach((item: any) => {
-    const day = new Date(item.fecha_busqueda).toISOString().split("T")[0];
-    const existing = timelineData.find((row) => row.fecha === day);
-    if (existing) existing.cantidad += 1;
+    const skStr = String(item.sk_tiempo);
+    if (skStr.length === 8) {
+      const year = skStr.substring(0, 4);
+      const month = skStr.substring(4, 6);
+      const day = skStr.substring(6, 8);
+      const formattedDay = `${year}-${month}-${day}`;
+      const existing = timelineData.find((row) => row.fecha === formattedDay);
+      if (existing) existing.cantidad += item.cantidad || 1;
+    }
   });
 
   return {

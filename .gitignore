@@ -83,6 +83,8 @@ lerna-debug.log*
 public/sw.js
 
 # Specific project files and local assets
+INFORME_SISTEMA.md
+DESIGN.md
 GUIA_SEGURIDAD.md
 self_hosting_security.md
 registro_verificación_ui_974912e5.plan.md
