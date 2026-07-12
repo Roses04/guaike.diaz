@@ -74,23 +74,23 @@ const DescubreView = () => {
                       {/* Technical details list */}
                       <div className="space-y-4 border-t border-slate-100 dark:border-white/5 pt-4">
                         <div className="flex justify-between text-xs py-1">
-                          <span className="text-slate-400 font-bold uppercase tracking-wider">Capital</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Capital</span>
                           <span className="text-slate-800 dark:text-slate-200 font-extrabold">{municipioDiazData.capital}</span>
                         </div>
                         <div className="flex justify-between text-xs py-1">
-                          <span className="text-slate-400 font-bold uppercase tracking-wider">Fundación</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Fundación</span>
                           <span className="text-slate-800 dark:text-slate-200 font-extrabold">{municipioDiazData.foundationYear}</span>
                         </div>
                         <div className="flex justify-between text-xs py-1">
-                          <span className="text-slate-400 font-bold uppercase tracking-wider">Santo Patrono</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Santo Patrono</span>
                           <span className="text-slate-800 dark:text-slate-200 font-extrabold">{municipioDiazData.patronSaint}</span>
                         </div>
                         <div className="flex justify-between text-xs py-1">
-                          <span className="text-slate-400 font-bold uppercase tracking-wider">Gentilicio</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Gentilicio</span>
                           <span className="text-slate-800 dark:text-slate-200 font-extrabold">{municipioDiazData.demonym}</span>
                         </div>
                         <div className="flex flex-col gap-1 text-xs py-1">
-                          <span className="text-slate-400 font-bold uppercase tracking-wider">Epónimo</span>
+                          <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Epónimo</span>
                           <span className="text-slate-800 dark:text-slate-200 font-extrabold leading-normal">{municipioDiazData.eponym}</span>
                         </div>
                       </div>
@@ -226,7 +226,7 @@ const DescubreView = () => {
                           {/* Tags list */}
                           <div className="flex flex-wrap gap-1.5 mb-4">
                             {attr.tags.map((tag, i) => (
-                              <span key={i} className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                              <span key={i} className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                                 #{tag}
                               </span>
                             ))}
@@ -299,7 +299,7 @@ const DescubreView = () => {
                           </div>
 
                           <div className="pt-3 mt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
                               <Info size={11} /> Preservado en {cult.origin}
                             </span>
                           </div>
@@ -331,7 +331,7 @@ const DescubreView = () => {
                             <h4 className="font-display font-bold text-base text-slate-800 dark:text-white group-hover:text-brand-blue transition duration-150">
                               {myth.title}
                             </h4>
-                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 bg-stone-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg shrink-0">
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 bg-stone-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg shrink-0">
                               📍 {myth.location}
                             </span>
                           </div>

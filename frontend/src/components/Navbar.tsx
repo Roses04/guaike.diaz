@@ -87,10 +87,11 @@ const Navbar = () => {
   }) => (
     <Link
       to={to}
+      data-active={isActive}
       className={`nav-item-anim flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-150 border-2
         ${isActive
-          ? "text-white bg-linear-to-br from-brand-blue to-brand-light dark:from-brand-light dark:to-brand-blue shadow-md shadow-brand-blue/20 border-transparent"
-          : "text-slate-700 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/5 dark:hover:bg-brand-light/5 border-transparent hover:border-brand-blue/70 dark:hover:border-brand-light/70"
+          ? "text-white bg-linear-to-br from-brand-blue to-blue-600 dark:from-brand-blue dark:to-blue-700 shadow-md shadow-brand-blue/20 border-transparent md:bg-none md:bg-white md:text-brand-navy md:dark:bg-linear-to-br md:dark:from-brand-blue md:dark:to-blue-700 md:dark:text-white"
+          : "text-slate-700 dark:text-slate-200 hover:text-brand-blue dark:hover:text-brand-light hover:bg-brand-blue/5 dark:hover:bg-brand-light/5 border-transparent hover:border-brand-blue/70 dark:hover:border-brand-light/70 md:text-brand-navy md:dark:text-slate-200"
         }`}
     >
       <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
@@ -138,7 +139,7 @@ const Navbar = () => {
   );
 
   return (
-    <header className="sticky top-0 md:static z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 dark:border-white/10 shadow-sm">
+    <header className="sticky top-0 md:static z-50 w-full bg-white/95 md:bg-brand-blue dark:bg-slate-900/95 md:dark:bg-slate-900/95 backdrop-blur-2xl border-b border-stone-200/90 md:border-brand-blue/30 dark:border-white/10 md:dark:border-white/10 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-14 md:h-16 gap-2">
 
@@ -149,15 +150,15 @@ const Navbar = () => {
             </Link>
 
             <Link to="/" className="hidden md:flex items-center gap-2 shrink-0 min-w-0">
-              <div className="bg-brand-blue/10 dark:bg-brand-light/10 text-brand-blue dark:text-brand-light p-2 rounded-xl border border-brand-blue/25">
+              <div className="bg-brand-blue/10 md:bg-brand-navy/10 dark:bg-brand-blue/10 md:dark:bg-brand-blue/10 text-brand-blue md:text-brand-navy dark:text-brand-blue md:dark:text-brand-blue p-2 rounded-xl border border-brand-blue/25 md:border-brand-navy/20 dark:border-brand-blue/25 md:dark:border-brand-blue/25">
                 <MapIcon size={20} strokeWidth={2.5} />
               </div>
               <div className="hidden md:block min-w-0">
                 <div className="text-base md:text-lg font-display font-extrabold tracking-tight flex items-center gap-0.5 leading-none">
-                  <span className="text-slate-800 dark:text-slate-100">GUAIKE</span>
-                  <span className="text-brand-gold font-black">.</span>
+                  <span className="text-slate-800 md:text-brand-navy dark:text-slate-100">GUAIKE</span>
+                  <span className="text-brand-gold md:text-brand-navy dark:md:text-brand-gold font-black">.</span>
                 </div>
-                <span className="text-[9px] md:text-[10px] font-bold text-brand-gold tracking-wider block">
+                <span className="text-[9px] md:text-[10px] font-bold text-brand-gold md:text-brand-navy dark:md:text-brand-gold tracking-wider block">
                   MUNICIPIO DÍAZ
                 </span>
               </div>
@@ -195,7 +196,7 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-stone-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700 transition border border-stone-200 dark:border-white/5"
+              className="p-2 rounded-xl bg-stone-100 md:bg-brand-navy/10 dark:bg-slate-800/80 md:dark:bg-slate-800/80 text-slate-600 md:text-brand-navy dark:text-slate-300 md:dark:text-slate-300 hover:bg-stone-200 hover:md:bg-brand-navy/20 dark:hover:bg-slate-700 md:dark:hover:bg-slate-700 transition border border-stone-200 md:border-brand-navy/20 dark:border-white/5 md:dark:border-white/5"
               aria-label={isDarkMode ? "Modo claro" : "Modo oscuro"}
             >
               {isDarkMode ? <Sun size={18} className="text-brand-gold" /> : <Moon size={18} />}
@@ -218,7 +219,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setShowLogoutConfirm(true)}
-                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition text-sm font-bold"
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-red-600 hover:bg-red-600 hover:text-white dark:text-red-500 dark:hover:bg-red-500 dark:hover:text-white transition text-sm font-bold"
                 >
                   <LogOut size={18} />
                   <span className="hidden xl:inline">Salir</span>

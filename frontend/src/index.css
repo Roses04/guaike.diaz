@@ -17,23 +17,23 @@
   --bg-secondary: var(--color-navy);
 
   --footer-bg: rgba(255, 255, 255, 0.95);
-  --footer-border: rgba(42, 52, 107, 0.12);
-  --footer-text: #334155;
-  --color-primary-text: #2a346b;
+  --footer-border: rgba(15, 23, 42, 0.06);
+  --footer-text: #475569;
+  --color-primary-text: #0f172a;
 
   /* Municipio Díaz - identidad visual */
   /* Logo colors */
-  --color-sky-blue: #87CEEB; /* azul cielo */
-  --color-navy: #003366;   /* azul marino */
-  --color-vegetation: #2E8B57; /* verde */
-  --color-sun: #FFD700;   /* amarillo */
-  --color-brown: #A0522D;  /* marrón claro */
+  --color-sky-blue: #38bdf8; /* azul cielo vibrante */
+  --color-navy: #0f172a;   /* azul marino profundo */
+  --color-vegetation: #10b981; /* verde fresco */
+  --color-sun: #cca43b;   /* amarillo dorado premium */
+  --color-brown: #a76d45;  /* marrón arcilla terracota */
   /* Keep existing brand mappings */
   /* tipografía principal */
-  --bg-image-darkened: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.96)), url('/images/plaza_san_juan.webp');
+  --bg-image-darkened: linear-gradient(rgba(241, 245, 249, 0.93), rgba(248, 250, 252, 0.97)), url('/images/plaza_san_juan.webp');
   --bg-color-fallback: #f1f5f9;
   /* fondo blanco suave */
-  --color-brand-gold-text: #7a5c00;
+  --color-brand-gold-text: #a16207;
   /* legible sobre fondos claros */
 
   /* Greens */
@@ -58,7 +58,8 @@
   --color-brand-gold: var(--yellow-2);
   /* Map brand colors to logo palette where feasible */
   --color-brand-blue: var(--color-sky-blue);
-  --color-brand-light: var(--color-navy);
+  --color-brand-light: var(--blue-1); /* Restaurar a celeste claro (#5fbde3) para modo oscuro legible */
+  --color-brand-navy: var(--color-navy); /* Definir brand-navy como el azul marino del Municipio Díaz */
   --color-brand-accent: var(--color-vegetation);
   --color-brand-gold: var(--color-sun);
 
@@ -80,26 +81,27 @@ html {
   color-scheme: dark;
   --color-primary-text: #f1f5f9;
   /* brand-dark = superficie oscura (no usar el color de texto) */
-  --color-brand-dark: #0f1419;
-  --bg-surface: #0f1419;
+  --color-brand-dark: #070a13;
+  --bg-surface: #0f172a;
   --color-brand-gold-text: var(--yellow-1);
   --color-brand-gold: var(--yellow-1);
   --color-brand-accent: var(--green-2);
-  --glow-1: rgba(91, 189, 227, 0.18);
+  --glow-1: rgba(56, 189, 248, 0.18);
   /* blue-1 */
-  --glow-2: rgba(224, 33, 85, 0.10);
+  --glow-2: rgba(245, 158, 11, 0.08);
   /* red hint for contrast */
-  --footer-bg: rgba(15, 20, 25, 0.95);
-  --footer-border: rgba(255, 255, 255, 0.12);
+  --footer-bg: rgba(15, 23, 42, 0.96);
+  --footer-border: rgba(255, 255, 255, 0.08);
   --footer-text: #cbd5e1;
   --footer-text-muted: #94a3b8;
-  --bg-image-darkened: linear-gradient(rgba(10, 15, 20, 0.93), rgba(10, 15, 20, 0.93)), url('/images/plaza_san_juan.webp');
+  --bg-image-darkened: linear-gradient(rgba(7, 10, 19, 0.94), rgba(7, 10, 19, 0.94)), url('/images/plaza_san_juan.webp');
 }
 
 @theme {
   --font-display: 'Outfit', sans-serif;
   --color-brand-blue: var(--color-brand-blue);
   --color-brand-light: var(--color-brand-light);
+  --color-brand-navy: var(--color-brand-navy);
   --color-brand-gold: var(--color-brand-gold);
   --color-brand-dark: var(--color-brand-dark);
   --color-brand-accent: var(--color-brand-accent);
@@ -332,12 +334,40 @@ body {
 
 /* Primary municipal CTA */
 .nav-item-anim {
-  transition: transform 0.22s cubic-bezier(.2,1,.22,1), box-shadow 0.2s ease, color 0.2s ease;
-  will-change: transform;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
 .nav-item-anim:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,147,217,0.08);
+  box-shadow: 0 4px 12px rgba(0,147,217,0.05);
+}
+
+/* Custom hover styles for Navbar links on desktop (md breakpoint) */
+@media (min-width: 768px) {
+  /* Inactive Link - Light Mode */
+  .nav-item-anim[data-active="false"]:hover {
+    border-color: var(--color-brand-navy) !important;
+    background-color: rgba(15, 23, 42, 0.1) !important;
+    color: var(--color-brand-navy) !important;
+  }
+
+  /* Inactive Link - Dark Mode */
+  .dark .nav-item-anim[data-active="false"]:hover {
+    border-color: var(--color-brand-blue) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--color-brand-blue) !important;
+  }
+
+  /* Active Link - Light Mode */
+  .nav-item-anim[data-active="true"]:hover {
+    background-color: #ffffff !important;
+    border-color: var(--color-brand-navy) !important;
+    color: var(--color-brand-navy) !important;
+  }
+
+  /* Active Link - Dark Mode */
+  .dark .nav-item-anim[data-active="true"]:hover {
+    border-color: var(--color-brand-blue) !important;
+    color: #ffffff !important;
+  }
 }
 
 /* Card hover accent */
