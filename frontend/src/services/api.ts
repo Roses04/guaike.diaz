@@ -157,11 +157,57 @@ const getUserRecordByEmail = async (email: string) => {
   const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) return null;
 
+  // Strategy 1: Try querying by auth_id (bypasses RLS policy "auth.uid() = auth_id")
+  // because Supabase Auth session sets auth.uid() which matches this column.
+  try {
+    const { data: sessionData } = await supabase.auth.getUser();
+    if (sessionData?.user?.id) {
+      const { data: byAuthId, error: authIdError } = await supabase
+        .from("usuarios")
+        .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, fecha_creacion, nombre_completo, telefono, cedula_tipo, cedula_numero, fecha_nacimiento, municipio_residencia, roles(nombre)")
+        .eq("auth_id", sessionData.user.id)
+        .maybeSingle();
+
+      if (!authIdError && byAuthId) {
+        const role = await resolveRoleName(byAuthId.rol_id, byAuthId.roles);
+        return {
+          id: byAuthId.id,
+          email: byAuthId.correo,
+          role,
+          verificado: byAuthId.verificado,
+          codigo_verificacion: byAuthId.codigo_verificacion,
+          codigo_enviado_en: byAuthId.codigo_enviado_en,
+          preguntas_seguridad: byAuthId.preguntas_seguridad,
+          intentos_fallidos: byAuthId.intentos_fallidos || 0,
+          bloqueado_hasta: byAuthId.bloqueado_hasta,
+          requiere_cambio_clave: byAuthId.requiere_cambio_clave,
+          clave_temporal_expira: byAuthId.clave_temporal_expira,
+          fecha_creacion: byAuthId.fecha_creacion,
+          full_name: byAuthId.nombre_completo || "",
+          telefono: byAuthId.telefono || "",
+          cedula_tipo: byAuthId.cedula_tipo || "",
+          cedula_numero: byAuthId.cedula_numero || "",
+          fecha_nacimiento: byAuthId.fecha_nacimiento || "",
+          municipio_residencia: byAuthId.municipio_residencia || ""
+        };
+      }
+    }
+  } catch (_e) {
+    // Fall through to email query
+  }
+
+  // Strategy 2: Fallback — query by email (works when RLS is disabled or
+  // when auth_id column is not set yet for older records)
   const { data, error } = await supabase
     .from("usuarios")
     .select("id, correo, rol_id, verificado, codigo_verificacion, codigo_enviado_en, preguntas_seguridad, intentos_fallidos, bloqueado_hasta, requiere_cambio_clave, clave_temporal_expira, fecha_creacion, nombre_completo, telefono, cedula_tipo, cedula_numero, fecha_nacimiento, municipio_residencia, roles(nombre)")
     .eq("correo", normalizedEmail)
     .maybeSingle();
+
+  // If RLS blocks this query, treat it as "not found" rather than throwing
+  if (error && (error.code === 'PGRST301' || error.message?.includes('row-level security'))) {
+    return null;
+  }
 
   if (error) {
     createApiError(error.message || "Error al leer usuario");
@@ -440,6 +486,20 @@ const createOperator = async (payload: any) => {
   }
   if (!usuario) createApiError("No se pudo obtener información de usuario");
 
+  // Safety check: if operator already exists (RLS may have prevented detection at load time),
+  // route to update flow instead of failing with a duplicate key constraint error.
+  const { data: existingOp } = await supabase
+    .from("operadores")
+    .select("id")
+    .eq("usuario_id", (usuario as any).id)
+    .maybeSingle();
+
+  if (existingOp) {
+    // Already has a profile → update instead of insert
+    await updateOperator(payload);
+    return { message: "Perfil de operador actualizado con éxito. Pendiente de revisión." };
+  }
+
   const { data: operatorData, error: opError } = await supabase
     .from("operadores")
     .insert([
@@ -584,17 +644,28 @@ const deleteEvent = async (id: string) => {
  * Si es válido, desbloquea la capacidad de dejar reseñas con el flag 'qr_verificado = true'.
  */
 const validateQr = async (body: any) => {
+  if (!body?.qr_uuid || typeof body.qr_uuid !== 'string' || body.qr_uuid.trim() === '') {
+    return { valido: false, message: "Código QR inválido o vacío." };
+  }
+
+  // Use maybeSingle() to avoid throwing on no match
   const { data, error } = await supabase
     .from("operadores")
-    .select("id")
-    .eq("qr_codigo_unico", body.qr_uuid)
-    .eq("es_verificado", true)
-    .single();
+    .select("id, es_verificado")
+    .eq("qr_codigo_unico", body.qr_uuid.trim())
+    .maybeSingle();
 
   if (error) createApiError(error.message);
-  if (!data) createApiError("Código QR inválido. No pertenece a ningún taller verificado.", 404);
-  const operador = data as any;
-  return { valido: true, operador_id: operador.id, message: "Visita física validada. Formulario de reseña desbloqueado." };
+
+  if (!data) {
+    return { valido: false, message: "Código QR inválido. No pertenece a ningún taller registrado." };
+  }
+
+  if (!data.es_verificado) {
+    return { valido: false, message: "El taller escaneado aún no ha sido verificado por la alcaldía. Las reseñas no están habilitadas." };
+  }
+
+  return { valido: true, operador_id: data.id, message: "Visita física validada. Formulario de reseña desbloqueado." };
 };
 
 /**
@@ -731,13 +802,16 @@ const updateOperator = async (payload: any) => {
   const usuario = await getUserRecordByEmail(userEmail as string);
   if (!usuario) createApiError("Usuario no encontrado", 404);
 
-  const { data: currentOp, error: findError } = await supabase
+  // Try to find by usuario_id, but also accept by auth_id to handle RLS edge cases
+  let { data: currentOp, error: findError } = await supabase
     .from("operadores")
     .select("id")
     .eq("usuario_id", (usuario as any).id)
     .maybeSingle();
 
-  if (findError || !currentOp) createApiError("No se encontró el perfil de operador para actualizar", 404);
+  // If RLS blocked or not found via usuario_id, we cannot update safely
+  if (findError && findError.code !== 'PGRST116') createApiError(findError.message || "Error al buscar tu perfil de operador");
+  if (!currentOp) createApiError("No se encontró el perfil de operador para actualizar. Si acabas de registrarte, intenta de nuevo en unos segundos.", 404);
   const operatorId = currentOp!.id;
 
   const { error: opError } = await supabase

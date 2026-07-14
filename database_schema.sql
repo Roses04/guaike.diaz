@@ -295,12 +295,29 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Trigger de actualización de auth_id cuando el usuario ya existe pero auth_id es null
+CREATE OR REPLACE FUNCTION public.handle_update_user()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE public.usuarios
+  SET auth_id = new.id,
+      fecha_actualizacion = now()
+  WHERE correo = new.email AND auth_id IS NULL;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+CREATE TRIGGER on_auth_user_updated
+  AFTER UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_update_user();
+
 -- Funciones y Triggers de Sincronización
 -- 1. Usuarios a dim_turista
 CREATE OR REPLACE FUNCTION sync_dim_turista()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO dim_turista (id_usuario_sistema, esta_autenticado, es_residente)
+    INSERT INTO public.dim_turista (id_usuario_sistema, esta_autenticado, es_residente)
     VALUES (
         NEW.id,
         TRUE,
@@ -310,14 +327,13 @@ BEGIN
     SET esta_autenticado = TRUE;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_sync_dim_turista ON usuarios;
 CREATE OR REPLACE TRIGGER trg_sync_dim_turista
 AFTER INSERT ON usuarios
 FOR EACH ROW
 EXECUTE FUNCTION sync_dim_turista();
-
 -- 2. Operadores a dim_artesano
 CREATE OR REPLACE FUNCTION sync_dim_artesano()
 RETURNS TRIGGER AS $$
@@ -327,13 +343,13 @@ DECLARE
     v_rampa BOOLEAN;
     v_pet BOOLEAN;
 BEGIN
-    SELECT nombre INTO v_categoria FROM categorias WHERE id = NEW.categoria_id;
+    SELECT nombre INTO v_categoria FROM public.categorias WHERE id = NEW.categoria_id;
     
-    SELECT EXISTS (SELECT 1 FROM operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 1) INTO v_vehicular;
-    SELECT EXISTS (SELECT 1 FROM operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 2) INTO v_rampa;
-    SELECT EXISTS (SELECT 1 FROM operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 3) INTO v_pet;
-
-    INSERT INTO dim_artesano (id_operador_sistema, nombre_taller, categoria_nombre, esta_verificado, accesibilidad_vehicular, rampa_discapacidad, pet_friendly)
+    SELECT EXISTS (SELECT 1 FROM public.operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 1) INTO v_vehicular;
+    SELECT EXISTS (SELECT 1 FROM public.operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 2) INTO v_rampa;
+    SELECT EXISTS (SELECT 1 FROM public.operador_accesibilidad WHERE operador_id = NEW.id AND accesibilidad_id = 3) INTO v_pet;
+ 
+    INSERT INTO public.dim_artesano (id_operador_sistema, nombre_taller, categoria_nombre, esta_verificado, accesibilidad_vehicular, rampa_discapacidad, pet_friendly)
     VALUES (
         NEW.id,
         NEW.nombre_taller,
@@ -352,7 +368,7 @@ BEGIN
         pet_friendly = EXCLUDED.pet_friendly;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_sync_dim_artesano ON operadores;
 CREATE OR REPLACE TRIGGER trg_sync_dim_artesano
@@ -368,33 +384,32 @@ DECLARE
     v_sk_ubicacion INT;
     v_sk_turista INT;
     v_sk_tiempo INT;
--- 3. Busquedas a hechos_actividad_turistica
 BEGIN
     v_sk_tiempo := to_char(NEW.fecha_busqueda, 'YYYYMMDD')::integer;
     
     -- Si hay categoría en la búsqueda, buscamos su registro dummy en dim_artesano
     IF NEW.categoria_id IS NOT NULL THEN
-        SELECT sk_artesano INTO v_sk_artesano FROM dim_artesano WHERE id_operador_sistema = -NEW.categoria_id LIMIT 1;
+        SELECT sk_artesano INTO v_sk_artesano FROM public.dim_artesano WHERE id_operador_sistema = -NEW.categoria_id LIMIT 1;
     END IF;
     v_sk_artesano := COALESCE(v_sk_artesano, 0);
 
     IF NEW.parroquia_id IS NOT NULL THEN
-        SELECT sk_ubicacion INTO v_sk_ubicacion FROM dim_ubicacion 
-        WHERE parroquia_nombre = (SELECT nombre FROM parroquias WHERE id = NEW.parroquia_id) LIMIT 1;
+        SELECT sk_ubicacion INTO v_sk_ubicacion FROM public.dim_ubicacion 
+        WHERE parroquia_nombre = (SELECT nombre FROM public.parroquias WHERE id = NEW.parroquia_id) LIMIT 1;
     END IF;
     v_sk_ubicacion := COALESCE(v_sk_ubicacion, 0);
 
     IF NEW.usuario_id IS NOT NULL THEN
-        SELECT sk_turista INTO v_sk_turista FROM dim_turista WHERE id_usuario_sistema = NEW.usuario_id LIMIT 1;
+        SELECT sk_turista INTO v_sk_turista FROM public.dim_turista WHERE id_usuario_sistema = NEW.usuario_id LIMIT 1;
     END IF;
     v_sk_turista := COALESCE(v_sk_turista, 0);
 
-    INSERT INTO hechos_actividad_turistica (sk_tiempo, sk_artesano, sk_ubicacion, sk_turista, tipo_actividad, cantidad)
+    INSERT INTO public.hechos_actividad_turistica (sk_tiempo, sk_artesano, sk_ubicacion, sk_turista, tipo_actividad, cantidad)
     VALUES (v_sk_tiempo, v_sk_artesano, v_sk_ubicacion, v_sk_turista, 'busqueda_directorio', 1);
     
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_sync_fact_busqueda ON registros_busqueda;
 CREATE OR REPLACE TRIGGER trg_sync_fact_busqueda
@@ -414,20 +429,20 @@ DECLARE
 BEGIN
     v_sk_tiempo := to_char(NEW.fecha_creacion, 'YYYYMMDD')::integer;
     
-    SELECT sk_artesano INTO v_sk_artesano FROM dim_artesano WHERE id_operador_sistema = NEW.operador_id LIMIT 1;
+    SELECT sk_artesano INTO v_sk_artesano FROM public.dim_artesano WHERE id_operador_sistema = NEW.operador_id LIMIT 1;
     v_sk_artesano := COALESCE(v_sk_artesano, 0);
 
-    SELECT parroquia_id INTO v_parroquia_id FROM operadores WHERE id = NEW.operador_id;
+    SELECT parroquia_id INTO v_parroquia_id FROM public.operadores WHERE id = NEW.operador_id;
     IF v_parroquia_id IS NOT NULL THEN
-        SELECT sk_ubicacion INTO v_sk_ubicacion FROM dim_ubicacion 
-        WHERE parroquia_nombre = (SELECT nombre FROM parroquias WHERE id = v_parroquia_id) LIMIT 1;
+        SELECT sk_ubicacion INTO v_sk_ubicacion FROM public.dim_ubicacion 
+        WHERE parroquia_nombre = (SELECT nombre FROM public.parroquias WHERE id = v_parroquia_id) LIMIT 1;
     END IF;
     v_sk_ubicacion := COALESCE(v_sk_ubicacion, 0);
 
-    SELECT sk_turista INTO v_sk_turista FROM dim_turista WHERE id_usuario_sistema = NEW.usuario_id LIMIT 1;
+    SELECT sk_turista INTO v_sk_turista FROM public.dim_turista WHERE id_usuario_sistema = NEW.usuario_id LIMIT 1;
     v_sk_turista := COALESCE(v_sk_turista, 0);
 
-    INSERT INTO hechos_actividad_turistica (sk_tiempo, sk_artesano, sk_ubicacion, sk_turista, tipo_actividad, puntuacion_resena, cantidad)
+    INSERT INTO public.hechos_actividad_turistica (sk_tiempo, sk_artesano, sk_ubicacion, sk_turista, tipo_actividad, puntuacion_resena, cantidad)
     VALUES (
         v_sk_tiempo, 
         v_sk_artesano, 
@@ -440,7 +455,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP TRIGGER IF EXISTS trg_sync_fact_resena ON resenas;
 CREATE OR REPLACE TRIGGER trg_sync_fact_resena
@@ -524,5 +539,46 @@ CREATE POLICY select_public_dim_turista ON dim_turista FOR SELECT USING (true);
 DROP POLICY IF EXISTS select_public_hechos ON hechos_actividad_turistica;
 CREATE POLICY select_public_hechos ON hechos_actividad_turistica FOR SELECT USING (true);
 
+-- 13. Políticas de Seguridad de Fila (RLS) para la tabla usuarios
+-- Habilitar RLS (ya habilitado por la migración add_auth_id_and_rls, pero se garantiza aquí)
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+
+-- SELECT: permite a cada usuario ver su propio registro.
+-- Doble condición: por auth_id (preferida) o por correo extraído del JWT (fallback para
+-- registros legacy cuyo auth_id todavía no ha sido backfillado).
+-- NOTA: usamos auth.jwt() ->> 'email' en lugar de SELECT FROM auth.users porque
+--       la tabla auth.users NO es accesible con el rol anon/authenticated.
+DROP POLICY IF EXISTS usuarios_select_own ON usuarios;
+DROP POLICY IF EXISTS usuarios_select_by_email ON usuarios;
+CREATE POLICY usuarios_select_own ON usuarios
+FOR SELECT
+USING (
+  auth.uid() = auth_id
+  OR correo = (auth.jwt() ->> 'email')
+);
+
+-- INSERT: el trigger SECURITY DEFINER handle_new_user() inserta con el rol postgres,
+-- que no está sujeto a RLS. Sin embargo, se permite también al usuario insertar su propio
+-- registro en caso de que el trigger falle (condición de carrera).
+DROP POLICY IF EXISTS usuarios_insert_own ON usuarios;
+CREATE POLICY usuarios_insert_own ON usuarios
+FOR INSERT
+WITH CHECK (
+  auth.uid() = auth_id
+  OR correo = (auth.jwt() ->> 'email')
+);
+
+-- UPDATE: el usuario solo puede modificar su propio registro.
+DROP POLICY IF EXISTS usuarios_update_own ON usuarios;
+CREATE POLICY usuarios_update_own ON usuarios
+FOR UPDATE
+USING (
+  auth.uid() = auth_id
+  OR correo = (auth.jwt() ->> 'email')
+)
+WITH CHECK (
+  auth.uid() = auth_id
+  OR correo = (auth.jwt() ->> 'email')
+);
 
 
