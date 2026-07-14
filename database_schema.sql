@@ -42,6 +42,14 @@ CREATE TABLE IF NOT EXISTS usuarios (
     bloqueado_hasta TIMESTAMP DEFAULT NULL,
     auth_id UUID,
     ultimo_acceso TIMESTAMP,
+    nombre_completo VARCHAR(255),
+    telefono VARCHAR(20),
+    cedula_tipo VARCHAR(10),
+    cedula_numero VARCHAR(20),
+    fecha_nacimiento DATE,
+    municipio_residencia VARCHAR(100),
+    requiere_cambio_clave BOOLEAN DEFAULT FALSE,
+    clave_temporal_expira TIMESTAMP,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -228,6 +236,64 @@ SELECT
     case when extract(isodow from d) in (6, 7) then true else false end as es_fin_de_semana
 FROM generate_series('2025-01-01'::timestamp, '2035-12-31'::timestamp, '1 day'::interval) d
 ON CONFLICT (fecha) DO NOTHING;
+
+-- Trigger de creación de nuevo usuario desde Supabase Auth
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+DECLARE
+  role_name text;
+  role_id_var integer;
+  full_name_var text;
+  telefono_var text;
+BEGIN
+  -- Extraer rol de raw_user_meta_data (por defecto 'turista')
+  role_name := COALESCE(new.raw_user_meta_data ->> 'role', 'turista');
+  
+  -- MEDIDA DE SEGURIDAD CRÍTICA:
+  -- Prevenir escalación de privilegios. Solo se permite el registro público
+  -- para los roles 'turista' y 'operador'. Cualquier otro (como 'admin')
+  -- es degradado a 'turista' de forma inmediata y silenciosa.
+  IF role_name NOT IN ('turista', 'operador') THEN
+    role_name := 'turista';
+  END IF;
+  
+  -- Extraer nombre y teléfono desde la metadata de Supabase Auth
+  full_name_var := COALESCE(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', '');
+  telefono_var := COALESCE(new.raw_user_meta_data ->> 'phone', '');
+  
+  -- Obtener el ID del rol correspondiente en la tabla roles
+  SELECT id INTO role_id_var FROM public.roles WHERE nombre = role_name;
+  
+  -- Si por algún motivo no se encuentra, usar el rol de 'turista'
+  IF role_id_var IS NULL THEN
+    SELECT id INTO role_id_var FROM public.roles WHERE nombre = 'turista';
+  END IF;
+
+  -- Insertar en la tabla usuarios pública o actualizar si ya existe (evitando duplicaciones)
+  INSERT INTO public.usuarios (
+    correo, contrasena, rol_id, auth_id, verificado, 
+    fecha_creacion, fecha_actualizacion, nombre_completo, telefono
+  )
+  VALUES (
+    new.email, '', role_id_var, new.id, true, 
+    now(), now(), full_name_var, telefono_var
+  )
+  ON CONFLICT (correo) DO UPDATE 
+  SET auth_id = new.id, 
+      rol_id = EXCLUDED.rol_id,
+      nombre_completo = EXCLUDED.nombre_completo,
+      telefono = EXCLUDED.telefono,
+      fecha_actualizacion = now();
+      
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Re-vincular el trigger de forma segura a auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Funciones y Triggers de Sincronización
 -- 1. Usuarios a dim_turista

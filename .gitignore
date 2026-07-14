@@ -83,6 +83,7 @@ lerna-debug.log*
 public/sw.js
 
 # Specific project files and local assets
+ESTRUCTURA_POWERPOINT_GAMMA.txt
 INFORME_SISTEMA.md
 DESIGN.md
 GUIA_SEGURIDAD.md
