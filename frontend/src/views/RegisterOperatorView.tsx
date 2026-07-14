@@ -21,6 +21,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useThemeStore } from "../store/useThemeStore";
 import SEO from "../components/SEO";
 import { PageHeader } from "../components/ui/PageHeader";
+import { compressImageToWebP } from "../utils/imageCompressor";
 import {
   MunicipioBoundsController,
   MunicipioMaskLayer,
@@ -215,6 +216,7 @@ const RegisterOperatorView = () => {
 
   /**
    * Carga de archivos multimedia (imágenes del taller, cédula y RIF).
+   * Comprime y convierte la imagen a formato .webp antes de subirla o guardarla.
    * Intenta subir directamente a la API REST de Cloudinary.
    * Si la subida remota falla (por ejemplo, debido a fallas de red offline de PWA),
    * implementa un mecanismo de fallback que codifica el archivo localmente a Base64
@@ -225,7 +227,17 @@ const RegisterOperatorView = () => {
     if (!files || files.length === 0) return;
 
     setUploading(target);
-    const file = files[0];
+    let file = files[0];
+    
+    // Comprimir y convertir a WebP si es una imagen
+    if (file.type.startsWith("image/")) {
+      try {
+        file = await compressImageToWebP(file, 1024, 0.75);
+      } catch (compressErr) {
+        console.warn("Fallo al comprimir imagen, usando archivo original:", compressErr);
+      }
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "ml_default");
