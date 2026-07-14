@@ -582,3 +582,150 @@ WITH CHECK (
 );
 
 
+-- 14. Políticas RLS para OPERADORES
+ALTER TABLE operadores ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS operadores_select_public ON operadores;
+CREATE POLICY operadores_select_public ON operadores
+FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS operadores_insert_own ON operadores;
+CREATE POLICY operadores_insert_own ON operadores
+FOR INSERT WITH CHECK (
+  usuario_id IN (
+    SELECT id FROM usuarios
+    WHERE auth_id = auth.uid() OR correo = (auth.jwt() ->> 'email')
+  )
+);
+
+DROP POLICY IF EXISTS operadores_update_own ON operadores;
+CREATE POLICY operadores_update_own ON operadores
+FOR UPDATE
+USING (
+  usuario_id IN (
+    SELECT id FROM usuarios
+    WHERE auth_id = auth.uid() OR correo = (auth.jwt() ->> 'email')
+  )
+)
+WITH CHECK (
+  usuario_id IN (
+    SELECT id FROM usuarios
+    WHERE auth_id = auth.uid() OR correo = (auth.jwt() ->> 'email')
+  )
+);
+
+-- Permite al Admin modificar cualquier operador (para el botón de verificar/aprobar taller)
+DROP POLICY IF EXISTS operadores_update_admin ON operadores;
+CREATE POLICY operadores_update_admin ON operadores
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+);
+
+-- 15. Políticas RLS para OPERADOR_ACCESIBILIDAD
+ALTER TABLE operador_accesibilidad ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS accesibilidad_select_public ON operador_accesibilidad;
+CREATE POLICY accesibilidad_select_public ON operador_accesibilidad
+FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS accesibilidad_manage_own ON operador_accesibilidad;
+CREATE POLICY accesibilidad_manage_own ON operador_accesibilidad
+FOR ALL
+USING (
+  operador_id IN (
+    SELECT o.id FROM operadores o
+    JOIN usuarios u ON o.usuario_id = u.id
+    WHERE u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email')
+  )
+)
+WITH CHECK (
+  operador_id IN (
+    SELECT o.id FROM operadores o
+    JOIN usuarios u ON o.usuario_id = u.id
+    WHERE u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email')
+  )
+);
+
+-- Permite al Admin gestionar la accesibilidad de cualquier taller
+DROP POLICY IF EXISTS accesibilidad_manage_admin ON operador_accesibilidad;
+CREATE POLICY accesibilidad_manage_admin ON operador_accesibilidad
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+);
+
+-- 16. Políticas RLS para OPERADOR_IMAGENES
+ALTER TABLE operador_imagenes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS imagenes_select_public ON operador_imagenes;
+CREATE POLICY imagenes_select_public ON operador_imagenes
+FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS imagenes_manage_own ON operador_imagenes;
+CREATE POLICY imagenes_manage_own ON operador_imagenes
+FOR ALL
+USING (
+  operador_id IN (
+    SELECT o.id FROM operadores o
+    JOIN usuarios u ON o.usuario_id = u.id
+    WHERE u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email')
+  )
+)
+WITH CHECK (
+  operador_id IN (
+    SELECT o.id FROM operadores o
+    JOIN usuarios u ON o.usuario_id = u.id
+    WHERE u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email')
+  )
+);
+
+-- Permite al Admin gestionar las imágenes de cualquier taller
+DROP POLICY IF EXISTS imagenes_manage_admin ON operador_imagenes;
+CREATE POLICY imagenes_manage_admin ON operador_imagenes
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
+    WHERE (u.auth_id = auth.uid() OR u.correo = (auth.jwt() ->> 'email'))
+      AND r.nombre = 'admin'
+  )
+);
+
+
+

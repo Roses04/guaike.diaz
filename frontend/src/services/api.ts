@@ -426,7 +426,7 @@ const getOperatorDetail = async (id: string) => {
     supabase.from("categorias").select("nombre").eq("id", operatorData.categoria_id).single(),
     supabase.from("parroquias").select("nombre").eq("id", operatorData.parroquia_id).single(),
     supabase.from("operador_imagenes").select("id,url_imagen,es_principal").eq("operador_id", id).order("es_principal", { ascending: false }),
-    supabase.from("operador_accesibilidad").select("accesibilidad(id,etiqueta,icono)").eq("operador_id", id),
+    supabase.from("operador_accesibilidad").select("opciones_accesibilidad(id,etiqueta,icono)").eq("operador_id", id),
     supabase.from("productos").select("id,nombre,descripcion,precio,url_imagen,esta_disponible").eq("operador_id", id).eq("esta_disponible", true).order("id", { ascending: false }),
     supabase.from("resenas").select("id,puntuacion,comentario,qr_verificado,fecha_creacion,respuesta_operador,fecha_respuesta,usuario:usuarios(correo)").eq("operador_id", id).order("fecha_creacion", { ascending: false }),
   ]);
@@ -459,7 +459,7 @@ const getOperatorDetail = async (id: string) => {
     longitud: location.longitud,
     latitud: location.latitud,
     imagenes: imagesRes.data || [],
-    accesibilidades: (accessRes.data || []).map((item: any) => item.accesibilidad),
+    accesibilidades: (accessRes.data || []).map((item: any) => item.opciones_accesibilidad),
     productos: productsRes.data || [],
     resenas: reviews,
     calificacion_promedio: averageRating,
