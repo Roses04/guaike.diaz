@@ -697,4 +697,73 @@ const OperatorDetailView = () => {
   );
 };
 
+
+interface QrOwnerPanelProps {
+  qrValue: string;
+  workshopName: string;
+}
+
+const QrOwnerPanel: React.FC<QrOwnerPanelProps> = ({ qrValue, workshopName }) => {
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = () => {
+    const canvas = qrRef.current?.querySelector("canvas");
+    if (!canvas) return;
+    const qrDataUrl = canvas.toDataURL("image/png");
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html><head><title>Código QR - ${workshopName}</title>
+        <style>body{font-family:sans-serif;text-align:center;padding:20px;} h2{margin-bottom:4px;} p{color:#666;font-size:12px;margin:4px 0;} img{margin:12px auto;display:block;} .uuid{font-size:9px;color:#999;font-family:monospace;word-break:break-all;margin-top:8px;}</style>
+        </head><body>
+        <h2>${workshopName}</h2>
+        <p>Escanea para verificar tu visita en GUAIKE.DÍAZ</p>
+        <img src="${qrDataUrl}" width="280" height="280" />
+        <p class="uuid">${qrValue}</p>
+        </body></html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  };
+
+  return (
+    <div className="mt-4 p-5 rounded-2xl bg-gradient-to-br from-brand-blue/5 to-brand-light/5 border border-brand-blue/20 dark:border-white/10 space-y-3">
+      <div className="flex items-center gap-2">
+        <QrCode size={18} className="text-brand-blue dark:text-brand-light flex-shrink-0" />
+        <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Tu Código QR de Visita</h3>
+      </div>
+      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+        Imprime este código y colócalo en tu taller para que los visitantes puedan escanearlo y dejar reseñas verificadas.
+      </p>
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div ref={qrRef} className="bg-white rounded-2xl p-3 shadow-lg border border-gray-100 flex-shrink-0">
+          <div className="hidden">
+            <QRCodeCanvas value={qrValue} size={280} level="H" />
+          </div>
+          <QRCodeSVG value={qrValue} size={140} level="H" className="sm:w-[160px] sm:h-[160px]" />
+        </div>
+        <div className="space-y-2 w-full">
+          <p className="text-[10px] font-mono text-slate-400 break-all select-all bg-slate-100 dark:bg-slate-800/50 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10">
+            {qrValue}
+          </p>
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="w-full py-2.5 rounded-xl bg-brand-blue dark:bg-brand-light text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 transition cursor-pointer"
+          >
+            <QrCode size={13} /> Imprimir Código QR
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default OperatorDetailView;
+
