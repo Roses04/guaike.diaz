@@ -11,8 +11,9 @@
  * - Soporte OFFLINE (Carga el operador guardado en caché si no hay internet y encola reseñas).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import SEO from "../components/SEO";
@@ -425,53 +426,7 @@ const OperatorDetailView = () => {
 
           {/* QR Code display panel — only visible to the owner operator */}
           {isOwner && operator.qr_codigo_unico && (
-            <div className="mt-4 p-5 rounded-2xl bg-gradient-to-br from-brand-blue/5 to-brand-light/5 border border-brand-blue/20 dark:border-white/10 space-y-3">
-              <div className="flex items-center gap-2">
-                <QrCode size={18} className="text-brand-blue dark:text-brand-light flex-shrink-0" />
-                <h3 className="text-sm font-extrabold text-slate-800 dark:text-white">Tu Código QR de Visita</h3>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Imprime este código y colócalo en tu taller para que los visitantes puedan escanearlo y dejar reseñas verificadas.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="bg-white rounded-2xl p-3 shadow-lg border border-gray-100 flex-shrink-0">
-                  <img
-                    src={`https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${encodeURIComponent(operator.qr_codigo_unico)}&choe=UTF-8`}
-                    alt={`Código QR de ${operator.nombre_taller}`}
-                    className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px]"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="space-y-2 w-full">
-                  <p className="text-[10px] font-mono text-slate-400 break-all select-all bg-slate-100 dark:bg-slate-800/50 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10">
-                    {operator.qr_codigo_unico}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const printWindow = window.open('', '_blank');
-                      if (printWindow) {
-                        printWindow.document.write(`
-                          <html><head><title>Código QR - ${operator.nombre_taller}</title>
-                          <style>body{font-family:sans-serif;text-align:center;padding:20px;} h2{margin-bottom:4px;} p{color:#666;font-size:12px;margin:4px 0;} img{margin:12px auto;display:block;} .uuid{font-size:9px;color:#999;font-family:monospace;word-break:break-all;margin-top:8px;}</style>
-                          </head><body>
-                          <h2>${operator.nombre_taller}</h2>
-                          <p>Escanea para verificar tu visita en GUAIKE.DÍAZ</p>
-                          <img src="https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(operator.qr_codigo_unico)}&choe=UTF-8" width="280" height="280" />
-                          <p class="uuid">${operator.qr_codigo_unico}</p>
-                          </body></html>
-                        `);
-                        printWindow.document.close();
-                        printWindow.print();
-                      }
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-brand-blue dark:bg-brand-light text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 transition cursor-pointer"
-                  >
-                    <QrCode size={13} /> Imprimir Código QR
-                  </button>
-                </div>
-              </div>
-            </div>
+            <QrOwnerPanel qrValue={operator.qr_codigo_unico} workshopName={operator.nombre_taller} />
           )}
         </div>
       </div>
