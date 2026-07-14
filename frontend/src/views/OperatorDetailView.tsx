@@ -81,7 +81,11 @@ const OperatorDetailView = () => {
       const res = await api.get(`/operators/${id}`);
       setOperator(res.data);
       // Guardar en caché local para acceso sin conexión
-      localStorage.setItem(`cache_operator_${id}`, JSON.stringify(res.data));
+      try {
+        localStorage.setItem(`cache_operator_${id}`, JSON.stringify(res.data));
+      } catch (storageErr) {
+        console.warn("No se pudo guardar el taller en caché local (límite de almacenamiento excedido):", storageErr);
+      }
       setIsOffline(false);
     } catch (err) {
       console.error("Error al cargar detalles del taller:", err);
